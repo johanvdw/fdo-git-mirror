@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_translate.cpp 25582 2013-01-29 21:13:43Z rouault $
+ * $Id: gdal_translate.cpp 22783 2011-07-23 19:28:16Z rouault $
  *
  * Project:  GDAL Utilities
  * Purpose:  GDAL Image Translator Program
@@ -35,7 +35,7 @@
 #include "vrt/vrtdataset.h"
 #include "commonutils.h"
 
-CPL_CVSID("$Id: gdal_translate.cpp 25582 2013-01-29 21:13:43Z rouault $");
+CPL_CVSID("$Id: gdal_translate.cpp 22783 2011-07-23 19:28:16Z rouault $");
 
 static int ArgIsNumeric( const char * );
 static void AttachMetadata( GDALDatasetH, char ** );
@@ -47,202 +47,38 @@ static int bSubCall = FALSE;
 /*                               Usage()                                */
 /* ******************************************************************** */
 
-static void Usage(const char* pszErrorMsg = NULL, int bShort = TRUE)
+static void Usage()
 
 {
     int	iDr;
         
-    printf( "Usage: gdal_translate [--help-general] [--long-usage]\n"
+    printf( "Usage: gdal_translate [--help-general]\n"
             "       [-ot {Byte/Int16/UInt16/UInt32/Int32/Float32/Float64/\n"
             "             CInt16/CInt32/CFloat32/CFloat64}] [-strict]\n"
             "       [-of format] [-b band] [-mask band] [-expand {gray|rgb|rgba}]\n"
             "       [-outsize xsize[%%] ysize[%%]]\n"
             "       [-unscale] [-scale [src_min src_max [dst_min dst_max]]]\n"
-            "       [-srcwin xoff yoff xsize ysize] [-projwin ulx uly lrx lry] [-epo] [-eco]\n"
+            "       [-srcwin xoff yoff xsize ysize] [-projwin ulx uly lrx lry]\n"
             "       [-a_srs srs_def] [-a_ullr ulx uly lrx lry] [-a_nodata value]\n"
             "       [-gcp pixel line easting northing [elevation]]*\n" 
             "       [-mo \"META-TAG=VALUE\"]* [-q] [-sds]\n"
             "       [-co \"NAME=VALUE\"]* [-stats]\n"
-            "       src_dataset dst_dataset\n" );
+            "       src_dataset dst_dataset\n\n" );
 
-    if( !bShort )
+    printf( "%s\n\n", GDALVersionInfo( "--version" ) );
+    printf( "The following format drivers are configured and support output:\n" );
+    for( iDr = 0; iDr < GDALGetDriverCount(); iDr++ )
     {
-        printf( "\n%s\n\n", GDALVersionInfo( "--version" ) );
-        printf( "The following format drivers are configured and support output:\n" );
-        for( iDr = 0; iDr < GDALGetDriverCount(); iDr++ )
+        GDALDriverH hDriver = GDALGetDriver(iDr);
+        
+        if( GDALGetMetadataItem( hDriver, GDAL_DCAP_CREATE, NULL ) != NULL
+            || GDALGetMetadataItem( hDriver, GDAL_DCAP_CREATECOPY,
+                                    NULL ) != NULL )
         {
-            GDALDriverH hDriver = GDALGetDriver(iDr);
-            
-            if( GDALGetMetadataItem( hDriver, GDAL_DCAP_CREATE, NULL ) != NULL
-                || GDALGetMetadataItem( hDriver, GDAL_DCAP_CREATECOPY,
-                                        NULL ) != NULL )
-            {
-                printf( "  %s: %s\n",
-                        GDALGetDriverShortName( hDriver ),
-                        GDALGetDriverLongName( hDriver ) );
-            }
+            printf( "  %s: %s\n",
+                    GDALGetDriverShortName( hDriver ),
+                    GDALGetDriverLongName( hDriver ) );
         }
-    }
-
-    if( pszErrorMsg != NULL )
-        fprintf(stderr, "\nFAILURE: %s\n", pszErrorMsg);
-
-    exit(1);
-}
-
-/************************************************************************/
-/*                              SrcToDst()                              */
-/************************************************************************/
-
-static void SrcToDst( double dfX, double dfY,
-                      int nSrcXOff, int nSrcYOff,
-                      int nSrcXSize, int nSrcYSize,
-                      int nDstXOff, int nDstYOff,
-                      int nDstXSize, int nDstYSize,
-                      double &dfXOut, double &dfYOut )
-
-{
-    dfXOut = ((dfX - nSrcXOff) / nSrcXSize) * nDstXSize + nDstXOff;
-    dfYOut = ((dfY - nSrcYOff) / nSrcYSize) * nDstYSize + nDstYOff;
-}
-
-/************************************************************************/
-/*                          GetSrcDstWindow()                           */
-/************************************************************************/
-
-static int FixSrcDstWindow( int* panSrcWin, int* panDstWin,
-                            int nSrcRasterXSize,
-                            int nSrcRasterYSize )
-
-{
-    const int nSrcXOff = panSrcWin[0];
-    const int nSrcYOff = panSrcWin[1];
-    const int nSrcXSize = panSrcWin[2];
-    const int nSrcYSize = panSrcWin[3];
-
-    const int nDstXOff = panDstWin[0];
-    const int nDstYOff = panDstWin[1];
-    const int nDstXSize = panDstWin[2];
-    const int nDstYSize = panDstWin[3];
-
-    int bModifiedX = FALSE, bModifiedY = FALSE;
-
-    int nModifiedSrcXOff = nSrcXOff;
-    int nModifiedSrcYOff = nSrcYOff;
-
-    int nModifiedSrcXSize = nSrcXSize;
-    int nModifiedSrcYSize = nSrcYSize;
-
-/* -------------------------------------------------------------------- */
-/*      Clamp within the bounds of the available source data.           */
-/* -------------------------------------------------------------------- */
-    if( nModifiedSrcXOff < 0 )
-    {
-        nModifiedSrcXSize += nModifiedSrcXOff;
-        nModifiedSrcXOff = 0;
-
-        bModifiedX = TRUE;
-    }
-
-    if( nModifiedSrcYOff < 0 )
-    {
-        nModifiedSrcYSize += nModifiedSrcYOff;
-        nModifiedSrcYOff = 0;
-        bModifiedY = TRUE;
-    }
-
-    if( nModifiedSrcXOff + nModifiedSrcXSize > nSrcRasterXSize )
-    {
-        nModifiedSrcXSize = nSrcRasterXSize - nModifiedSrcXOff;
-        bModifiedX = TRUE;
-    }
-
-    if( nModifiedSrcYOff + nModifiedSrcYSize > nSrcRasterYSize )
-    {
-        nModifiedSrcYSize = nSrcRasterYSize - nModifiedSrcYOff;
-        bModifiedY = TRUE;
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Don't do anything if the requesting region is completely off    */
-/*      the source image.                                               */
-/* -------------------------------------------------------------------- */
-    if( nModifiedSrcXOff >= nSrcRasterXSize
-        || nModifiedSrcYOff >= nSrcRasterYSize
-        || nModifiedSrcXSize <= 0 || nModifiedSrcYSize <= 0 )
-    {
-        return FALSE;
-    }
-
-    panSrcWin[0] = nModifiedSrcXOff;
-    panSrcWin[1] = nModifiedSrcYOff;
-    panSrcWin[2] = nModifiedSrcXSize;
-    panSrcWin[3] = nModifiedSrcYSize;
-
-/* -------------------------------------------------------------------- */
-/*      If we haven't had to modify the source rectangle, then the      */
-/*      destination rectangle must be the whole region.                 */
-/* -------------------------------------------------------------------- */
-    if( !bModifiedX && !bModifiedY )
-        return TRUE;
-
-/* -------------------------------------------------------------------- */
-/*      Now transform this possibly reduced request back into the       */
-/*      destination buffer coordinates in case the output region is     */
-/*      less than the whole buffer.                                     */
-/* -------------------------------------------------------------------- */
-    double dfDstULX, dfDstULY, dfDstLRX, dfDstLRY;
-
-    SrcToDst( nModifiedSrcXOff, nModifiedSrcYOff,
-              nSrcXOff, nSrcYOff,
-              nSrcXSize, nSrcYSize,
-              nDstXOff, nDstYOff,
-              nDstXSize, nDstYSize,
-              dfDstULX, dfDstULY );
-    SrcToDst( nModifiedSrcXOff + nModifiedSrcXSize, nModifiedSrcYOff + nModifiedSrcYSize,
-              nSrcXOff, nSrcYOff,
-              nSrcXSize, nSrcYSize,
-              nDstXOff, nDstYOff,
-              nDstXSize, nDstYSize,
-              dfDstLRX, dfDstLRY );
-
-    int nModifiedDstXOff = nDstXOff;
-    int nModifiedDstYOff = nDstYOff;
-    int nModifiedDstXSize = nDstXSize;
-    int nModifiedDstYSize = nDstYSize;
-
-    if( bModifiedX )
-    {
-        nModifiedDstXOff = (int) ((dfDstULX - nDstXOff)+0.001);
-        nModifiedDstXSize = (int) ((dfDstLRX - nDstXOff)+0.001)
-            - nModifiedDstXOff;
-
-        nModifiedDstXOff = MAX(0,nModifiedDstXOff);
-        if( nModifiedDstXOff + nModifiedDstXSize > nDstXSize )
-            nModifiedDstXSize = nDstXSize - nModifiedDstXOff;
-    }
-
-    if( bModifiedY )
-    {
-        nModifiedDstYOff = (int) ((dfDstULY - nDstYOff)+0.001);
-        nModifiedDstYSize = (int) ((dfDstLRY - nDstYOff)+0.001)
-            - nModifiedDstYOff;
-
-        nModifiedDstYOff = MAX(0,nModifiedDstYOff);
-        if( nModifiedDstYOff + nModifiedDstYSize > nDstYSize )
-            nModifiedDstYSize = nDstYSize - nModifiedDstYOff;
-    }
-
-    if( nModifiedDstXSize < 1 || nModifiedDstYSize < 1 )
-        return FALSE;
-    else
-    {
-        panDstWin[0] = nModifiedDstXOff;
-        panDstWin[1] = nModifiedDstYOff;
-        panDstWin[2] = nModifiedDstXSize;
-        panDstWin[3] = nModifiedDstYSize;
-
-        return TRUE;
     }
 }
 
@@ -256,10 +92,6 @@ enum
     MASK_AUTO,
     MASK_USER
 };
-
-#define CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(nExtraArg) \
-    do { if (i + nExtraArg >= argc) \
-        Usage(CPLSPrintf("%s option requires %d argument(s)", argv[i], nExtraArg)); } while(0)
 
 static int ProxyMain( int argc, char ** argv )
 
@@ -300,8 +132,6 @@ static int ProxyMain( int argc, char ** argv )
     int                 eMaskMode = MASK_AUTO;
     int                 nMaskBand = 0; /* negative value means mask band of ABS(nMaskBand) */
     int                 bStats = FALSE, bApproxStats = FALSE;
-    int                 bErrorOnPartiallyOutside = FALSE;
-    int                 bErrorOnCompletelyOutside = FALSE;
 
 
     anSrcWin[0] = 0;
@@ -315,7 +145,18 @@ static int ProxyMain( int argc, char ** argv )
     if (! GDAL_CHECK_VERSION(argv[0]))
         exit(1);
 
-    EarlySetConfigOptions(argc, argv);
+    /* Must process GDAL_SKIP before GDALAllRegister(), but we can't call */
+    /* GDALGeneralCmdLineProcessor before it needs the drivers to be registered */
+    /* for the --format or --formats options */
+    for( i = 1; i < argc; i++ )
+    {
+        if( EQUAL(argv[i],"--config") && i + 2 < argc && EQUAL(argv[i + 1], "GDAL_SKIP") )
+        {
+            CPLSetConfigOption( argv[i+1], argv[i+2] );
+
+            i += 2;
+        }
+    }
 
 /* -------------------------------------------------------------------- */
 /*      Register standard GDAL drivers, and process generic GDAL        */
@@ -337,12 +178,6 @@ static int ProxyMain( int argc, char ** argv )
                    argv[0], GDAL_RELEASE_NAME, GDALVersionInfo("RELEASE_NAME"));
             return 0;
         }
-        else if( EQUAL(argv[i],"--help") )
-            Usage();
-        else if ( EQUAL(argv[i], "--long-usage") )
-        {
-            Usage(NULL, FALSE);
-        }
         else if( EQUAL(argv[i],"-of") && i < argc-1 )
         {
             pszFormat = argv[++i];
@@ -355,9 +190,8 @@ static int ProxyMain( int argc, char ** argv )
             pfnProgress = GDALDummyProgress;
         }
 
-        else if( EQUAL(argv[i],"-ot") )
+        else if( EQUAL(argv[i],"-ot") && i < argc-1 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             int	iType;
             
             for( iType = 1; iType < GDT_TypeCount; iType++ )
@@ -372,13 +206,15 @@ static int ProxyMain( int argc, char ** argv )
 
             if( eOutputType == GDT_Unknown )
             {
-                Usage(CPLSPrintf("Unknown output pixel type: %s.", argv[i+1] ));
+                printf( "Unknown output pixel type: %s\n", argv[i+1] );
+                Usage();
+                GDALDestroyDriverManager();
+                exit( 2 );
             }
             i++;
         }
-        else if( EQUAL(argv[i],"-b") )
+        else if( EQUAL(argv[i],"-b") && i < argc-1 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             const char* pszBand = argv[i+1];
             int bMask = FALSE;
             if (EQUAL(pszBand, "mask"))
@@ -395,7 +231,10 @@ static int ProxyMain( int argc, char ** argv )
             int nBand = atoi(pszBand);
             if( nBand < 1 )
             {
-                Usage(CPLSPrintf( "Unrecognizable band number (%s).", argv[i+1] ));
+                printf( "Unrecognizable band number (%s).\n", argv[i+1] );
+                Usage();
+                GDALDestroyDriverManager();
+                exit( 2 );
             }
             i++;
 
@@ -409,9 +248,8 @@ static int ProxyMain( int argc, char ** argv )
             if( panBandList[nBandCount-1] != nBandCount )
                 bDefBands = FALSE;
         }
-        else if( EQUAL(argv[i],"-mask") )
+        else if( EQUAL(argv[i],"-mask") && i < argc-1 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             bParsedMaskArgument = TRUE;
             const char* pszBand = argv[i+1];
             if (EQUAL(pszBand, "none"))
@@ -435,7 +273,10 @@ static int ProxyMain( int argc, char ** argv )
                 int nBand = atoi(pszBand);
                 if( nBand < 1 )
                 {
-                    Usage(CPLSPrintf( "Unrecognizable band number (%s).", argv[i+1] ));
+                    printf( "Unrecognizable band number (%s).\n", argv[i+1] );
+                    Usage();
+                    GDALDestroyDriverManager();
+                    exit( 2 );
                 }
                 
                 eMaskMode = MASK_USER;
@@ -454,9 +295,8 @@ static int ProxyMain( int argc, char ** argv )
         else if( EQUAL(argv[i],"-sds")  )
             bCopySubDatasets = TRUE;
             
-        else if( EQUAL(argv[i],"-gcp") )
+        else if( EQUAL(argv[i],"-gcp") && i < argc - 4 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(4);
             char* endptr = NULL;
             /* -gcp pixel line easting northing [elev] */
 
@@ -481,9 +321,8 @@ static int ProxyMain( int argc, char ** argv )
             /* should set id and info? */
         }   
 
-        else if( EQUAL(argv[i],"-a_nodata") )
+        else if( EQUAL(argv[i],"-a_nodata") && i < argc - 1 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             if (EQUAL(argv[i+1], "none"))
             {
                 bUnsetNoData = TRUE;
@@ -496,9 +335,8 @@ static int ProxyMain( int argc, char ** argv )
             i += 1;
         }   
 
-        else if( EQUAL(argv[i],"-a_ullr") )
+        else if( EQUAL(argv[i],"-a_ullr") && i < argc - 4 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(4);
             adfULLR[0] = CPLAtofM(argv[i+1]);
             adfULLR[1] = CPLAtofM(argv[i+2]);
             adfULLR[2] = CPLAtofM(argv[i+3]);
@@ -509,9 +347,8 @@ static int ProxyMain( int argc, char ** argv )
             i += 4;
         }   
 
-        else if( EQUAL(argv[i],"-co") )
+        else if( EQUAL(argv[i],"-co") && i < argc-1 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             papszCreateOptions = CSLAddString( papszCreateOptions, argv[++i] );
         }   
 
@@ -543,52 +380,36 @@ static int ProxyMain( int argc, char ** argv )
             bUnscale = TRUE;
         }
 
-        else if( EQUAL(argv[i],"-mo") )
+        else if( EQUAL(argv[i],"-mo") && i < argc-1 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             papszMetadataOptions = CSLAddString( papszMetadataOptions,
                                                  argv[++i] );
         }
 
-        else if( EQUAL(argv[i],"-outsize") )
+        else if( EQUAL(argv[i],"-outsize") && i < argc-2 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(2);
             pszOXSize = argv[++i];
             pszOYSize = argv[++i];
         }   
 
-        else if( EQUAL(argv[i],"-srcwin") )
+        else if( EQUAL(argv[i],"-srcwin") && i < argc-4 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(4);
             anSrcWin[0] = atoi(argv[++i]);
             anSrcWin[1] = atoi(argv[++i]);
             anSrcWin[2] = atoi(argv[++i]);
             anSrcWin[3] = atoi(argv[++i]);
         }   
 
-        else if( EQUAL(argv[i],"-projwin") )
+        else if( EQUAL(argv[i],"-projwin") && i < argc-4 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(4);
             dfULX = CPLAtofM(argv[++i]);
             dfULY = CPLAtofM(argv[++i]);
             dfLRX = CPLAtofM(argv[++i]);
             dfLRY = CPLAtofM(argv[++i]);
         }   
 
-        else if( EQUAL(argv[i],"-epo") )
+        else if( EQUAL(argv[i],"-a_srs") && i < argc-1 )
         {
-            bErrorOnPartiallyOutside = TRUE;
-            bErrorOnCompletelyOutside = TRUE;
-        }
-
-        else  if( EQUAL(argv[i],"-eco") )
-        {
-            bErrorOnCompletelyOutside = TRUE;
-        }
-    
-        else if( EQUAL(argv[i],"-a_srs") )
-        {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             OGRSpatialReference oOutputSRS;
 
             if( oOutputSRS.SetFromUserInput( argv[i+1] ) != OGRERR_NONE )
@@ -603,9 +424,8 @@ static int ProxyMain( int argc, char ** argv )
             i++;
         }   
 
-        else if( EQUAL(argv[i],"-expand") )
+        else if( EQUAL(argv[i],"-expand") && i < argc-1 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             if (EQUAL(argv[i+1], "gray"))
                 nRGBExpand = 1;
             else if (EQUAL(argv[i+1], "rgb"))
@@ -614,8 +434,11 @@ static int ProxyMain( int argc, char ** argv )
                 nRGBExpand = 4;
             else
             {
-                Usage(CPLSPrintf( "Value %s unsupported. Only gray, rgb or rgba are supported.", 
-                    argv[i] ));
+                printf( "Value %s unsupported. Only gray, rgb or rgba are supported.\n\n", 
+                    argv[i] );
+                Usage();
+                GDALDestroyDriverManager();
+                exit( 2 );
             }
             i++;
         }
@@ -633,7 +456,11 @@ static int ProxyMain( int argc, char ** argv )
 
         else if( argv[i][0] == '-' )
         {
-            Usage(CPLSPrintf("Unkown option name '%s'", argv[i]));
+            printf( "Option %s incomplete, or not recognised.\n\n", 
+                    argv[i] );
+            Usage();
+            GDALDestroyDriverManager();
+            exit( 2 );
         }
         else if( pszSource == NULL )
         {
@@ -648,21 +475,25 @@ static int ProxyMain( int argc, char ** argv )
 
         else
         {
-            Usage("Too many command options.");
+            printf( "Too many command options.\n\n" );
+            Usage();
+            GDALDestroyDriverManager();
+            exit( 2 );
         }
     }
 
     if( pszDest == NULL )
     {
-        if( pszSource == NULL )
-            Usage("No source dataset specified.");
-        else
-            Usage("No target dataset specified.");
+        Usage();
+        GDALDestroyDriverManager();
+        exit( 10 );
     }
 
     if ( strcmp(pszSource, pszDest) == 0)
     {
-        Usage("Source and destination datasets must be different.");
+        fprintf(stderr, "Source and destination datasets must be different.\n");
+        GDALDestroyDriverManager();
+        exit( 1 );
     }
 
     if( strcmp(pszDest, "/vsistdout/") == 0)
@@ -830,50 +661,37 @@ static int ProxyMain( int argc, char ** argv )
                      anSrcWin[1], 
                      anSrcWin[2], 
                      anSrcWin[3] );
+        
+        if( anSrcWin[0] < 0 || anSrcWin[1] < 0 
+            || anSrcWin[0] + anSrcWin[2] > GDALGetRasterXSize(hDataset) 
+            || anSrcWin[1] + anSrcWin[3] > GDALGetRasterYSize(hDataset) )
+        {
+            fprintf( stderr, 
+                     "Computed -srcwin falls outside raster size of %dx%d.\n",
+                     GDALGetRasterXSize(hDataset), 
+                     GDALGetRasterYSize(hDataset) );
+            exit( 1 );
+        }
     }
 
 /* -------------------------------------------------------------------- */
-/*      Verify source window dimensions.                                */
+/*      Verify source window.                                           */
 /* -------------------------------------------------------------------- */
-    if( anSrcWin[2] <= 0 || anSrcWin[3] <= 0 )
-    {
-        fprintf( stderr,
-                 "Error: %s-srcwin %d %d %d %d has negative width and/or height.\n",
-                 ( dfULX != 0.0 || dfULY != 0.0 || dfLRX != 0.0 || dfLRY != 0.0 ) ? "Computed " : "",
-                 anSrcWin[0],
-                 anSrcWin[1],
-                 anSrcWin[2],
-                 anSrcWin[3] );
-        exit( 1 );
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Verify source window dimensions.                                */
-/* -------------------------------------------------------------------- */
-    else if( anSrcWin[0] < 0 || anSrcWin[1] < 0 
-        || anSrcWin[0] + anSrcWin[2] > GDALGetRasterXSize(hDataset)
+    if( anSrcWin[0] < 0 || anSrcWin[1] < 0 
+        || anSrcWin[2] <= 0 || anSrcWin[3] <= 0
+        || anSrcWin[0] + anSrcWin[2] > GDALGetRasterXSize(hDataset) 
         || anSrcWin[1] + anSrcWin[3] > GDALGetRasterYSize(hDataset) )
     {
-        int bCompletelyOutside = anSrcWin[0] + anSrcWin[2] <= 0 ||
-                                    anSrcWin[1] + anSrcWin[3] <= 0 ||
-                                    anSrcWin[0] >= GDALGetRasterXSize(hDataset) ||
-                                    anSrcWin[1] >= GDALGetRasterYSize(hDataset);
-        int bIsError = bErrorOnPartiallyOutside || (bCompletelyOutside && bErrorOnCompletelyOutside);
-        if( !bQuiet || bIsError )
-        {
-            fprintf( stderr,
-                 "%s: %s-srcwin %d %d %d %d falls %s outside raster extent.%s\n",
-                 (bIsError) ? "Error" : "Warning",
-                 ( dfULX != 0.0 || dfULY != 0.0 || dfLRX != 0.0 || dfLRY != 0.0 ) ? "Computed " : "",
+        fprintf( stderr, 
+                 "-srcwin %d %d %d %d falls outside raster size of %dx%d\n"
+                 "or is otherwise illegal.\n",
                  anSrcWin[0],
                  anSrcWin[1],
                  anSrcWin[2],
                  anSrcWin[3],
-                 (bCompletelyOutside) ? "completely" : "partially",
-                 (bIsError) ? "" : " Going on however." );
-        }
-        if( bIsError )
-            exit(1);
+                 GDALGetRasterXSize(hDataset), 
+                 GDALGetRasterYSize(hDataset) );
+        exit( 1 );
     }
 
 /* -------------------------------------------------------------------- */
@@ -972,7 +790,7 @@ static int ProxyMain( int argc, char ** argv )
         nOYSize = (int) ((pszOYSize[strlen(pszOYSize)-1]=='%' 
                           ? CPLAtofM(pszOYSize)/100*anSrcWin[3] : atoi(pszOYSize)));
     }
-
+    
 /* ==================================================================== */
 /*      Create a virtual dataset.                                       */
 /* ==================================================================== */
@@ -1061,20 +879,6 @@ static int ProxyMain( int argc, char ** argv )
         GDALDeinitGCPs( nGCPs, pasGCPs );
         CPLFree( pasGCPs );
     }
-
-/* -------------------------------------------------------------------- */
-/*      To make the VRT to look less awkward (but this is optional      */
-/*      in fact), avoid negative values.                                */
-/* -------------------------------------------------------------------- */
-    int anDstWin[4];
-    anDstWin[0] = 0;
-    anDstWin[1] = 0;
-    anDstWin[2] = nOXSize;
-    anDstWin[3] = nOYSize;
-
-    FixSrcDstWindow( anSrcWin, anDstWin,
-                     GDALGetRasterXSize(hDataset),
-                     GDALGetRasterYSize(hDataset) );
 
 /* -------------------------------------------------------------------- */
 /*      Transfer generally applicable metadata.                         */
@@ -1257,20 +1061,18 @@ static int ProxyMain( int argc, char ** argv )
         if( bUnscale || bScale || (nRGBExpand != 0 && i < nRGBExpand) )
         {
             poVRTBand->AddComplexSource( poSrcBand,
-                                         anSrcWin[0], anSrcWin[1],
-                                         anSrcWin[2], anSrcWin[3],
-                                         anDstWin[0], anDstWin[1],
-                                         anDstWin[2], anDstWin[3],
+                                         anSrcWin[0], anSrcWin[1], 
+                                         anSrcWin[2], anSrcWin[3], 
+                                         0, 0, nOXSize, nOYSize,
                                          dfOffset, dfScale,
                                          VRT_NODATA_UNSET,
                                          nComponent );
         }
         else
             poVRTBand->AddSimpleSource( poSrcBand,
-                                        anSrcWin[0], anSrcWin[1],
-                                        anSrcWin[2], anSrcWin[3],
-                                        anDstWin[0], anDstWin[1],
-                                        anDstWin[2], anDstWin[3] );
+                                        anSrcWin[0], anSrcWin[1], 
+                                        anSrcWin[2], anSrcWin[3], 
+                                        0, 0, nOXSize, nOYSize );
 
 /* -------------------------------------------------------------------- */
 /*      In case of color table translate, we only set the color         */
@@ -1360,8 +1162,7 @@ static int ProxyMain( int argc, char ** argv )
                 hMaskVRTBand->AddMaskBandSource(poSrcBand,
                                         anSrcWin[0], anSrcWin[1],
                                         anSrcWin[2], anSrcWin[3],
-                                        anDstWin[0], anDstWin[1],
-                                        anDstWin[2], anDstWin[3] );
+                                        0, 0, nOXSize, nOYSize );
             }
         }
     }
@@ -1378,14 +1179,12 @@ static int ProxyMain( int argc, char ** argv )
                 hMaskVRTBand->AddSimpleSource(poSrcBand,
                                         anSrcWin[0], anSrcWin[1],
                                         anSrcWin[2], anSrcWin[3],
-                                        anDstWin[0], anDstWin[1],
-                                        anDstWin[2], anDstWin[3] );
+                                        0, 0, nOXSize, nOYSize );
             else
                 hMaskVRTBand->AddMaskBandSource(poSrcBand,
                                         anSrcWin[0], anSrcWin[1],
                                         anSrcWin[2], anSrcWin[3],
-                                        anDstWin[0], anDstWin[1],
-                                        anDstWin[2], anDstWin[3] );
+                                        0, 0, nOXSize, nOYSize );
         }
     }
     else
@@ -1399,8 +1198,7 @@ static int ProxyMain( int argc, char ** argv )
             hMaskVRTBand->AddMaskBandSource((GDALRasterBand*)GDALGetRasterBand(hDataset, 1),
                                         anSrcWin[0], anSrcWin[1],
                                         anSrcWin[2], anSrcWin[3],
-                                        anDstWin[0], anDstWin[1],
-                                        anDstWin[2], anDstWin[3] );
+                                        0, 0, nOXSize, nOYSize );
         }
     }
 
@@ -1463,7 +1261,20 @@ static int ProxyMain( int argc, char ** argv )
 int ArgIsNumeric( const char *pszArg )
 
 {
-    return CPLGetValueType(pszArg) != CPL_VALUE_STRING;
+    if( pszArg[0] == '-' )
+        pszArg++;
+
+    if( *pszArg == '\0' )
+        return FALSE;
+
+    while( *pszArg != '\0' )
+    {
+        if( (*pszArg < '0' || *pszArg > '9') && *pszArg != '.' )
+            return FALSE;
+        pszArg++;
+    }
+        
+    return TRUE;
 }
 
 /************************************************************************/

@@ -5,6 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
+ * $Id: tftpd.c,v 1.64 2010-02-04 17:17:19 yangtse Exp $
  *
  * Trivial file transfer protocol server.
  *
@@ -47,7 +48,9 @@
  * SUCH DAMAGE.
  */
 
-#include "server_setup.h"
+#define CURL_NO_OLDIES
+
+#include "setup.h" /* portability help from the lib directory */
 
 #ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
@@ -57,6 +60,9 @@
 #endif
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
 #endif
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
@@ -78,7 +84,9 @@
 #endif
 
 #include <setjmp.h>
-
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 #ifdef HAVE_PWD_H
 #include <pwd.h>
 #endif
@@ -89,7 +97,6 @@
 #include "curlx.h" /* from the private lib dir */
 #include "getpart.h"
 #include "util.h"
-#include "server_sockaddr.h"
 
 /* include memdebug.h last */
 #include "memdebug.h"
@@ -121,11 +128,6 @@ struct errmsg {
   const char *e_msg;
 };
 
-typedef union {
-  struct tftphdr hdr;
-  char storage[PKTSIZE];
-} tftphdr_storage_t;
-
 /*
  * bf.counter values in range [-1 .. SEGSIZE] represents size of data in the
  * bf.buf buffer. Additionally it can also hold flags BF_ALLOC or BF_FREE.
@@ -133,7 +135,7 @@ typedef union {
 
 struct bf {
   int counter;            /* size of data in buffer, or flag */
-  tftphdr_storage_t buf;  /* room for data packet */
+  char buf[PKTSIZE];      /* room for data packet */
 };
 
 #define BF_ALLOC -3       /* alloc'd but not yet filled */
@@ -189,10 +191,10 @@ static int current;     /* index of buffer in use */
 static int newline = 0;    /* fillbuf: in middle of newline expansion */
 static int prevchar = -1;  /* putbuf: previous char (cr check) */
 
-static tftphdr_storage_t buf;
-static tftphdr_storage_t ackbuf;
+static char buf[PKTSIZE];
+static char ackbuf[PKTSIZE];
 
-static srvr_sockaddr_union_t from;
+static struct sockaddr_in from;
 static curl_socklen_t fromlen;
 
 static curl_socket_t peer = CURL_SOCKET_BAD;
@@ -250,10 +252,6 @@ static SIGHANDLER_T old_sigint_handler  = SIG_ERR;
 
 #ifdef SIGTERM
 static SIGHANDLER_T old_sigterm_handler = SIG_ERR;
-#endif
-
-#if defined(SIGBREAK) && defined(WIN32)
-static SIGHANDLER_T old_sigbreak_handler = SIG_ERR;
 #endif
 
 /* var which if set indicates that the program should finish execution */
@@ -369,13 +367,13 @@ static void justtimeout(int signum)
 
 static RETSIGTYPE exit_signal_handler(int signum)
 {
-  int old_errno = errno;
+  int old_errno = ERRNO;
   if(got_exit_signal == 0) {
     got_exit_signal = 1;
     exit_signal = signum;
   }
   (void)signal(signum, exit_signal_handler);
-  errno = old_errno;
+  SET_ERRNO(old_errno);
 }
 
 static void install_signal_handlers(void)
@@ -383,33 +381,26 @@ static void install_signal_handlers(void)
 #ifdef SIGHUP
   /* ignore SIGHUP signal */
   if((old_sighup_handler = signal(SIGHUP, SIG_IGN)) == SIG_ERR)
-    logmsg("cannot install SIGHUP handler: %s", strerror(errno));
+    logmsg("cannot install SIGHUP handler: %s", strerror(ERRNO));
 #endif
 #ifdef SIGPIPE
   /* ignore SIGPIPE signal */
   if((old_sigpipe_handler = signal(SIGPIPE, SIG_IGN)) == SIG_ERR)
-    logmsg("cannot install SIGPIPE handler: %s", strerror(errno));
+    logmsg("cannot install SIGPIPE handler: %s", strerror(ERRNO));
 #endif
 #ifdef SIGINT
   /* handle SIGINT signal with our exit_signal_handler */
   if((old_sigint_handler = signal(SIGINT, exit_signal_handler)) == SIG_ERR)
-    logmsg("cannot install SIGINT handler: %s", strerror(errno));
+    logmsg("cannot install SIGINT handler: %s", strerror(ERRNO));
   else
     siginterrupt(SIGINT, 1);
 #endif
 #ifdef SIGTERM
   /* handle SIGTERM signal with our exit_signal_handler */
   if((old_sigterm_handler = signal(SIGTERM, exit_signal_handler)) == SIG_ERR)
-    logmsg("cannot install SIGTERM handler: %s", strerror(errno));
+    logmsg("cannot install SIGTERM handler: %s", strerror(ERRNO));
   else
     siginterrupt(SIGTERM, 1);
-#endif
-#if defined(SIGBREAK) && defined(WIN32)
-  /* handle SIGBREAK signal with our exit_signal_handler */
-  if((old_sigbreak_handler = signal(SIGBREAK, exit_signal_handler)) == SIG_ERR)
-    logmsg("cannot install SIGBREAK handler: %s", strerror(errno));
-  else
-    siginterrupt(SIGBREAK, 1);
 #endif
 }
 
@@ -431,10 +422,6 @@ static void restore_signal_handlers(void)
   if(SIG_ERR != old_sigterm_handler)
     (void)signal(SIGTERM, old_sigterm_handler);
 #endif
-#if defined(SIGBREAK) && defined(WIN32)
-  if(SIG_ERR != old_sigbreak_handler)
-    (void)signal(SIGBREAK, old_sigbreak_handler);
-#endif
 }
 
 /*
@@ -449,7 +436,7 @@ static struct tftphdr *rw_init(int x)
   current = 0;
   bfs[1].counter = BF_FREE;
   nextone = x;                    /* ahead or behind? */
-  return &bfs[0].buf.hdr;
+  return (struct tftphdr *)bfs[0].buf;
 }
 
 static struct tftphdr *w_init(void)
@@ -477,7 +464,7 @@ static int readit(struct testcase *test, struct tftphdr **dpp,
   if (b->counter == BF_FREE)      /* if it's empty */
     read_ahead(test, convert);    /* fill it */
 
-  *dpp = &b->buf.hdr;             /* set caller's ptr */
+  *dpp = (struct tftphdr *)b->buf;        /* set caller's ptr */
   return b->counter;
 }
 
@@ -499,7 +486,7 @@ static void read_ahead(struct testcase *test,
     return;
   nextone = !nextone;             /* "incr" next buffer ptr */
 
-  dp = &b->buf.hdr;
+  dp = (struct tftphdr *)b->buf;
 
   if (convert == 0) {
     /* The former file reading code did this:
@@ -553,7 +540,7 @@ static int writeit(struct testcase *test, struct tftphdr **dpp,
   if (bfs[current].counter != BF_FREE)     /* if not free */
     write_behind(test, convert);     /* flush it */
   bfs[current].counter = BF_ALLOC;        /* mark as alloc'd */
-  *dpp =  &bfs[current].buf.hdr;
+  *dpp =  (struct tftphdr *)bfs[current].buf;
   return ct;                      /* this is a lie of course */
 }
 
@@ -589,7 +576,7 @@ static ssize_t write_behind(struct testcase *test, int convert)
 
   count = b->counter;             /* remember byte count */
   b->counter = BF_FREE;           /* reset flag */
-  dp = &b->buf.hdr;
+  dp = (struct tftphdr *)b->buf;
   nextone = !nextone;             /* incr for next time */
   writebuf = dp->th_data;
 
@@ -613,8 +600,7 @@ static ssize_t write_behind(struct testcase *test, int convert)
     }
     /* formerly
        putc(c, file); */
-    if(1 != write(test->ofile, &c, 1))
-      break;
+    write(test->ofile, &c, 1);
     skipit:
     prevchar = c;
   }
@@ -642,7 +628,7 @@ static int synchnet(curl_socket_t f /* socket to flush */)
 #endif
   int j = 0;
   char rbuf[PKTSIZE];
-  srvr_sockaddr_union_t fromaddr;
+  struct sockaddr_in fromaddr;
   curl_socklen_t fromaddrlen;
 
   for (;;) {
@@ -653,16 +639,9 @@ static int synchnet(curl_socket_t f /* socket to flush */)
 #endif
     if (i) {
       j++;
-#ifdef ENABLE_IPV6
-      if(!use_ipv6)
-#endif
-        fromaddrlen = sizeof(fromaddr.sa4);
-#ifdef ENABLE_IPV6
-      else
-        fromaddrlen = sizeof(fromaddr.sa6);
-#endif
-      (void) recvfrom(f, rbuf, sizeof(rbuf), 0,
-                      &fromaddr.sa, &fromaddrlen);
+      fromaddrlen = sizeof(fromaddr);
+      (void)recvfrom(f, rbuf, sizeof(rbuf), 0,
+                     (struct sockaddr *)&fromaddr, &fromaddrlen);
     }
     else
       break;
@@ -672,7 +651,11 @@ static int synchnet(curl_socket_t f /* socket to flush */)
 
 int main(int argc, char **argv)
 {
-  srvr_sockaddr_union_t me;
+  struct sockaddr_in me;
+#ifdef ENABLE_IPV6
+  struct sockaddr_in6 me6;
+#endif /* ENABLE_IPV6 */
+
   struct tftphdr *tp;
   ssize_t n = 0;
   int arg = 1;
@@ -726,14 +709,15 @@ int main(int argc, char **argv)
       arg++;
       if(argc>arg) {
         char *endptr;
-        unsigned long ulnum = strtoul(argv[arg], &endptr, 10);
+        long lnum = -1;
+        lnum = strtol(argv[arg], &endptr, 10);
         if((endptr != argv[arg] + strlen(argv[arg])) ||
-           (ulnum < 1025UL) || (ulnum > 65535UL)) {
+           (lnum < 1025L) || (lnum > 65535L)) {
           fprintf(stderr, "tftpd: invalid --port argument (%s)\n",
                   argv[arg]);
           return 0;
         }
-        port = curlx_ultous(ulnum);
+        port = (unsigned short)(lnum & 0xFFFFL);
         arg++;
       }
     }
@@ -796,19 +780,19 @@ int main(int argc, char **argv)
 #ifdef ENABLE_IPV6
   if(!use_ipv6) {
 #endif
-    memset(&me.sa4, 0, sizeof(me.sa4));
-    me.sa4.sin_family = AF_INET;
-    me.sa4.sin_addr.s_addr = INADDR_ANY;
-    me.sa4.sin_port = htons(port);
-    rc = bind(sock, &me.sa, sizeof(me.sa4));
+    memset(&me, 0, sizeof(me));
+    me.sin_family = AF_INET;
+    me.sin_addr.s_addr = INADDR_ANY;
+    me.sin_port = htons(port);
+    rc = bind(sock, (struct sockaddr *) &me, sizeof(me));
 #ifdef ENABLE_IPV6
   }
   else {
-    memset(&me.sa6, 0, sizeof(me.sa6));
-    me.sa6.sin6_family = AF_INET6;
-    me.sa6.sin6_addr = in6addr_any;
-    me.sa6.sin6_port = htons(port);
-    rc = bind(sock, &me.sa, sizeof(me.sa6));
+    memset(&me6, 0, sizeof(me6));
+    me6.sin6_family = AF_INET6;
+    me6.sin6_addr = in6addr_any;
+    me6.sin6_port = htons(port);
+    rc = bind(sock, (struct sockaddr *) &me6, sizeof(me6));
   }
 #endif /* ENABLE_IPV6 */
   if(0 != rc) {
@@ -829,16 +813,8 @@ int main(int argc, char **argv)
 
   for (;;) {
     fromlen = sizeof(from);
-#ifdef ENABLE_IPV6
-    if(!use_ipv6)
-#endif
-      fromlen = sizeof(from.sa4);
-#ifdef ENABLE_IPV6
-    else
-      fromlen = sizeof(from.sa6);
-#endif
-    n = (ssize_t)recvfrom(sock, &buf.storage[0], sizeof(buf.storage), 0,
-                          &from.sa, &fromlen);
+    n = (ssize_t)recvfrom(sock, buf, sizeof(buf), 0,
+                          (struct sockaddr *)&from, &fromlen);
     if(got_exit_signal)
       break;
     if (n < 0) {
@@ -850,42 +826,23 @@ int main(int argc, char **argv)
     set_advisor_read_lock(SERVERLOGS_LOCK);
     serverlogslocked = 1;
 
-#ifdef ENABLE_IPV6
-    if(!use_ipv6) {
-#endif
-      from.sa4.sin_family = AF_INET;
-      peer = socket(AF_INET, SOCK_DGRAM, 0);
-      if(CURL_SOCKET_BAD == peer) {
-        logmsg("socket");
-        result = 2;
-        break;
-      }
-      if(connect(peer, &from.sa, sizeof(from.sa4)) < 0) {
-        logmsg("connect: fail");
-        result = 1;
-        break;
-      }
-#ifdef ENABLE_IPV6
-    }
-    else {
-      from.sa6.sin6_family = AF_INET6;
-      peer = socket(AF_INET6, SOCK_DGRAM, 0);
-      if(CURL_SOCKET_BAD == peer) {
-        logmsg("socket");
-        result = 2;
-        break;
-      }
-      if(connect(peer, &from.sa, sizeof(from.sa6)) < 0) {
-        logmsg("connect: fail");
-        result = 1;
-        break;
-      }
-    }
-#endif
+    from.sin_family = AF_INET;
 
+    peer = socket(AF_INET, SOCK_DGRAM, 0);
+    if(CURL_SOCKET_BAD == peer) {
+      logmsg("socket");
+      result = 2;
+      break;
+    }
+
+    if (connect(peer, (struct sockaddr *)&from, sizeof(from)) < 0) {
+      logmsg("connect: fail");
+      result = 1;
+      break;
+    }
     maxtimeout = 5*TIMEOUT;
 
-    tp = &buf.hdr;
+    tp = (struct tftphdr *)buf;
     tp->th_opcode = ntohs(tp->th_opcode);
     if (tp->th_opcode == opcode_RRQ || tp->th_opcode == opcode_WRQ) {
       memset(&test, 0, sizeof(test));
@@ -964,14 +921,11 @@ static int do_tftp(struct testcase *test, struct tftphdr *tp, ssize_t size)
   char *filename, *mode = NULL;
   int error;
   FILE *server;
-#ifdef USE_WINSOCK
-  DWORD recvtimeout, recvtimeoutbak;
-#endif
 
   /* Open request dump file. */
   server = fopen(REQUEST_DUMP, "ab");
   if(!server) {
-    error = errno;
+    error = ERRNO;
     logmsg("fopen() failed with error: %d %s", error, strerror(error));
     logmsg("Error opening file: %s", REQUEST_DUMP);
     return -1;
@@ -983,7 +937,7 @@ static int do_tftp(struct testcase *test, struct tftphdr *tp, ssize_t size)
   cp = (char *)&tp->th_stuff;
   filename = cp;
 again:
-  while (cp < &buf.storage[size]) {
+  while (cp < buf + size) {
     if (*cp == '\0')
       break;
     cp++;
@@ -1021,26 +975,10 @@ again:
     nak(ecode);
     return 1;
   }
-
-#ifdef USE_WINSOCK
-  recvtimeout = sizeof(recvtimeoutbak);
-  getsockopt(peer, SOL_SOCKET, SO_RCVTIMEO,
-             (char*)&recvtimeoutbak, (int*)&recvtimeout);
-  recvtimeout = TIMEOUT*1000;
-  setsockopt(peer, SOL_SOCKET, SO_RCVTIMEO,
-             (const char*)&recvtimeout, sizeof(recvtimeout));
-#endif
-
   if (tp->th_opcode == opcode_WRQ)
     recvtftp(test, pf);
   else
     sendtftp(test, pf);
-
-#ifdef USE_WINSOCK
-  recvtimeout = recvtimeoutbak;
-  setsockopt(peer, SOL_SOCKET, SO_RCVTIMEO,
-             (const char*)&recvtimeout, sizeof(recvtimeout));
-#endif
 
   return 0;
 }
@@ -1105,7 +1043,7 @@ static int validate_access(struct testcase *test,
     if(file) {
       FILE *stream=fopen(file, "rb");
       if(!stream) {
-        error = errno;
+        error = ERRNO;
         logmsg("fopen() failed with error: %d %s", error, strerror(error));
         logmsg("Error opening file: %s", file);
         logmsg("Couldn't open test file: %s", file);
@@ -1113,12 +1051,8 @@ static int validate_access(struct testcase *test,
       }
       else {
         size_t count;
-        error = getpart(&test->buffer, &count, "reply", partbuf, stream);
+        test->buffer = (char *)spitout(stream, "reply", partbuf, &count);
         fclose(stream);
-        if(error) {
-          logmsg("getpart() failed with error: %d", error);
-          return EACCESS;
-        }
         if(test->buffer) {
           test->rptr = test->buffer; /* set read pointer */
           test->bufsize = count;    /* set total count */
@@ -1153,15 +1087,15 @@ static void sendtftp(struct testcase *test, struct formats *pf)
   mysignal(SIGALRM, timer);
 #endif
   sdp = r_init();
-  sap = &ackbuf.hdr;
+  sap = (struct tftphdr *)ackbuf;
   do {
     size = readit(test, &sdp, pf->f_convert);
     if (size < 0) {
-      nak(errno + 100);
+      nak(ERRNO + 100);
       return;
     }
-    sdp->th_opcode = htons((unsigned short)opcode_DATA);
-    sdp->th_block = htons(sendblock);
+    sdp->th_opcode = htons((u_short)opcode_DATA);
+    sdp->th_block = htons((u_short)sendblock);
     timeout = 0;
 #ifdef HAVE_SIGSETJMP
     (void) sigsetjmp(timeoutbuf, 1);
@@ -1176,7 +1110,7 @@ static void sendtftp(struct testcase *test, struct formats *pf)
 #ifdef HAVE_ALARM
       alarm(rexmtval);        /* read the ack */
 #endif
-      n = sread(peer, &ackbuf.storage[0], sizeof(ackbuf.storage));
+      n = sread(peer, ackbuf, sizeof (ackbuf));
 #ifdef HAVE_ALARM
       alarm(0);
 #endif
@@ -1186,8 +1120,8 @@ static void sendtftp(struct testcase *test, struct formats *pf)
         logmsg("read: fail");
         return;
       }
-      sap->th_opcode = ntohs((unsigned short)sap->th_opcode);
-      sap->th_block = ntohs(sap->th_block);
+      sap->th_opcode = ntohs((u_short)sap->th_opcode);
+      sap->th_block = ntohs((u_short)sap->th_block);
 
       if (sap->th_opcode == opcode_ERROR) {
         logmsg("got ERROR");
@@ -1221,17 +1155,17 @@ static void recvtftp(struct testcase *test, struct formats *pf)
   mysignal(SIGALRM, timer);
 #endif
   rdp = w_init();
-  rap = &ackbuf.hdr;
+  rap = (struct tftphdr *)ackbuf;
   do {
     timeout = 0;
-    rap->th_opcode = htons((unsigned short)opcode_ACK);
-    rap->th_block = htons(recvblock);
+    rap->th_opcode = htons((u_short)opcode_ACK);
+    rap->th_block = htons((u_short)recvblock);
     recvblock++;
 #ifdef HAVE_SIGSETJMP
     (void) sigsetjmp(timeoutbuf, 1);
 #endif
 send_ack:
-    if (swrite(peer, &ackbuf.storage[0], 4) != 4) {
+    if (swrite(peer, ackbuf, 4) != 4) {
       logmsg("write: fail\n");
       goto abort;
     }
@@ -1250,8 +1184,8 @@ send_ack:
         logmsg("read: fail\n");
         goto abort;
       }
-      rdp->th_opcode = ntohs((unsigned short)rdp->th_opcode);
-      rdp->th_block = ntohs(rdp->th_block);
+      rdp->th_opcode = ntohs((u_short)rdp->th_opcode);
+      rdp->th_block = ntohs((u_short)rdp->th_block);
       if (rdp->th_opcode == opcode_ERROR)
         goto abort;
       if (rdp->th_opcode == opcode_DATA) {
@@ -1268,7 +1202,7 @@ send_ack:
     size = writeit(test, &rdp, (int)(n - 4), pf->f_convert);
     if (size != (n-4)) {                 /* ahem */
       if (size < 0)
-        nak(errno + 100);
+        nak(ERRNO + 100);
       else
         nak(ENOSPACE);
       goto abort;
@@ -1276,24 +1210,23 @@ send_ack:
   } while (size == SEGSIZE);
   write_behind(test, pf->f_convert);
 
-  rap->th_opcode = htons((unsigned short)opcode_ACK);  /* send the "final" ack */
-  rap->th_block = htons(recvblock);
-  (void) swrite(peer, &ackbuf.storage[0], 4);
+  rap->th_opcode = htons((u_short)opcode_ACK);  /* send the "final" ack */
+  rap->th_block = htons((u_short)recvblock);
+  (void) swrite(peer, ackbuf, 4);
 #if defined(HAVE_ALARM) && defined(SIGALRM)
   mysignal(SIGALRM, justtimeout);        /* just abort read on timeout */
   alarm(rexmtval);
 #endif
-  /* normally times out and quits */
-  n = sread(peer, &buf.storage[0], sizeof(buf.storage));
+  n = sread(peer, buf, sizeof(buf));     /* normally times out and quits */
 #ifdef HAVE_ALARM
   alarm(0);
 #endif
   if(got_exit_signal)
     goto abort;
-  if (n >= 4 &&                               /* if read some data */
-      rdp->th_opcode == opcode_DATA &&        /* and got a data block */
-      recvblock == rdp->th_block) {           /* then my last ack was lost */
-    (void) swrite(peer, &ackbuf.storage[0], 4);  /* resend final ack */
+  if (n >= 4 &&                          /* if read some data */
+      rdp->th_opcode == opcode_DATA &&   /* and got a data block */
+      recvblock == rdp->th_block) {      /* then my last ack was lost */
+    (void) swrite(peer, ackbuf, 4);      /* resend final ack */
   }
 abort:
   return;
@@ -1309,9 +1242,9 @@ static void nak(int error)
   int length;
   struct errmsg *pe;
 
-  tp = &buf.hdr;
-  tp->th_opcode = htons((unsigned short)opcode_ERROR);
-  tp->th_code = htons((unsigned short)error);
+  tp = (struct tftphdr *)buf;
+  tp->th_opcode = htons((u_short)opcode_ERROR);
+  tp->th_code = htons((u_short)error);
   for (pe = errmsgs; pe->e_code >= 0; pe++)
     if (pe->e_code == error)
       break;
@@ -1319,12 +1252,10 @@ static void nak(int error)
     pe->e_msg = strerror(error - 100);
     tp->th_code = EUNDEF;   /* set 'undef' errorcode */
   }
+  strcpy(tp->th_msg, pe->e_msg);
   length = (int)strlen(pe->e_msg);
-
-  /* we use memcpy() instead of strcpy() in order to avoid buffer overflow
-   * report from glibc with FORTIFY_SOURCE */
-  memcpy(tp->th_msg, pe->e_msg, length + 1);
+  tp->th_msg[length] = '\0';
   length += 5;
-  if (swrite(peer, &buf.storage[0], length) != length)
+  if (swrite(peer, buf, length) != length)
     logmsg("nak: fail\n");
 }

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: Operations.i 24896 2012-09-03 00:32:04Z warmerdam $
+ * $Id: Operations.i 20606 2010-09-13 21:50:45Z rouault $
  *
  * Name:     Operations.i
  * Project:  GDAL Python Interface
@@ -609,31 +609,6 @@ public:
   %clear (double*);
   %clear (int*);
 #endif
-
-/************************************************************************/
-/*                       TransformGeolocations()                        */
-/************************************************************************/
-
-%apply Pointer NONNULL {GDALRasterBandShadow *xBand, GDALRasterBandShadow *yBand, GDALRasterBandShadow *zBand};
-
-#ifndef SWIGJAVA
-%feature( "kwargs" ) TransformGeolocations;
-#endif
-
-  int  TransformGeolocations( GDALRasterBandShadow *xBand,
-                              GDALRasterBandShadow *yBand, 
-	  		      GDALRasterBandShadow *zBand,
-                              GDALProgressFunc callback=NULL,
-                              void* callback_data=NULL,
-                              char **options = NULL) {
-
-    CPLErrorReset();
-
-    return GDALTransformGeolocations( xBand, yBand, zBand, 
-                                      GDALUseTransformer, self,
-                            	      callback, callback_data, options );
-  }
-%clear GDALRasterBandShadow *xBand, GDALRasterBandShadow *yBand, GDALRasterBandShadow *zBand;
 
 } /*extend */
 };

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: tifvsi.cpp 24411 2012-05-13 20:16:08Z rouault $
+ * $Id: tifvsi.cpp 22639 2011-07-03 15:51:39Z rouault $
  *
  * Project:  GeoTIFF Driver
  * Purpose:  Implement system hook functions for libtiff on top of CPL/VSI,
@@ -35,8 +35,6 @@
 #include "cpl_vsi.h"
 #include "tifvsi.h"
 
-#include <errno.h>
-
 // We avoid including xtiffio.h since it drags in the libgeotiff version
 // of the VSI functions.
 
@@ -62,12 +60,7 @@ _tiffReadProc(thandle_t fd, tdata_t buf, tsize_t size)
 static tsize_t
 _tiffWriteProc(thandle_t fd, tdata_t buf, tsize_t size)
 {
-    tsize_t nRet = VSIFWriteL( buf, 1, size, (VSILFILE *) fd );
-    if (nRet < size)
-    {
-        TIFFErrorExt( fd, "_tiffWriteProc", "%s", VSIStrerror( errno ) );
-    }
-    return nRet;
+    return VSIFWriteL( buf, 1, size, (VSILFILE *) fd );
 }
 
 static toff_t
@@ -76,10 +69,7 @@ _tiffSeekProc(thandle_t fd, toff_t off, int whence)
     if( VSIFSeekL( (VSILFILE *) fd, off, whence ) == 0 )
         return (toff_t) VSIFTellL( (VSILFILE *) fd );
     else
-    {
-        TIFFErrorExt( fd, "_tiffSeekProc", "%s", VSIStrerror( errno ) );
         return (toff_t) -1;
-    }
 }
 
 static int

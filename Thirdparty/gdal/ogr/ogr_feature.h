@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_feature.h 24849 2012-08-25 12:22:05Z rouault $
+ * $Id: ogr_feature.h 22368 2011-05-13 17:59:41Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Class for representing a whole feature, and layer schemas.
@@ -93,8 +93,6 @@ class CPL_DLL OGRFieldDefn
     
     int                 IsIgnored() { return bIgnore; }
     void                SetIgnored( int bIgnore ) { this->bIgnore = bIgnore; }
-
-    int                 IsSame( const OGRFieldDefn * ) const;
 };
 
 /************************************************************************/
@@ -160,8 +158,6 @@ class CPL_DLL OGRFeatureDefn
     void        SetGeometryIgnored( int bIgnore ) { bIgnoreGeometry = bIgnore; }
     int        IsStyleIgnored() { return bIgnoreStyle; }
     void        SetStyleIgnored( int bIgnore ) { bIgnoreStyle = bIgnore; }
-
-    int         IsSame( const OGRFeatureDefn * poOtherFeatureDefn ) const;
 
     static OGRFeatureDefn  *CreateFeatureDefn( const char *pszName = NULL );
     static void         DestroyFeatureDefn( OGRFeatureDefn * );
@@ -287,7 +283,6 @@ class CPL_DLL OGRFeature
 
     OGRErr              SetFrom( OGRFeature *, int = TRUE);
     OGRErr              SetFrom( OGRFeature *, int *, int = TRUE );
-    OGRErr              SetFieldsFrom( OGRFeature *, int *, int = TRUE ); 
 
     OGRErr              RemapFields( OGRFeatureDefn *poNewDefn, 
                                      int *panRemapSource );
@@ -310,7 +305,6 @@ class CPL_DLL OGRFeature
 /************************************************************************/
 
 class OGRLayer;
-class swq_expr_node;
 
 class CPL_DLL OGRFeatureQuery
 {
@@ -319,10 +313,6 @@ class CPL_DLL OGRFeatureQuery
     void           *pSWQExpr;
 
     char          **FieldCollector( void *, char ** );
-
-    long       *EvaluateAgainstIndices( swq_expr_node*, OGRLayer *, int& nFIDCount);
-    
-    int         CanUseIndex( swq_expr_node*, OGRLayer * );
     
   public:
                 OGRFeatureQuery();
@@ -332,8 +322,6 @@ class CPL_DLL OGRFeatureQuery
     int         Evaluate( OGRFeature * );
 
     long       *EvaluateAgainstIndices( OGRLayer *, OGRErr * );
-    
-    int         CanUseIndex( OGRLayer * );
 
     char      **GetUsedFields();
 

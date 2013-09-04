@@ -408,7 +408,6 @@ static int do_generate(BIO *bio, char *genstr, char *genconf, BUF_MEM *buf)
 
 	atyp = ASN1_generate_nconf(genstr, cnf);
 	NCONF_free(cnf);
-	cnf = NULL;
 
 	if (!atyp)
 		return -1;

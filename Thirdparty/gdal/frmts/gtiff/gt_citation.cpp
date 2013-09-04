@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gt_citation.cpp 25773 2013-03-20 20:13:40Z rouault $
+ * $Id: gt_citation.cpp 23433 2011-11-27 19:49:54Z rouault $
  *
  * Project:  GeoTIFF Driver
  * Purpose:  Implements special parsing of Imagine citation strings, and
@@ -34,7 +34,7 @@
 #include "geovalues.h"
 #include "gt_citation.h"
 
-CPL_CVSID("$Id: gt_citation.cpp 25773 2013-03-20 20:13:40Z rouault $");
+CPL_CVSID("$Id: gt_citation.cpp 23433 2011-11-27 19:49:54Z rouault $");
 
 static const char *apszUnitMap[] = {
     "meters", "1.0",
@@ -72,9 +72,9 @@ static const char *apszUnitMap[] = {
     "indian_feet", "0.3047995142",
     "indian_foot", "0.3047995142",
     "Yard_Indian", "0.9143985307444408", 
-    "Foot_Clarke", "0.30479726540",
+    "Foot_Clarke", "0.304797265",
     "Foot_Gold_Coast", "0.3047997101815088",
-    "Link_Clarke", "0.2011661951640", 
+    "Link_Clarke", "0.2011661949", 
     "Yard_Sears", "0.9143984146160287", 
     "50_Kilometers", "50000.0", 
     "150_Kilometers", "150000.0", 
@@ -551,17 +551,6 @@ OGRBoolean CheckCitationKeyForStatePlaneUTM(GTIF* hGTIF, GTIFDefn* psDefn, OGRSp
 {
     if( !hGTIF || !psDefn || !poSRS )
         return FALSE;
-
-/* -------------------------------------------------------------------- */
-/*      For ESRI builds we are interested in maximizing PE              */
-/*      compatability, but generally we prefer to use EPSG              */
-/*      definitions of the coordinate system if PCS is defined.         */
-/* -------------------------------------------------------------------- */
-#if !defined(ESRI_BUILD)
-    if( psDefn->PCS != KvUserDefined )
-        return FALSE;
-#endif
-
     char  szCTString[512];
     szCTString[0] = '\0';
 
@@ -688,7 +677,6 @@ OGRBoolean CheckCitationKeyForStatePlaneUTM(GTIF* hGTIF, GTIFDefn* psDefn, OGRSp
         if( poSRS->ImportFromESRIStatePlaneWKT(0, NULL, (const char*)units, psDefn->PCS) == OGRERR_NONE )
             return TRUE;
     }
-
     return FALSE;
 }
 

@@ -56,8 +56,7 @@ int RSA_padding_add_PKCS1_OAEP(unsigned char *to, int tlen,
 	seed = to + 1;
 	db = to + SHA_DIGEST_LENGTH + 1;
 
-	if (!EVP_Digest((void *)param, plen, db, NULL, EVP_sha1(), NULL))
-		return 0;
+	EVP_Digest((void *)param, plen, db, NULL, EVP_sha1(), NULL);
 	memset(db + SHA_DIGEST_LENGTH, 0,
 		emlen - flen - 2 * SHA_DIGEST_LENGTH - 1);
 	db[emlen - flen - SHA_DIGEST_LENGTH - 1] = 0x01;
@@ -146,10 +145,9 @@ int RSA_padding_check_PKCS1_OAEP(unsigned char *to, int tlen,
 	for (i = 0; i < dblen; i++)
 		db[i] ^= maskeddb[i];
 
-	if (!EVP_Digest((void *)param, plen, phash, NULL, EVP_sha1(), NULL))
-		return -1;
+	EVP_Digest((void *)param, plen, phash, NULL, EVP_sha1(), NULL);
 
-	if (CRYPTO_memcmp(db, phash, SHA_DIGEST_LENGTH) != 0 || bad)
+	if (memcmp(db, phash, SHA_DIGEST_LENGTH) != 0 || bad)
 		goto decoding_err;
 	else
 		{
@@ -191,40 +189,34 @@ int PKCS1_MGF1(unsigned char *mask, long len,
 	EVP_MD_CTX c;
 	unsigned char md[EVP_MAX_MD_SIZE];
 	int mdlen;
-	int rv = -1;
 
 	EVP_MD_CTX_init(&c);
 	mdlen = EVP_MD_size(dgst);
 	if (mdlen < 0)
-		goto err;
+		return -1;
 	for (i = 0; outlen < len; i++)
 		{
 		cnt[0] = (unsigned char)((i >> 24) & 255);
 		cnt[1] = (unsigned char)((i >> 16) & 255);
 		cnt[2] = (unsigned char)((i >> 8)) & 255;
 		cnt[3] = (unsigned char)(i & 255);
-		if (!EVP_DigestInit_ex(&c,dgst, NULL)
-			|| !EVP_DigestUpdate(&c, seed, seedlen)
-			|| !EVP_DigestUpdate(&c, cnt, 4))
-			goto err;
+		EVP_DigestInit_ex(&c,dgst, NULL);
+		EVP_DigestUpdate(&c, seed, seedlen);
+		EVP_DigestUpdate(&c, cnt, 4);
 		if (outlen + mdlen <= len)
 			{
-			if (!EVP_DigestFinal_ex(&c, mask + outlen, NULL))
-				goto err;
+			EVP_DigestFinal_ex(&c, mask + outlen, NULL);
 			outlen += mdlen;
 			}
 		else
 			{
-			if (!EVP_DigestFinal_ex(&c, md, NULL))
-				goto err;
+			EVP_DigestFinal_ex(&c, md, NULL);
 			memcpy(mask + outlen, md, len - outlen);
 			outlen = len;
 			}
 		}
-	rv = 0;
-	err:
 	EVP_MD_CTX_cleanup(&c);
-	return rv;
+	return 0;
 	}
 
 static int MGF1(unsigned char *mask, long len, const unsigned char *seed,

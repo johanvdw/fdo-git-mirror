@@ -64,7 +64,6 @@
 #endif
 
 #include <assert.h>
-#include <stdlib.h>
 #include <string.h>
 #include <openssl/conf.h>
 #include <openssl/conf_api.h>
@@ -286,7 +285,7 @@ CONF_VALUE *_CONF_new_section(CONF *conf, const char *section)
 	v->value=(char *)sk;
 	
 	vv=lh_CONF_VALUE_insert(conf->data,v);
-	OPENSSL_assert(vv == NULL);
+	assert(vv == NULL);
 	ok=1;
 err:
 	if (!ok)

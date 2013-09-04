@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_vfk.h 24067 2012-03-04 11:27:45Z martinl $
+ * $Id: ogr_vfk.h 23423 2011-11-26 18:40:30Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions for OGR/VFK driver.
@@ -57,14 +57,14 @@ private:
     OGRVFKDataSource    *poDS;
 
     /* VFK data block */
-    IVFKDataBlock       *poDataBlock;
+    VFKDataBlock        *poDataBlock;
 
     /* get next feature */
     int                  m_iNextFeature;
     
     /* private methods */
-    OGRGeometry         *CreateGeometry(IVFKFeature *);
-    OGRFeature          *GetFeature(IVFKFeature *);
+    OGRGeometry         *CreateGeometry(VFKFeature *);
+    OGRFeature          *GetFeature(VFKFeature *);
     
 public:
     OGRVFKLayer(const char *, OGRSpatialReference *,
@@ -100,7 +100,7 @@ private:
     IVFKReader    *poReader;
 
     /* private methods */
-    OGRVFKLayer   *CreateLayerFromBlock(const IVFKDataBlock *);
+    OGRVFKLayer   *CreateLayerFromBlock(const VFKDataBlock *);
 
 public:
     OGRVFKDataSource();
@@ -116,6 +116,9 @@ public:
     int            TestCapability(const char *);
 
     IVFKReader    *GetReader() const { return poReader; }
+
+    void           AddInfo(const char *, const char *);
+    const char    *GetInfo(const char *);
 };
 
 /************************************************************************/

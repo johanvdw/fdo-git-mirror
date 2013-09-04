@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * $Id: gdal_grid.cpp 25582 2013-01-29 21:13:43Z rouault $
+ * $Id: gdal_grid.cpp 22783 2011-07-23 19:28:16Z rouault $
  *
  * Project:  GDAL Utilities
  * Purpose:  GDAL scattered data gridding (interpolation) tool
@@ -40,13 +40,13 @@
 #include "gdalgrid.h"
 #include "commonutils.h"
 
-CPL_CVSID("$Id: gdal_grid.cpp 25582 2013-01-29 21:13:43Z rouault $");
+CPL_CVSID("$Id: gdal_grid.cpp 22783 2011-07-23 19:28:16Z rouault $");
 
 /************************************************************************/
 /*                               Usage()                                */
 /************************************************************************/
 
-static void Usage(const char* pszErrorMsg = NULL)
+static void Usage()
 
 {
     printf( 
@@ -82,9 +82,6 @@ static void Usage(const char* pszErrorMsg = NULL)
         "            average_distance\n"
         "            average_distance_pts\n"
         "\n");
-
-    if( pszErrorMsg != NULL )
-        fprintf(stderr, "\nFAILURE: %s\n", pszErrorMsg);
 
     GDALDestroyDriverManager();
     exit( 1 );
@@ -240,7 +237,7 @@ static void ProcessGeometry( OGRPoint *poGeom, OGRGeometry *poClipSrc,
 /*      geometries and burn values.                                     */
 /************************************************************************/
 
-static CPLErr ProcessLayer( OGRLayerH hSrcLayer, GDALDatasetH hDstDS,
+static void ProcessLayer( OGRLayerH hSrcLayer, GDALDatasetH hDstDS,
                           OGRGeometry *poClipSrc,
                           GUInt32 nXSize, GUInt32 nYSize, int nBand,
                           int& bIsXExtentSet, int& bIsYExtentSet,
@@ -266,7 +263,7 @@ static CPLErr ProcessLayer( OGRLayerH hSrcLayer, GDALDatasetH hDstDS,
             printf( "Failed to find field %s on layer %s, skipping.\n",
                     pszBurnAttribute, 
                     OGR_FD_GetName( OGR_L_GetLayerDefn( hSrcLayer ) ) );
-            return CE_Failure;
+            return;
         }
     }
 
@@ -317,7 +314,7 @@ static CPLErr ProcessLayer( OGRLayerH hSrcLayer, GDALDatasetH hDstDS,
     {
         printf( "No point geometry found on layer %s, skipping.\n",
                 OGR_FD_GetName( OGR_L_GetLayerDefn( hSrcLayer ) ) );
-        return CE_None;
+        return;
     }
 
 /* -------------------------------------------------------------------- */
@@ -370,57 +367,29 @@ static CPLErr ProcessLayer( OGRLayerH hSrcLayer, GDALDatasetH hDstDS,
     {
         // FIXME: Shoulda' set to nodata value instead
         GDALFillRaster( hBand, 0.0 , 0.0 );
-        return CE_None;
+        return;
     }
 
     GUInt32 nXOffset, nYOffset;
     int     nBlockXSize, nBlockYSize;
-    int     nDataTypeSize = GDALGetDataTypeSize(eType) / 8;
 
-    // Try to grow the work buffer up to 16 MB if it is smaller
     GDALGetBlockSize( hBand, &nBlockXSize, &nBlockYSize );
-    const GUInt32 nDesiredBufferSize = 16*1024*1024;
-    if( (GUInt32)nBlockXSize < nXSize && (GUInt32)nBlockYSize < nYSize &&
-        (GUInt32)nBlockXSize < nDesiredBufferSize / (nBlockYSize * nDataTypeSize) )
-    {
-        int nNewBlockXSize  = nDesiredBufferSize / (nBlockYSize * nDataTypeSize);
-        nBlockXSize = (nNewBlockXSize / nBlockXSize) * nBlockXSize;
-        if( (GUInt32)nBlockXSize > nXSize )
-            nBlockXSize = nXSize;
-    }
-    else if( (GUInt32)nBlockXSize == nXSize && (GUInt32)nBlockYSize < nYSize &&
-             (GUInt32)nBlockYSize < nDesiredBufferSize / (nXSize * nDataTypeSize) )
-    {
-        int nNewBlockYSize = nDesiredBufferSize / (nXSize * nDataTypeSize);
-        nBlockYSize = (nNewBlockYSize / nBlockYSize) * nBlockYSize;
-        if( (GUInt32)nBlockYSize > nYSize )
-            nBlockYSize = nYSize;
-    }
-    CPLDebug("GDAL_GRID", "Work buffer: %d * %d", nBlockXSize, nBlockYSize);
-
     void    *pData =
-        VSIMalloc3( nBlockXSize, nBlockYSize, nDataTypeSize );
-    if( pData == NULL )
-    {
-        CPLError(CE_Failure, CPLE_OutOfMemory, "Cannot allocate work buffer");
-        return CE_Failure;
-    }
+        CPLMalloc( nBlockXSize * nBlockYSize * GDALGetDataTypeSize(eType) );
 
     GUInt32 nBlock = 0;
     GUInt32 nBlockCount = ((nXSize + nBlockXSize - 1) / nBlockXSize)
         * ((nYSize + nBlockYSize - 1) / nBlockYSize);
 
-    CPLErr eErr = CE_None;
-    for ( nYOffset = 0; nYOffset < nYSize && eErr == CE_None; nYOffset += nBlockYSize )
+    for ( nYOffset = 0; nYOffset < nYSize; nYOffset += nBlockYSize )
     {
-        for ( nXOffset = 0; nXOffset < nXSize && eErr == CE_None; nXOffset += nBlockXSize )
+        for ( nXOffset = 0; nXOffset < nXSize; nXOffset += nBlockXSize )
         {
             void *pScaledProgress;
             pScaledProgress =
-                GDALCreateScaledProgress( (double)nBlock / nBlockCount,
-                                          (double)(nBlock + 1) / nBlockCount,
+                GDALCreateScaledProgress( 0.0,
+                                          (double)++nBlock / nBlockCount,
                                           pfnProgress, NULL );
-            nBlock ++;
 
             int nXRequest = nBlockXSize;
             if (nXOffset + nXRequest > nXSize)
@@ -430,7 +399,7 @@ static CPLErr ProcessLayer( OGRLayerH hSrcLayer, GDALDatasetH hDstDS,
             if (nYOffset + nYRequest > nYSize)
                 nYRequest = nYSize - nYOffset;
 
-            eErr = GDALGridCreate( eAlgorithm, pOptions,
+            GDALGridCreate( eAlgorithm, pOptions,
                             adfX.size(), &(adfX[0]), &(adfY[0]), &(adfZ[0]),
                             dfXMin + dfDeltaX * nXOffset,
                             dfXMin + dfDeltaX * (nXOffset + nXRequest),
@@ -439,8 +408,7 @@ static CPLErr ProcessLayer( OGRLayerH hSrcLayer, GDALDatasetH hDstDS,
                             nXRequest, nYRequest, eType, pData,
                             GDALScaledProgress, pScaledProgress );
 
-            if( eErr == CE_None )
-                eErr = GDALRasterIO( hBand, GF_Write, nXOffset, nYOffset,
+            GDALRasterIO( hBand, GF_Write, nXOffset, nYOffset,
                           nXRequest, nYRequest, pData,
                           nXRequest, nYRequest, eType, 0, 0 );
 
@@ -449,7 +417,6 @@ static CPLErr ProcessLayer( OGRLayerH hSrcLayer, GDALDatasetH hDstDS,
     }
 
     CPLFree( pData );
-    return eErr;
 }
 
 /************************************************************************/
@@ -542,10 +509,6 @@ static OGRGeometryCollection* LoadGeometry( const char* pszDS,
 /*                                main()                                */
 /************************************************************************/
 
-#define CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(nExtraArg) \
-    do { if (i + nExtraArg >= argc) \
-        Usage(CPLSPrintf("%s option requires %d argument(s)", argv[i], nExtraArg)); } while(0)
-
 int main( int argc, char ** argv )
 {
     GDALDriverH     hDriver;
@@ -595,11 +558,8 @@ int main( int argc, char ** argv )
                    argv[0], GDAL_RELEASE_NAME, GDALVersionInfo("RELEASE_NAME"));
             return 0;
         }
-        else if( EQUAL(argv[i],"--help") )
-            Usage();
-        else if( EQUAL(argv[i],"-of") )
+        else if( EQUAL(argv[i],"-of") && i < argc-1 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             pszFormat = argv[++i];
             bFormatExplicitelySet = TRUE;
         }
@@ -610,9 +570,8 @@ int main( int argc, char ** argv )
             pfnProgress = GDALDummyProgress;
         }
 
-        else if( EQUAL(argv[i],"-ot") )
+        else if( EQUAL(argv[i],"-ot") && i < argc-1 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             int	iType;
             
             for( iType = 1; iType < GDT_TypeCount; iType++ )
@@ -627,68 +586,64 @@ int main( int argc, char ** argv )
 
             if( eOutputType == GDT_Unknown )
             {
-                Usage(CPLSPrintf("Unknown output pixel type: %s.",
-                                 argv[i + 1] ));
+                fprintf( stderr, "FAILURE: Unknown output pixel type: %s\n",
+                         argv[i + 1] );
+                Usage();
             }
             i++;
         }
 
-        else if( EQUAL(argv[i],"-txe") )
+        else if( EQUAL(argv[i],"-txe") && i < argc-2 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(2);
             dfXMin = atof(argv[++i]);
             dfXMax = atof(argv[++i]);
             bIsXExtentSet = TRUE;
         }   
 
-        else if( EQUAL(argv[i],"-tye") )
+        else if( EQUAL(argv[i],"-tye") && i < argc-2 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(2);
             dfYMin = atof(argv[++i]);
             dfYMax = atof(argv[++i]);
             bIsYExtentSet = TRUE;
         }   
 
-        else if( EQUAL(argv[i],"-outsize") )
+        else if( EQUAL(argv[i],"-outsize") && i < argc-2 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(2);
             nXSize = atoi(argv[++i]);
             nYSize = atoi(argv[++i]);
         }   
 
-        else if( EQUAL(argv[i],"-co") )
+        else if( EQUAL(argv[i],"-co") && i < argc-1 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             papszCreateOptions = CSLAddString( papszCreateOptions, argv[++i] );
         }   
 
-        else if( EQUAL(argv[i],"-zfield") )
+        else if( EQUAL(argv[i],"-zfield") && i < argc-1 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             pszBurnAttribute = argv[++i];
         }
 
-        else if( EQUAL(argv[i],"-where") )
+        else if( EQUAL(argv[i],"-where") && i < argc-1 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             pszWHERE = argv[++i];
         }
 
-        else if( EQUAL(argv[i],"-l") )
+        else if( EQUAL(argv[i],"-l") && i < argc-1 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             papszLayers = CSLAddString( papszLayers, argv[++i] );
         }
 
-        else if( EQUAL(argv[i],"-sql") )
+        else if( EQUAL(argv[i],"-sql") && i < argc-1 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             pszSQL = argv[++i];
         }
 
-        else if( EQUAL(argv[i],"-spat") )
+        else if( EQUAL(argv[i],"-spat") 
+                 && argv[i+1] != NULL 
+                 && argv[i+2] != NULL 
+                 && argv[i+3] != NULL 
+                 && argv[i+4] != NULL )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(4);
             OGRLinearRing  oRing;
 
             oRing.addPoint( atof(argv[i+1]), atof(argv[i+2]) );
@@ -702,11 +657,8 @@ int main( int argc, char ** argv )
             i += 4;
         }
 
-        else if ( EQUAL(argv[i],"-clipsrc") )
+        else if ( EQUAL(argv[i],"-clipsrc") && i < argc - 1 )
         {
-            if (i + 1 >= argc)
-                Usage(CPLSPrintf("%s option requires 1 or 4 arguments", argv[i]));
-
             bClipSrc = TRUE;
             errno = 0;
             const double unused = strtod( argv[i + 1], NULL );    // XXX: is it a number or not?
@@ -735,8 +687,9 @@ int main( int argc, char ** argv )
                 OGRGeometryFactory::createFromWkt(&argv[i + 1], NULL, &poClipSrc);
                 if ( poClipSrc == NULL )
                 {
-                    Usage("Invalid geometry. "
-                             "Must be a valid POLYGON or MULTIPOLYGON WKT.");
+                    fprintf( stderr, "FAILURE: Invalid geometry. "
+                             "Must be a valid POLYGON or MULTIPOLYGON WKT\n\n");
+                    Usage();
                 }
                 i++;
             }
@@ -751,30 +704,26 @@ int main( int argc, char ** argv )
             }
         }
 
-        else if ( EQUAL(argv[i], "-clipsrcsql") )
+        else if ( EQUAL(argv[i], "-clipsrcsql") && i < argc - 1 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             pszClipSrcSQL = argv[i + 1];
             i++;
         }
 
-        else if ( EQUAL(argv[i], "-clipsrclayer") )
+        else if ( EQUAL(argv[i], "-clipsrclayer") && i < argc - 1 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             pszClipSrcLayer = argv[i + 1];
             i++;
         }
 
-        else if ( EQUAL(argv[i], "-clipsrcwhere") )
+        else if ( EQUAL(argv[i], "-clipsrcwhere") && i < argc - 1 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             pszClipSrcWhere = argv[i + 1];
             i++;
         }
 
-        else if( EQUAL(argv[i],"-a_srs") )
+        else if( EQUAL(argv[i],"-a_srs") && i < argc-1 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             OGRSpatialReference oOutputSRS;
 
             if( oOutputSRS.SetFromUserInput( argv[i+1] ) != OGRERR_NONE )
@@ -789,21 +738,23 @@ int main( int argc, char ** argv )
             i++;
         }   
 
-        else if( EQUAL(argv[i],"-a") )
+        else if( EQUAL(argv[i],"-a") && i < argc-1 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             if ( ParseAlgorithmAndOptions( argv[++i], &eAlgorithm, &pOptions )
                  != CE_None )
             {
                 fprintf( stderr,
-                         "Failed to process algorithm name and parameters.\n" );
+                         "Failed to process algoritm name and parameters.\n" );
                 exit( 1 );
             }
         }
 
         else if( argv[i][0] == '-' )
         {
-            Usage(CPLSPrintf("Unkown option name '%s'", argv[i]));
+            fprintf( stderr,
+                     "FAILURE: Option %s incomplete, or not recognised.\n\n", 
+                     argv[i] );
+            Usage();
         }
 
         else if( pszSource == NULL )
@@ -818,37 +769,34 @@ int main( int argc, char ** argv )
 
         else
         {
-            Usage("Too many command options.");
+            fprintf( stderr, "FAILURE: Too many command options.\n\n" );
+            Usage();
         }
     }
 
-    if( pszSource == NULL )
+    if( pszSource == NULL || pszDest == NULL
+        || (pszSQL == NULL && papszLayers == NULL) )
     {
-        Usage("Source datasource is not specified.");
+        Usage();
     }
-    if( pszDest == NULL )
-    {
-        Usage("Target dataset is not specified.");
-    }
-    if( pszSQL == NULL && papszLayers == NULL )
-    {
-        Usage("Neither -sql nor -l are specified.");
-    }
-    
+
     if ( bClipSrc && pszClipSrcDS != NULL )
     {
         poClipSrc = LoadGeometry( pszClipSrcDS, pszClipSrcSQL,
                                   pszClipSrcLayer, pszClipSrcWhere );
         if ( poClipSrc == NULL )
         {
-            Usage("Cannot load source clip geometry.");
+            fprintf( stderr, "FAILURE: cannot load source clip geometry\n\n" );
+            Usage();
         }
     }
     else if ( bClipSrc && poClipSrc == NULL && !poSpatialFilter )
     {
-        Usage("-clipsrc must be used with -spat option or \n"
+        fprintf( stderr,
+                 "FAILURE: -clipsrc must be used with -spat option or \n"
                  "a bounding box, WKT string or datasource must be "
-                 "specified.");
+                 "specified\n\n" );
+        Usage();
     }
 
     if ( poSpatialFilter )

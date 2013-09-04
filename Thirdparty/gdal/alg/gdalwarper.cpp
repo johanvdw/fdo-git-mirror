@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalwarper.cpp 25884 2013-04-09 17:04:16Z etourigny $
+ * $Id: gdalwarper.cpp 22888 2011-08-07 13:06:36Z rouault $
  *
  * Project:  High Performance Image Reprojector
  * Purpose:  Implementation of high level convenience APIs for warper.
@@ -33,7 +33,7 @@
 #include "ogr_api.h"
 #include "gdal_priv.h"
 
-CPL_CVSID("$Id: gdalwarper.cpp 25884 2013-04-09 17:04:16Z etourigny $");
+CPL_CVSID("$Id: gdalwarper.cpp 22888 2011-08-07 13:06:36Z rouault $");
 
 /************************************************************************/
 /*                         GDALReprojectImage()                         */
@@ -837,10 +837,6 @@ GDALWarpDstAlphaMasker( void *pMaskFuncArg, int nBandCount, GDALDataType eType,
  * avoids partial writes of compressed blocks and lost space when they are rewritten
  * at the end of the file. However sticking to target block size may cause major
  * processing slowdown for some particular reprojections.
- *
- * - NUM_THREADS: (GDAL >= 1.10) Can be set to a numeric value or ALL_CPUS to
- * set the number of threads to use to parallelize the computation part of the
- * warping. If not set, computation will be done in a single thread.
  */
 
 /************************************************************************/
@@ -968,10 +964,6 @@ GDALSerializeWarpOptions( const GDALWarpOptions *psWO )
         pszAlgName = "CubicSpline";
     else if( psWO->eResampleAlg == GRA_Lanczos )
         pszAlgName = "Lanczos";
-    else if( psWO->eResampleAlg == GRA_Average )
-        pszAlgName = "Average";
-    else if( psWO->eResampleAlg == GRA_Mode )
-        pszAlgName = "Mode";
     else
         pszAlgName = "Unknown";
 
@@ -1191,10 +1183,6 @@ GDALWarpOptions * CPL_STDCALL GDALDeserializeWarpOptions( CPLXMLNode *psTree )
         psWO->eResampleAlg = GRA_CubicSpline;
     else if( EQUAL(pszValue,"Lanczos") )
         psWO->eResampleAlg = GRA_Lanczos;
-    else if( EQUAL(pszValue,"Average") )
-        psWO->eResampleAlg = GRA_Average;
-    else if( EQUAL(pszValue,"Mode") )
-        psWO->eResampleAlg = GRA_Mode;
     else if( EQUAL(pszValue,"Default") )
         /* leave as is */;
     else

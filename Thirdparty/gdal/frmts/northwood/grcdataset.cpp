@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: grcdataset.cpp 24355 2012-05-01 10:52:54Z rouault $
+ * $Id: grcdataset.cpp 23059 2011-09-05 17:30:20Z rouault $
  *
  * Project:  GRC Reader
  * Purpose:  GDAL driver for Northwood Classified Format
@@ -235,7 +235,7 @@ CPLErr NWT_GRCRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
 
     if( nBand == 1 )
     {                            //grc's are just one band of indices
-        VSIFSeekL( poGDS->fp, 1024 + nRecordSize * (vsi_l_offset)nBlockYOff, SEEK_SET );
+        VSIFSeekL( poGDS->fp, 1024 + nRecordSize * nBlockYOff, SEEK_SET );
         VSIFReadL( pImage, 1, nRecordSize, poGDS->fp );
     }
     else

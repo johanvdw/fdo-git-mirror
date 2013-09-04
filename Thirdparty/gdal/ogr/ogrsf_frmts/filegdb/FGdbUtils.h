@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: FGdbUtils.h 23796 2012-01-24 19:10:16Z rouault $
+ * $Id: FGdbUtils.h 23025 2011-09-02 19:57:13Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Various FileGDB OGR Datasource utility functions
@@ -78,12 +78,5 @@ bool GDBDebug(long hr, std::string desc);
 // Utility for adding attributes to CPL nodes
 //
 void FGDB_CPLAddXMLAttribute(CPLXMLNode* node, const char* attrname, const char* attrvalue);
-
-//
-// Utility for escaping reserved words and cleaning field names
-//
-std::string FGDBLaunderName(const std::string name);
-std::string FGDBEscapeUnsupportedPrefixes(const std::string className);
-std::string FGDBEscapeReservedKeywords(const std::string name);
 
 #endif

@@ -16,12 +16,11 @@ export LC_ALL=C
 export LC_MESSAGES=C
 export LANG=C
 cd /tmp
-rm -rf boost-build-nightly
-mkdir boost-build-nightly
+rm -rf boost-build
 echo "Checking out sources"
-svn co http://svn.boost.org/svn/boost/trunk/tools/build/v2 boost-build-nightly/boost-build > /tmp/boost_build_checkout_log
-mv /tmp/boost_build_checkout_log boost-build-nightly/checkout-log
-cd boost-build-nightly/boost-build/
+svn co http://svn.boost.org/svn/boost/trunk/tools boost-build > /tmp/boost_build_checkout_log
+mv /tmp/boost_build_checkout_log boost-build/checkout-log
+cd boost-build/build/v2
 echo "Building packages and uploading docs"
 ./roll.sh > ../roll-log 2>&1
 cd ..

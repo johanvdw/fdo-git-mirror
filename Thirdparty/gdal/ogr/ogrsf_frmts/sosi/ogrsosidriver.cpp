@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrsosidriver.cpp 25330 2012-12-18 11:12:05Z mloskot $
+ * $Id: ogrsosidriver.cpp 21065 2010-11-05 18:47:30Z rouault $
  *
  * Project:  SOSI Translator
  * Purpose:  Implements OGRSOSIDriver.
@@ -33,17 +33,13 @@ void RegisterOGRSOSI() {
     OGRSFDriverRegistrar::GetRegistrar()->RegisterDriver( new OGRSOSIDriver );
 }
 
-static int nFYBAInitCounter = 0;
 
 /************************************************************************/
 /*                           OGRSOSIDriver()                           */
 /************************************************************************/
+
 OGRSOSIDriver::OGRSOSIDriver() {
-    if ( nFYBAInitCounter == 0 )
-    {
-        LC_Init();  /* Init FYBA */
-    }
-    nFYBAInitCounter++;
+    LC_Init();  /* Init FYBA */
 }
 
 /************************************************************************/
@@ -51,11 +47,7 @@ OGRSOSIDriver::OGRSOSIDriver() {
 /************************************************************************/
 
 OGRSOSIDriver::~OGRSOSIDriver() {
-    nFYBAInitCounter--;
-    if ( nFYBAInitCounter == 0 )
-    {
-        LC_Close(); /* Close FYBA */
-    }
+    LC_Close(); /* Close FYBA */
 }
 
 /************************************************************************/

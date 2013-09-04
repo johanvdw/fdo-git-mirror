@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrili2datasource.cpp 24408 2012-05-11 21:31:45Z pka $
+ * $Id: ogrili2datasource.cpp 15089 2008-07-31 18:56:56Z rouault $
  *
  * Project:  Interlis 2 Translator
  * Purpose:  Implements OGRILI2DataSource class.
@@ -37,7 +37,7 @@
 using namespace std;
 
 
-CPL_CVSID("$Id: ogrili2datasource.cpp 24408 2012-05-11 21:31:45Z pka $");
+CPL_CVSID("$Id: ogrili2datasource.cpp 15089 2008-07-31 18:56:56Z rouault $");
 
 /************************************************************************/
 /*                         OGRILI2DataSource()                         */
@@ -170,10 +170,6 @@ int OGRILI2DataSource::Open( const char * pszNewName, int bTestOpen )
     poReader->SaveClasses( pszName );
 
     listLayer = poReader->GetLayers();
-    list<OGRLayer *>::const_iterator layerIt;
-    for (layerIt = listLayer.begin(); layerIt != listLayer.end(); ++layerIt) {
-        (*layerIt)->ResetReading();
-    }
 
     CSLDestroy( filenames );
 

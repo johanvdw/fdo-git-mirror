@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_csv.h 25806 2013-03-26 18:30:18Z warmerdam $
+ * $Id: ogr_csv.h 21806 2011-02-22 22:57:12Z rouault $
  *
  * Project:  CSV Translator
  * Purpose:  Definition of classes for OGR .csv driver.
@@ -69,7 +69,6 @@ class OGRCSVLayer : public OGRLayer
 
     char*               pszFilename;
     int                 bCreateCSVT;
-    int                 bWriteBOM;
     char                chDelimiter;
 
     int                 iWktGeomReadField;
@@ -81,9 +80,6 @@ class OGRCSVLayer : public OGRLayer
 
     /* GNIS specific */
     int                 iLongitudeField, iLatitudeField;
-
-    int                 bIsEurostatTSV;
-    int                 nEurostatDims;
 
     int                 nTotalFeatures;
 
@@ -109,11 +105,8 @@ class OGRCSVLayer : public OGRLayer
     void                SetCRLF(int);
     void                SetWriteGeometry(OGRCSVGeometryFormat eGeometryFormat);
     void                SetCreateCSVT(int bCreateCSVT);
-    void                SetWriteBOM(int bWriteBOM);
 
     virtual int         GetFeatureCount( int bForce = TRUE );
-
-    OGRErr              WriteHeader();
 };
 
 /************************************************************************/
@@ -157,8 +150,6 @@ class OGRCSVDataSource : public OGRDataSource
 
     void                SetDefaultCSVName( const char *pszName ) 
         { osDefaultCSVName = pszName; }
-
-    static CPLString    GetRealExtension(CPLString osFilename);
 };
 
 /************************************************************************/

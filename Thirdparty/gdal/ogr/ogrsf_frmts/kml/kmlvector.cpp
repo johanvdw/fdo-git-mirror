@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: kmlvector.cpp 23978 2012-02-14 20:42:34Z rouault $
+ * $Id: kmlvector.cpp 17491 2009-08-01 17:22:37Z rouault $
  *
  * Project:  KML Driver
  * Purpose:  Specialization of the kml class, only for vectors in kml files.
@@ -93,7 +93,7 @@ bool KMLVector::isRest(std::string const& sIn) const
     return false;
 }
 
-void KMLVector::findLayers(KMLNode* poNode, int bKeepEmptyContainers)
+void KMLVector::findLayers(KMLNode* poNode)
 {
     bool bEmpty = true;
 
@@ -117,7 +117,7 @@ void KMLVector::findLayers(KMLNode* poNode, int bKeepEmptyContainers)
         {
             if( isContainer(poNode->getChild(z)->getName()) )
             {
-                findLayers(poNode->getChild(z), bKeepEmptyContainers);
+                findLayers(poNode->getChild(z));
             }
             else if( isFeatureContainer(poNode->getChild(z)->getName()) )
             {
@@ -125,19 +125,13 @@ void KMLVector::findLayers(KMLNode* poNode, int bKeepEmptyContainers)
             }
         }
 
-        if( bKeepEmptyContainers && poNode->getName() == "Folder" )
-        {
-            if (!bEmpty)
-                poNode->eliminateEmpty(this);
-        }
-        else if(bEmpty)
+        if(bEmpty)
         {
             return;
         }
         
         Nodetype nodeType = poNode->getType();
-        if( bKeepEmptyContainers ||
-            isFeature(Nodetype2String(nodeType)) ||
+        if( isFeature(Nodetype2String(nodeType)) ||
             nodeType == Mixed ||
             nodeType == MultiGeometry || nodeType == MultiPoint ||
             nodeType == MultiLineString || nodeType == MultiPolygon)

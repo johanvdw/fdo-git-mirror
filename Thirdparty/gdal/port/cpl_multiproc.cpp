@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_multiproc.cpp 25780 2013-03-22 19:36:58Z warmerdam $
+ * $Id: cpl_multiproc.cpp 22648 2011-07-05 23:14:50Z warmerdam $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  CPL Multi-Threading, and process handling portability functions.
@@ -40,7 +40,7 @@
 #  include <wce_time.h>
 #endif
 
-CPL_CVSID("$Id: cpl_multiproc.cpp 25780 2013-03-22 19:36:58Z warmerdam $");
+CPL_CVSID("$Id: cpl_multiproc.cpp 22648 2011-07-05 23:14:50Z warmerdam $");
 
 #if defined(CPL_MULTIPROC_STUB) && !defined(DEBUG)
 #  define MUTEX_NONE
@@ -114,17 +114,13 @@ CPLMutexHolder::~CPLMutexHolder()
 /************************************************************************/
 
 #ifndef CPL_MULTIPROC_PTHREAD
-
-#ifndef MUTEX_NONE
-static void *hCOAMutex = NULL;
-#endif
-
 int CPLCreateOrAcquireMutex( void **phMutex, double dfWaitInSeconds )
 
 {
     int bSuccess = FALSE;
 
 #ifndef MUTEX_NONE
+    static void *hCOAMutex = NULL;
 
     /*
     ** ironically, creation of this initial mutex is not threadsafe
@@ -162,23 +158,6 @@ int CPLCreateOrAcquireMutex( void **phMutex, double dfWaitInSeconds )
     return bSuccess;
 }
 #endif
-
-/************************************************************************/ 
-/*                      CPLCleanupMasterMutex()                         */ 
-/************************************************************************/ 
- 
-void CPLCleanupMasterMutex() 
-{ 
-#ifndef CPL_MULTIPROC_PTHREAD 
-#ifndef MUTEX_NONE 
-    if( hCOAMutex != NULL ) 
-    { 
-        CPLDestroyMutex( hCOAMutex ); 
-        hCOAMutex = NULL; 
-    } 
-#endif 
-#endif 
-} 
 
 /************************************************************************/
 /*                        CPLCleanupTLSList()                           */
@@ -222,15 +201,6 @@ static void CPLCleanupTLSList( void **papTLSList )
 /************************************************************************/
 
 /************************************************************************/
-/*                             CPLGetNumCPUs()                          */
-/************************************************************************/
-
-int CPLGetNumCPUs()
-{
-    return 1;
-}
-
-/************************************************************************/
 /*                        CPLGetThreadingModel()                        */
 /************************************************************************/
 
@@ -248,7 +218,7 @@ void *CPLCreateMutex()
 
 {
 #ifndef MUTEX_NONE
-    unsigned char *pabyMutex = (unsigned char *) malloc( 4 );
+    unsigned char *pabyMutex = (unsigned char *) CPLMalloc( 4 );
 
     pabyMutex[0] = 1;
     pabyMutex[1] = 'r';
@@ -317,49 +287,8 @@ void CPLDestroyMutex( void *hMutex )
     CPLAssert( pabyMutex[1] == 'r' && pabyMutex[2] == 'e' 
                && pabyMutex[3] == 'd' );
 
-    free( pabyMutex );
+    CPLFree( pabyMutex );
 #endif
-}
-
-/************************************************************************/
-/*                            CPLCreateCond()                           */
-/************************************************************************/
-
-void  *CPLCreateCond()
-{
-    return NULL;
-}
-
-/************************************************************************/
-/*                            CPLCondWait()                             */
-/************************************************************************/
-
-void  CPLCondWait( void *hCond, void* hMutex )
-{
-}
-
-/************************************************************************/
-/*                            CPLCondSignal()                           */
-/************************************************************************/
-
-void  CPLCondSignal( void *hCond )
-{
-}
-
-/************************************************************************/
-/*                           CPLCondBroadcast()                         */
-/************************************************************************/
-
-void  CPLCondBroadcast( void *hCond )
-{
-}
-
-/************************************************************************/
-/*                            CPLDestroyCond()                          */
-/************************************************************************/
-
-void  CPLDestroyCond( void *hCond )
-{
 }
 
 /************************************************************************/
@@ -462,26 +391,6 @@ int CPLCreateThread( CPLThreadFunc pfnMain, void *pArg )
 }
 
 /************************************************************************/
-/*                      CPLCreateJoinableThread()                       */
-/************************************************************************/
-
-void* CPLCreateJoinableThread( CPLThreadFunc pfnMain, void *pThreadArg )
-
-{
-    CPLDebug( "CPLCreateJoinableThread", "Fails to dummy implementation" );
-
-    return NULL;
-}
-
-/************************************************************************/
-/*                          CPLJoinThread()                             */
-/************************************************************************/
-
-void CPLJoinThread(void* hJoinableThread)
-{
-}
-
-/************************************************************************/
 /*                              CPLSleep()                              */
 /************************************************************************/
 
@@ -511,11 +420,7 @@ static void **CPLGetTLSList()
 
 {
     if( papTLSList == NULL )
-    {
-        papTLSList = (void **) VSICalloc(sizeof(void*),CTLS_MAX*2);
-        if( papTLSList == NULL )
-            CPLEmergencyError("CPLGetTLSList() failed to allocate TLS list!");
-    }
+        papTLSList = (void **) CPLCalloc(sizeof(void*),CTLS_MAX*2);
 
     return papTLSList;
 }
@@ -554,20 +459,6 @@ void CPLCleanupTLS()
 #  include "cpl_win32ce_api.h"
 #  define TLS_OUT_OF_INDEXES ((DWORD)0xFFFFFFFF)
 #endif
-
-/************************************************************************/
-/*                             CPLGetNumCPUs()                          */
-/************************************************************************/
-
-int CPLGetNumCPUs()
-{
-    SYSTEM_INFO info;
-    GetSystemInfo(&info);
-    DWORD dwNum = info.dwNumberOfProcessors;
-    if( dwNum < 1 )
-        return 1;
-    return (int)dwNum;
-}
 
 /************************************************************************/
 /*                        CPLGetThreadingModel()                        */
@@ -674,146 +565,6 @@ void CPLDestroyMutex( void *hMutexIn )
 }
 
 /************************************************************************/
-/*                            CPLCreateCond()                           */
-/************************************************************************/
-
-struct _WaiterItem
-{
-    HANDLE hEvent;
-    struct _WaiterItem* psNext;
-};
-typedef struct _WaiterItem WaiterItem;
-
-typedef struct
-{
-    void        *hInternalMutex;
-    WaiterItem  *psWaiterList;
-} Win32Cond;
-
-void  *CPLCreateCond()
-{
-    Win32Cond* psCond = (Win32Cond*) malloc(sizeof(Win32Cond));
-    if (psCond == NULL)
-        return NULL;
-    psCond->hInternalMutex = CPLCreateMutex();
-    if (psCond->hInternalMutex == NULL)
-    {
-        free(psCond);
-        return NULL;
-    }
-    CPLReleaseMutex(psCond->hInternalMutex);
-    psCond->psWaiterList = NULL;
-    return psCond;
-}
-
-/************************************************************************/
-/*                            CPLCondWait()                             */
-/************************************************************************/
-
-static void CPLTLSFreeEvent(void* pData)
-{
-    CloseHandle((HANDLE)pData);
-}
-
-void  CPLCondWait( void *hCond, void* hClientMutex )
-{
-    Win32Cond* psCond = (Win32Cond*) hCond;
-
-    HANDLE hEvent = (HANDLE) CPLGetTLS(CTLS_WIN32_COND);
-    if (hEvent == NULL)
-    {
-        hEvent = CreateEvent(NULL, /* security attributes */
-                             0,    /* manual reset = no */
-                             0,    /* initial state = unsignaled */
-                             NULL  /* no name */);
-        CPLAssert(hEvent != NULL);
-
-        CPLSetTLSWithFreeFunc(CTLS_WIN32_COND, hEvent, CPLTLSFreeEvent);
-    }
-
-    /* Insert the waiter into the waiter list of the condition */
-    CPLAcquireMutex(psCond->hInternalMutex, 1000.0);
-
-    WaiterItem* psItem = (WaiterItem*)malloc(sizeof(WaiterItem));
-    CPLAssert(psItem != NULL);
-
-    psItem->hEvent = hEvent;
-    psItem->psNext = psCond->psWaiterList;
-
-    psCond->psWaiterList = psItem;
-
-    CPLReleaseMutex(psCond->hInternalMutex);
-
-    /* Release the client mutex before waiting for the event being signaled */
-    CPLReleaseMutex(hClientMutex);
-
-    DWORD nRet = WaitForSingleObject(hEvent, INFINITE);
-    CPLAssert (nRet != WAIT_FAILED);
-
-    /* Reacquire the client mutex */
-    CPLAcquireMutex(hClientMutex, 1000.0);
-}
-
-/************************************************************************/
-/*                            CPLCondSignal()                           */
-/************************************************************************/
-
-void  CPLCondSignal( void *hCond )
-{
-    Win32Cond* psCond = (Win32Cond*) hCond;
-
-    /* Signal the first registered event, and remove it from the list */
-    CPLAcquireMutex(psCond->hInternalMutex, 1000.0);
-
-    WaiterItem* psIter = psCond->psWaiterList;
-    if (psIter != NULL)
-    {
-        SetEvent(psIter->hEvent);
-        psCond->psWaiterList = psIter->psNext;
-        free(psIter);
-    }
-
-    CPLReleaseMutex(psCond->hInternalMutex);
-}
-
-/************************************************************************/
-/*                           CPLCondBroadcast()                         */
-/************************************************************************/
-
-void  CPLCondBroadcast( void *hCond )
-{
-    Win32Cond* psCond = (Win32Cond*) hCond;
-
-    /* Signal all the registered events, and remove them from the list */
-    CPLAcquireMutex(psCond->hInternalMutex, 1000.0);
-
-    WaiterItem* psIter = psCond->psWaiterList;
-    while (psIter != NULL)
-    {
-        WaiterItem* psNext = psIter->psNext;
-        SetEvent(psIter->hEvent);
-        free(psIter);
-        psIter = psNext;
-    }
-    psCond->psWaiterList = NULL;
-
-    CPLReleaseMutex(psCond->hInternalMutex);
-}
-
-/************************************************************************/
-/*                            CPLDestroyCond()                          */
-/************************************************************************/
-
-void  CPLDestroyCond( void *hCond )
-{
-    Win32Cond* psCond = (Win32Cond*) hCond;
-    CPLDestroyMutex(psCond->hInternalMutex);
-    psCond->hInternalMutex = NULL;
-    CPLAssert(psCond->psWaiterList == NULL);
-    free(psCond);
-}
-
-/************************************************************************/
 /*                            CPLLockFile()                             */
 /************************************************************************/
 
@@ -886,7 +637,6 @@ GIntBig CPLGetPID()
 typedef struct {
     void *pAppData;
     CPLThreadFunc pfnMain;
-    HANDLE hThread;
 } CPLStdCallThreadInfo;
 
 static DWORD WINAPI CPLStdCallThreadJacket( void *pData )
@@ -896,8 +646,7 @@ static DWORD WINAPI CPLStdCallThreadJacket( void *pData )
 
     psInfo->pfnMain( psInfo->pAppData );
 
-    if (psInfo->hThread == NULL)
-        CPLFree( psInfo ); /* Only for detached threads */
+    CPLFree( psInfo );
 
     CPLCleanupTLS();
 
@@ -922,7 +671,6 @@ int CPLCreateThread( CPLThreadFunc pfnMain, void *pThreadArg )
     psInfo = (CPLStdCallThreadInfo*) CPLCalloc(sizeof(CPLStdCallThreadInfo),1);
     psInfo->pAppData = pThreadArg;
     psInfo->pfnMain = pfnMain;
-    psInfo->hThread = NULL;
 
     hThread = CreateThread( NULL, 0, CPLStdCallThreadJacket, psInfo, 
                             0, &nThreadId );
@@ -933,44 +681,6 @@ int CPLCreateThread( CPLThreadFunc pfnMain, void *pThreadArg )
     CloseHandle( hThread );
 
     return nThreadId;
-}
-
-/************************************************************************/
-/*                      CPLCreateJoinableThread()                       */
-/************************************************************************/
-
-void* CPLCreateJoinableThread( CPLThreadFunc pfnMain, void *pThreadArg )
-
-{
-    HANDLE hThread;
-    DWORD  nThreadId;
-    CPLStdCallThreadInfo *psInfo;
-
-    psInfo = (CPLStdCallThreadInfo*) CPLCalloc(sizeof(CPLStdCallThreadInfo),1);
-    psInfo->pAppData = pThreadArg;
-    psInfo->pfnMain = pfnMain;
-
-    hThread = CreateThread( NULL, 0, CPLStdCallThreadJacket, psInfo, 
-                            0, &nThreadId );
-
-    if( hThread == NULL )
-        return NULL;
-        
-    psInfo->hThread = hThread;
-    return psInfo;
-}
-
-/************************************************************************/
-/*                          CPLJoinThread()                             */
-/************************************************************************/
-
-void CPLJoinThread(void* hJoinableThread)
-{
-    CPLStdCallThreadInfo *psInfo = (CPLStdCallThreadInfo *) hJoinableThread;
-    
-    WaitForSingleObject(psInfo->hThread, INFINITE);
-    CloseHandle( psInfo->hThread );
-    CPLFree( psInfo );
 }
 
 /************************************************************************/
@@ -1000,7 +710,8 @@ static void **CPLGetTLSList()
         nTLSKey = TlsAlloc();
         if( nTLSKey == TLS_OUT_OF_INDEXES )
         {
-            CPLEmergencyError( "CPLGetTLSList(): TlsAlloc() failed!" );
+            CPLError( CE_Fatal, CPLE_AppDefined, 
+                      "TlsAlloc() failed!" );
         }
         bTLSKeySetup = TRUE;
     }
@@ -1008,12 +719,11 @@ static void **CPLGetTLSList()
     papTLSList = (void **) TlsGetValue( nTLSKey );
     if( papTLSList == NULL )
     {
-        papTLSList = (void **) VSICalloc(sizeof(void*),CTLS_MAX*2);
-        if( papTLSList == NULL )
-            CPLEmergencyError("CPLGetTLSList() failed to allocate TLS list!");
+        papTLSList = (void **) CPLCalloc(sizeof(void*),CTLS_MAX*2);
         if( TlsSetValue( nTLSKey, papTLSList ) == 0 )
         {
-            CPLEmergencyError( "CPLGetTLSList(): TlsSetValue() failed!" );
+            CPLError( CE_Fatal, CPLE_AppDefined, 
+                      "TlsSetValue() failed!" );
         }
     }
 
@@ -1047,7 +757,6 @@ void CPLCleanupTLS()
 
 #include <pthread.h>
 #include <time.h>
-#include <unistd.h>
 
   /************************************************************************/
   /* ==================================================================== */
@@ -1058,34 +767,19 @@ void CPLCleanupTLS()
   /************************************************************************/
 
 /************************************************************************/
-/*                             CPLGetNumCPUs()                          */
-/************************************************************************/
-
-int CPLGetNumCPUs()
-{
-#ifdef _SC_NPROCESSORS_ONLN
-    return (int)sysconf(_SC_NPROCESSORS_ONLN);
-#else
-    return 1;
-#endif
-}
-
-/************************************************************************/
 /*                      CPLCreateOrAcquireMutex()                       */
 /************************************************************************/
-
-static pthread_mutex_t global_mutex = PTHREAD_MUTEX_INITIALIZER;
-static void *CPLCreateMutexInternal(int bAlreadyInGlobalLock);
 
 int CPLCreateOrAcquireMutex( void **phMutex, double dfWaitInSeconds )
 
 {
     int bSuccess = FALSE;
+    static pthread_mutex_t global_mutex = PTHREAD_MUTEX_INITIALIZER;
 
     pthread_mutex_lock(&global_mutex);
     if( *phMutex == NULL )
     {
-        *phMutex = CPLCreateMutexInternal(TRUE);
+        *phMutex = CPLCreateMutex();
         bSuccess = *phMutex != NULL;
         pthread_mutex_unlock(&global_mutex);
     }
@@ -1113,68 +807,42 @@ const char *CPLGetThreadingModel()
 /*                           CPLCreateMutex()                           */
 /************************************************************************/
 
-typedef struct _MutexLinkedElt MutexLinkedElt;
-struct _MutexLinkedElt
-{
-    pthread_mutex_t   sMutex;
-    _MutexLinkedElt  *psPrev;
-    _MutexLinkedElt  *psNext;
-};
-static MutexLinkedElt* psMutexList = NULL;
+void *CPLCreateMutex()
 
-static void CPLInitMutex(MutexLinkedElt* psItem)
 {
+    pthread_mutex_t *hMutex;
+
+    hMutex = (pthread_mutex_t *) malloc(sizeof(pthread_mutex_t));
+    if (hMutex == NULL)
+        return NULL;
+
 #if defined(PTHREAD_MUTEX_RECURSIVE) || defined(HAVE_PTHREAD_MUTEX_RECURSIVE)
     {
         pthread_mutexattr_t  attr;
         pthread_mutexattr_init( &attr );
         pthread_mutexattr_settype( &attr, PTHREAD_MUTEX_RECURSIVE );
-        pthread_mutex_init( &(psItem->sMutex), &attr );
+        pthread_mutex_init( hMutex, &attr );
     }
 /* BSDs have PTHREAD_MUTEX_RECURSIVE as an enum, not a define. */
-/* But they have #define MUTEX_TYPE_COUNTING_FAST   PTHREAD_MUTEX_RECURSIVE */
+/* But they have #define MUTEX_TYPE_COUNTING_FAST	PTHREAD_MUTEX_RECURSIVE */
 #elif defined(MUTEX_TYPE_COUNTING_FAST)
     {
         pthread_mutexattr_t  attr;
         pthread_mutexattr_init( &attr );
         pthread_mutexattr_settype( &attr, MUTEX_TYPE_COUNTING_FAST );
-        pthread_mutex_init( &(psItem->sMutex), &attr );
+        pthread_mutex_init( hMutex, &attr );
     }
 #elif defined(PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP)
     pthread_mutex_t tmp_mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
-    psItem->sMutex = tmp_mutex;
+    *hMutex = tmp_mutex;
 #else
 #error "Recursive mutexes apparently unsupported, configure --without-threads" 
 #endif
-}
-
-static void *CPLCreateMutexInternal(int bAlreadyInGlobalLock)
-{
-    MutexLinkedElt* psItem = (MutexLinkedElt *) malloc(sizeof(MutexLinkedElt));
-    if (psItem == NULL)
-        return NULL;
-
-    if( !bAlreadyInGlobalLock )
-        pthread_mutex_lock(&global_mutex);
-    psItem->psPrev = NULL;
-    psItem->psNext = psMutexList;
-    if( psMutexList )
-        psMutexList->psPrev = psItem;
-    psMutexList = psItem;
-    if( !bAlreadyInGlobalLock )
-        pthread_mutex_unlock(&global_mutex);
-
-    CPLInitMutex(psItem);
 
     // mutexes are implicitly acquired when created.
-    CPLAcquireMutex( &(psItem->sMutex), 0.0 );
+    CPLAcquireMutex( hMutex, 0.0 );
 
-    return psItem;
-}
-
-void *CPLCreateMutex()
-{
-    return CPLCreateMutexInternal(FALSE);
+    return (void *) hMutex;
 }
 
 /************************************************************************/
@@ -1187,8 +855,7 @@ int CPLAcquireMutex( void *hMutexIn, double dfWaitInSeconds )
     int err;
 
     /* we need to add timeout support */
-    MutexLinkedElt* psItem = (MutexLinkedElt *) hMutexIn;
-    err =  pthread_mutex_lock( &(psItem->sMutex) );
+    err =  pthread_mutex_lock( (pthread_mutex_t *) hMutexIn );
     
     if( err != 0 )
     {
@@ -1210,8 +877,7 @@ int CPLAcquireMutex( void *hMutexIn, double dfWaitInSeconds )
 void CPLReleaseMutex( void *hMutexIn )
 
 {
-    MutexLinkedElt* psItem = (MutexLinkedElt *) hMutexIn;
-    pthread_mutex_unlock( &(psItem->sMutex) );
+    pthread_mutex_unlock( (pthread_mutex_t *) hMutexIn );
 }
 
 /************************************************************************/
@@ -1221,90 +887,8 @@ void CPLReleaseMutex( void *hMutexIn )
 void CPLDestroyMutex( void *hMutexIn )
 
 {
-    MutexLinkedElt* psItem = (MutexLinkedElt *) hMutexIn;
-    pthread_mutex_destroy( &(psItem->sMutex) );
-    pthread_mutex_lock(&global_mutex);
-    if( psItem->psPrev )
-        psItem->psPrev->psNext = psItem->psNext;
-    if( psItem->psNext )
-        psItem->psNext->psPrev = psItem->psPrev;
-    if( psItem == psMutexList )
-        psMutexList = psItem->psNext;
-    pthread_mutex_unlock(&global_mutex);
+    pthread_mutex_destroy( (pthread_mutex_t *) hMutexIn );
     free( hMutexIn );
-}
-
-/************************************************************************/
-/*                          CPLReinitAllMutex()                         */
-/************************************************************************/
-
-/* Used by gdalclientserver.cpp just after forking, to avoid */
-/* deadlocks while mixing threads with fork */
-void CPLReinitAllMutex();
-void CPLReinitAllMutex()
-{
-    MutexLinkedElt* psItem = psMutexList;
-    while(psItem != NULL )
-    {
-        CPLInitMutex(psItem);
-        psItem = psItem->psNext;
-    }
-    pthread_mutex_t tmp_global_mutex = PTHREAD_MUTEX_INITIALIZER;
-    global_mutex = tmp_global_mutex;
-}
-
-/************************************************************************/
-/*                            CPLCreateCond()                           */
-/************************************************************************/
-
-void  *CPLCreateCond()
-{
-    pthread_cond_t* pCond = (pthread_cond_t* )malloc(sizeof(pthread_cond_t));
-    if (pCond)
-        pthread_cond_init(pCond, NULL);
-    return pCond;
-}
-
-/************************************************************************/
-/*                            CPLCondWait()                             */
-/************************************************************************/
-
-void  CPLCondWait( void *hCond, void* hMutex )
-{
-    pthread_cond_t* pCond = (pthread_cond_t* )hCond;
-    pthread_mutex_t * pMutex = (pthread_mutex_t *)hMutex;
-    pthread_cond_wait(pCond,  pMutex);
-}
-
-/************************************************************************/
-/*                            CPLCondSignal()                           */
-/************************************************************************/
-
-void  CPLCondSignal( void *hCond )
-{
-    pthread_cond_t* pCond = (pthread_cond_t* )hCond;
-    pthread_cond_signal(pCond);
-}
-
-/************************************************************************/
-/*                           CPLCondBroadcast()                         */
-/************************************************************************/
-
-void  CPLCondBroadcast( void *hCond )
-{
-    pthread_cond_t* pCond = (pthread_cond_t* )hCond;
-    pthread_cond_broadcast(pCond);
-}
-
-/************************************************************************/
-/*                            CPLDestroyCond()                          */
-/************************************************************************/
-
-void  CPLDestroyCond( void *hCond )
-{
-    pthread_cond_t* pCond = (pthread_cond_t* )hCond;
-    pthread_cond_destroy(pCond);
-    free(hCond);
 }
 
 /************************************************************************/
@@ -1395,7 +979,6 @@ typedef struct {
     void *pAppData;
     CPLThreadFunc pfnMain;
     pthread_t hThread;
-    int bJoinable;
 } CPLStdCallThreadInfo;
 
 static void *CPLStdCallThreadJacket( void *pData )
@@ -1405,8 +988,7 @@ static void *CPLStdCallThreadJacket( void *pData )
 
     psInfo->pfnMain( psInfo->pAppData );
 
-    if (!psInfo->bJoinable)
-        CPLFree( psInfo );
+    CPLFree( psInfo );
 
     return NULL;
 }
@@ -1429,7 +1011,6 @@ int CPLCreateThread( CPLThreadFunc pfnMain, void *pThreadArg )
     psInfo = (CPLStdCallThreadInfo*) CPLCalloc(sizeof(CPLStdCallThreadInfo),1);
     psInfo->pAppData = pThreadArg;
     psInfo->pfnMain = pfnMain;
-    psInfo->bJoinable = FALSE;
 
     pthread_attr_init( &hThreadAttr );
     pthread_attr_setdetachstate( &hThreadAttr, PTHREAD_CREATE_DETACHED );
@@ -1441,47 +1022,6 @@ int CPLCreateThread( CPLThreadFunc pfnMain, void *pThreadArg )
     }
 
     return 1; /* can we return the actual thread pid? */
-}
-
-/************************************************************************/
-/*                      CPLCreateJoinableThread()                       */
-/************************************************************************/
-
-void* CPLCreateJoinableThread( CPLThreadFunc pfnMain, void *pThreadArg )
-
-{
-    CPLStdCallThreadInfo *psInfo;
-    pthread_attr_t hThreadAttr;
-
-    psInfo = (CPLStdCallThreadInfo*) CPLCalloc(sizeof(CPLStdCallThreadInfo),1);
-    psInfo->pAppData = pThreadArg;
-    psInfo->pfnMain = pfnMain;
-    psInfo->bJoinable = TRUE;
-
-    pthread_attr_init( &hThreadAttr );
-    pthread_attr_setdetachstate( &hThreadAttr, PTHREAD_CREATE_JOINABLE );
-    if( pthread_create( &(psInfo->hThread), &hThreadAttr,
-                        CPLStdCallThreadJacket, (void *) psInfo ) != 0 )
-    {
-        CPLFree( psInfo );
-        return NULL;
-    }
-
-    return psInfo;
-}
-
-/************************************************************************/
-/*                          CPLJoinThread()                             */
-/************************************************************************/
-
-void CPLJoinThread(void* hJoinableThread)
-{
-    CPLStdCallThreadInfo *psInfo = (CPLStdCallThreadInfo*) hJoinableThread;
-
-    void* status;
-    pthread_join( psInfo->hThread, &status);
-
-    CPLFree(psInfo);
 }
 
 /************************************************************************/
@@ -1543,19 +1083,18 @@ static void **CPLGetTLSList()
 
     if ( pthread_once(&oTLSKeySetup, CPLMake_key) != 0 )
     {
-        CPLEmergencyError( "CPLGetTLSList(): pthread_once() failed!" );
+        CPLError( CE_Fatal, CPLE_AppDefined,
+            "pthread_once() failed!" );
     }
 
     papTLSList = (void **) pthread_getspecific( oTLSKey );
     if( papTLSList == NULL )
     {
-        papTLSList = (void **) VSICalloc(sizeof(void*),CTLS_MAX*2);
-        if( papTLSList == NULL )
-            CPLEmergencyError("CPLGetTLSList() failed to allocate TLS list!");
+        papTLSList = (void **) CPLCalloc(sizeof(void*),CTLS_MAX*2);
         if( pthread_setspecific( oTLSKey, papTLSList ) != 0 )
         {
-            CPLEmergencyError( 
-                "CPLGetTLSList(): pthread_setspecific() failed!" );
+            CPLError( CE_Fatal, CPLE_AppDefined,
+                "pthread_setspecific() failed!" );
         }
     }
 

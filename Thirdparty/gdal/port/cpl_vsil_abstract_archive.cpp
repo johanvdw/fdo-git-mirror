@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_vsil_abstract_archive.cpp 23817 2012-01-28 17:39:00Z rouault $
+ * $Id: cpl_vsil_abstract_archive.cpp 22980 2011-08-25 22:29:12Z rouault $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Implement VSI large file api for archive files.
@@ -35,7 +35,7 @@
 
 #define ENABLE_DEBUG 0
 
-CPL_CVSID("$Id: cpl_vsil_abstract_archive.cpp 23817 2012-01-28 17:39:00Z rouault $");
+CPL_CVSID("$Id: cpl_vsil_abstract_archive.cpp 22980 2011-08-25 22:29:12Z rouault $");
 
 /************************************************************************/
 /*                    ~VSIArchiveEntryFileOffset()                      */
@@ -139,15 +139,8 @@ const VSIArchiveContent* VSIArchiveFilesystemHandler::GetContentOfArchive
         }
 
         char* pszStrippedFileName = CPLStrdup(fileName);
-        char* pszIter;
-        for(pszIter = pszStrippedFileName;*pszIter;pszIter++)
-        {
-            if (*pszIter == '\\')
-                *pszIter = '/';
-        }
-
         int bIsDir = strlen(fileName) > 0 &&
-                      fileName[strlen(fileName)-1] == '/';
+                      (fileName[strlen(fileName)-1] == '/' || fileName[strlen(fileName)-1] == '\\');
         if (bIsDir)
         {
             /* Remove trailing slash */
@@ -159,9 +152,10 @@ const VSIArchiveContent* VSIArchiveFilesystemHandler::GetContentOfArchive
             oSet.insert(pszStrippedFileName);
 
             /* Add intermediate directory structure */
+            char* pszIter;
             for(pszIter = pszStrippedFileName;*pszIter;pszIter++)
             {
-                if (*pszIter == '/')
+                if (*pszIter == '/' || *pszIter == '\\')
                 {
                     char* pszStrippedFileName2 = CPLStrdup(pszStrippedFileName);
                     pszStrippedFileName2[pszIter - pszStrippedFileName] = 0;
@@ -350,11 +344,11 @@ char* VSIArchiveFilesystemHandler::SplitFilename(const char *pszFilename,
                     osFileInArchive = "";
 
                 /* Remove trailing slash */
-                if (osFileInArchive.size())
+                if (strlen(osFileInArchive))
                 {
                     char lastC = osFileInArchive[strlen(osFileInArchive) - 1];
                     if (lastC == '\\' || lastC == '/')
-                        osFileInArchive.resize(strlen(osFileInArchive) - 1);
+                        osFileInArchive[strlen(osFileInArchive) - 1] = 0;
                 }
 
                 return archiveFilename;

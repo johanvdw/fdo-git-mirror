@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrs57driver.cpp 25823 2013-03-31 15:38:35Z rouault $
+ * $Id: ogrs57driver.cpp 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  S-57 Translator
  * Purpose:  Implements OGRS57Driver
@@ -29,12 +29,10 @@
 
 #include "ogr_s57.h"
 #include "cpl_conv.h"
-#include "cpl_multiproc.h"
 
-CPL_CVSID("$Id: ogrs57driver.cpp 25823 2013-03-31 15:38:35Z rouault $");
+CPL_CVSID("$Id: ogrs57driver.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
 
 S57ClassRegistrar *OGRS57Driver::poRegistrar = NULL;
-static void* hS57RegistrarMutex = NULL;
 
 /************************************************************************/
 /*                            OGRS57Driver()                            */
@@ -56,12 +54,6 @@ OGRS57Driver::~OGRS57Driver()
     {
         delete poRegistrar;
         poRegistrar = NULL;
-    }
-    
-    if( hS57RegistrarMutex != NULL )
-    {
-        CPLDestroyMutex(hS57RegistrarMutex);
-        hS57RegistrarMutex = NULL;
     }
 }
 
@@ -144,8 +136,6 @@ S57ClassRegistrar *OGRS57Driver::GetS57Registrar()
 /* -------------------------------------------------------------------- */
 /*      Instantiate the class registrar if possible.                    */
 /* -------------------------------------------------------------------- */
-    CPLMutexHolderD(&hS57RegistrarMutex);
-
     if( poRegistrar == NULL )
     {
         poRegistrar = new S57ClassRegistrar();

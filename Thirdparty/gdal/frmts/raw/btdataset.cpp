@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: btdataset.cpp 25924 2013-04-18 18:16:41Z rouault $
+ * $Id: btdataset.cpp 23033 2011-09-03 18:46:11Z rouault $
  *
  * Project:  VTP .bt Driver
  * Purpose:  Implementation of VTP .bt elevation format read/write support.
@@ -31,7 +31,7 @@
 #include "rawdataset.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: btdataset.cpp 25924 2013-04-18 18:16:41Z rouault $");
+CPL_CVSID("$Id: btdataset.cpp 23033 2011-09-03 18:46:11Z rouault $");
 
 CPL_C_START
 void    GDALRegister_BT(void);
@@ -54,6 +54,8 @@ class BTDataset : public GDALPamDataset
 
     char        *pszProjection;
     
+    double      dfVScale;
+
     int         nVersionCode;  // version times 10.
 
     int         bHeaderModified;
@@ -137,7 +139,7 @@ CPLErr BTRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
 /*      Seek to profile.                                                */
 /* -------------------------------------------------------------------- */
     if( VSIFSeekL( fpImage, 
-                   256 + nBlockXOff * nDataSize * (vsi_l_offset) nRasterYSize, 
+                   256 + nBlockXOff * nDataSize * nRasterYSize, 
                    SEEK_SET ) != 0 )
     {
         CPLError( CE_Failure, CPLE_FileIO, 
@@ -911,7 +913,7 @@ GDALDataset *BTDataset::Create( const char * pszFilename,
 /*      Write to disk.                                                  */
 /* -------------------------------------------------------------------- */
     VSIFWriteL( (void *) abyHeader, 256, 1, fp );
-    if( VSIFSeekL( fp, (GDALGetDataTypeSize(eType)/8) * nXSize * (vsi_l_offset)nYSize - 1, 
+    if( VSIFSeekL( fp, (GDALGetDataTypeSize(eType)/8) * nXSize * nYSize - 1, 
                    SEEK_CUR ) != 0 
         || VSIFWriteL( abyHeader+255, 1, 1, fp ) != 1 )
     {

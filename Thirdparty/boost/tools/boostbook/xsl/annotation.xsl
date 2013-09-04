@@ -20,9 +20,7 @@
   <xsl:key name="macros" match="macro" use="@name"/>
   <xsl:key name="headers" match="header" use="@name"/>
   <xsl:key name="globals" match="namespace/data-member|header/data-member" use="@name"/>
-  <xsl:key name="named-entities"
-    match="class|struct|union|concept|function|overloaded-function|macro|library|namespace/data-member|header/data-member|*[attribute::id]"
-    use="translate(@name|@id, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')"/>
+  <xsl:key name="named-entities" match="class|struct|union|concept|function|overloaded-function|macro|library|namespace/data-member|header/data-member|*[attribute::id]" use="translate(@name|@id, $uppercase-letters, $lowercase-letters)"/>
 
   <xsl:template match="function|overloaded-function" mode="generate.id">
     <xsl:call-template name="fully-qualified-id">
@@ -118,10 +116,6 @@
     <!-- Strip off any call -->
     <xsl:variable name="name">
       <xsl:choose>
-        <xsl:when test="contains($fullname, 'operator()')">
-          <xsl:value-of select="substring-before($fullname, 'operator()')"/>
-          <xsl:value-of select="'operator()'"/>
-        </xsl:when>
         <xsl:when test="contains($fullname, '(')">
           <xsl:value-of select="substring-before($fullname, '(')"/>
         </xsl:when>
@@ -380,21 +374,7 @@
     </xsl:choose>
   </xsl:template>
 
-  <xsl:template match="programlisting" mode="annotation">
-    <programlisting>
-      <xsl:apply-templates mode="annotation">
-        <xsl:with-param name="highlight" select="true()"/>
-      </xsl:apply-templates>
-    </programlisting>
-  </xsl:template>
-  
   <xsl:template match="code" mode="annotation">
-    <computeroutput>
-      <xsl:apply-templates mode="annotation"/>
-    </computeroutput>
-  </xsl:template>
-
-  <xsl:template match="code[@language='jam']" mode="annotation">
     <computeroutput>
       <xsl:apply-templates mode="annotation"/>
     </computeroutput>
@@ -410,10 +390,6 @@
     <xsl:apply-templates mode="annotation"/>
   </xsl:template>
 
-  <xsl:template match="type" mode="annotation">
-    <xsl:apply-templates mode="annotation"/>
-  </xsl:template>
-
   <xsl:template match="comment()" mode="annotation">
     <xsl:copy/>
   </xsl:template>
@@ -422,7 +398,11 @@
     <xsl:param name="highlight" select="false()"/>
 
     <xsl:element name="{name(.)}">
-      <xsl:copy-of select="./@*"/>
+      <xsl:for-each select="./@*">
+        <xsl:attribute name="{name(.)}">
+          <xsl:value-of select="."/>
+        </xsl:attribute>
+      </xsl:for-each>
       <xsl:apply-templates select="./*|./text()" mode="annotation">
         <xsl:with-param name="highlight" select="$highlight"/>
       </xsl:apply-templates>

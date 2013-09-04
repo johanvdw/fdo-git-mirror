@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalwarpkernel_opencl.h 25068 2012-10-07 14:01:47Z rouault $
+ * $Id: gdalwarpkernel_opencl.h 21223 2010-12-08 20:40:33Z rouault $
  *
  * Project:  OpenCL Image Reprojector
  * Purpose:  Implementation of the GDALWarpKernel reprojector in OpenCL.
@@ -33,9 +33,7 @@
    clSetCommandQueueProperty() which are not available by default
    with some OpenCL implementation (ie. ATI) */
 
-#if defined(DEBUG_OPENCL) && DEBUG_OPENCL == 1
 #define CL_USE_DEPRECATED_OPENCL_1_0_APIS
-#endif
 
 #ifdef __APPLE__
 #include <OpenCL/OpenCL.h>
@@ -53,14 +51,7 @@ typedef enum {
     OCL_CubicSpline=12,
     OCL_Lanczos=13
 } OCLResampAlg;
-
-typedef enum
-{
-    VENDOR_OTHER,
-    VENDOR_AMD,
-    VENDOR_INTEL
-} OCLVendor;
-
+    
 struct oclWarper {
     cl_command_queue queue;
     cl_context context;
@@ -148,7 +139,7 @@ struct oclWarper {
     cl_mem fDstNoDataRealCL;
     float *fDstNoDataReal;
 
-    OCLVendor eCLVendor;
+    int bIsATI;
 };
 
 struct oclWarper* GDALWarpKernelOpenCL_createEnv(int srcWidth, int srcHeight,

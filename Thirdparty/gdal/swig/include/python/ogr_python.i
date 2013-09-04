@@ -1,5 +1,5 @@
 /*
- * $Id: ogr_python.i 25899 2013-04-11 18:07:32Z rouault $
+ * $Id: ogr_python.i 23417 2011-11-23 06:45:28Z warmerdam $
  *
  * python specific code for ogr bindings.
  */
@@ -69,6 +69,7 @@
 ds[0] would return the first layer on the datasource.
 ds['aname'] would return the layer named "aname".
 ds[0:4] would return a list of the first four layers."""
+        import types
         if isinstance(value, slice):
             output = []
             for i in xrange(value.start,value.stop,value.step):
@@ -88,6 +89,7 @@ ds[0:4] would return a list of the first four layers."""
 
     def GetLayer(self,iLayer=0):
         """Return the layer given an index or a name"""
+        import types
         if isinstance(iLayer, str):
             return self.GetLayerByName(str(iLayer))
         elif isinstance(iLayer, int):
@@ -97,6 +99,7 @@ ds[0:4] would return a list of the first four layers."""
 
     def DeleteLayer(self, value):
         """Deletes the layer given an index or layer name"""
+        import types
         if isinstance(value, str):
             for i in range(self.GetLayerCount()):
                 name = self.GetLayer(i).GetName()
@@ -106,7 +109,7 @@ ds[0:4] would return a list of the first four layers."""
         elif isinstance(value, int):
             return _ogr.DataSource_DeleteLayer(self, value)
         else:
-            raise TypeError("Input %s is not of String or Int type" % type(value))
+            raise TypeError("Input %s is not of String or Int type" % type(iLayer))
   }
 }
 
@@ -124,20 +127,12 @@ ds[0:4] would return a list of the first four layers."""
         """Returns the number of features in the layer"""
         return self.GetFeatureCount()
 
-    # To avoid __len__ being called when testing boolean value
-    # which can have side effects (#4758)
-    def __nonzero__(self):
-        return True
-
-    # For Python 3 compat
-    __bool__ = __nonzero__
-
     def __getitem__(self, value):
         """Support list and slice -like access to the layer.
 layer[0] would return the first feature on the layer.
 layer[0:4] would return a list of the first four features."""
+        import types
         if isinstance(value, slice):
-            import sys
             output = []
             if value.stop == sys.maxint:
                 #for an unending slice, sys.maxint is used
@@ -160,7 +155,7 @@ layer[0:4] would return a list of the first four features."""
         else:
             raise TypeError("Input %s is not of IntType or SliceType" % type(value))
 
-    def CreateFields(self, fields):
+    def CreateFields(fields):
         """Create a list of fields on the Layer"""
         for i in fields:
             self.CreateField(i)
@@ -211,8 +206,6 @@ layer[0:4] would return a list of the first four features."""
     # This has some risk of name collisions.
     def __getattr__(self, key):
         """Returns the values of fields by the given name"""
-        if key == 'this':
-            return self.__dict__[key]
         try:
             return self.GetField(key)
         except:
@@ -238,6 +231,7 @@ layer[0:4] would return a list of the first four features."""
         self.SetField2( key, value )    
 
     def GetField(self, fld_index):
+        import types
         if isinstance(fld_index, str):
             fld_index = self.GetFieldIndex(fld_index)
         if (fld_index < 0) or (fld_index > self.GetFieldCount()):
@@ -335,7 +329,7 @@ layer[0:4] would return a list of the first four features."""
                   } 
         
         fid = self.GetFID()
-        if fid != NullFID:
+        if fid:
             output['id'] = fid
             
         for key in self.keys():
@@ -414,5 +408,3 @@ layer[0:4] would return a list of the first four features."""
 }
 
 %import typemaps_python.i
-
-%include "callback.i"

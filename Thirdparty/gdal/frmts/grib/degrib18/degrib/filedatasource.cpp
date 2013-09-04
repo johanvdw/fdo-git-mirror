@@ -26,10 +26,10 @@ size_t FileDataSource::DataSourceFread(void* lpBuf, size_t size, size_t count)
 
 int FileDataSource::DataSourceFgetc()
 {
-    unsigned char byData;
+    char chData;
 
-    if( VSIFReadL( &byData, 1, 1, fp ) == 1 )
-        return byData;
+    if( VSIFReadL( &chData, 1, 1, fp ) == 1 )
+        return chData;
     else
         return EOF;
 }

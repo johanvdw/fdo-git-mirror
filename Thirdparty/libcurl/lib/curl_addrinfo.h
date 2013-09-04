@@ -7,7 +7,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2012, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2009, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -20,10 +20,14 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
+ * $Id: curl_addrinfo.h,v 1.5 2009-12-30 17:59:56 yangtse Exp $
  ***************************************************************************/
 
-#include "curl_setup.h"
+#include "setup.h"
 
+#ifdef HAVE_SYS_SOCKET_H
+#  include <sys/socket.h>
+#endif
 #ifdef HAVE_NETINET_IN_H
 #  include <netinet/in.h>
 #endif
@@ -41,7 +45,7 @@
 #endif
 
 
-/*
+/* 
  * Curl_addrinfo is our internal struct definition that we use to allow
  * consistent internal handling of this data. We use this even when the
  * system provides an addrinfo structure definition. And we use this for
@@ -76,8 +80,6 @@ Curl_he2ai(const struct hostent *he, int port);
 
 Curl_addrinfo *
 Curl_ip2addr(int af, const void *inaddr, const char *hostname, int port);
-
-Curl_addrinfo *Curl_str2addr(char *dotted, int port);
 
 #if defined(CURLDEBUG) && defined(HAVE_FREEADDRINFO)
 void

@@ -5,7 +5,7 @@ include ./file.lst
 
 INST_H_FILES	=	ogr_core.h ogr_feature.h ogr_geometry.h ogr_p.h \
 		ogr_spatialref.h ogr_srs_api.h ogrsf_frmts/ogrsf_frmts.h \
-		ogr_featurestyle.h ogr_api.h ogr_geocoding.h
+		ogr_featurestyle.h ogr_api.h
 
 ifeq ($(HAVE_GEOS),yes)
 CPPFLAGS 	:=	-DHAVE_GEOS=1 $(GEOS_CFLAGS) $(CPPFLAGS)
@@ -25,7 +25,7 @@ else
 ZLIB_XTRA_OPT =
 endif
 
-CPPFLAGS	:=	-Iogrsf_frmts -Iogrsf_frmts/mem -I. $(GDAL_INCLUDE) $(PROJ_INCLUDE) $(PROJ_FLAGS) $(CPPFLAGS) $(ZLIB_XTRA_OPT)
+CPPFLAGS	:=	-Iogrsf_frmts -I. $(GDAL_INCLUDE) $(PROJ_INCLUDE) $(PROJ_FLAGS) $(CPPFLAGS) $(ZLIB_XTRA_OPT)
 
 default:	lib
 

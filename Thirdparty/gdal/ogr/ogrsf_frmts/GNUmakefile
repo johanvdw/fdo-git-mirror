@@ -25,27 +25,19 @@ SUBDIRS-$(HAVE_SDE)     += sde
 SUBDIRS-$(HAVE_FGDB)    += filegdb
 SUBDIRS-$(HAVE_ARCOBJECTS)  += arcobjects
 SUBDIRS-$(HAVE_INGRES)  += ingres
-SUBDIRS-$(HAVE_SQLITE)  += vfk
+SUBDIRS-$(HAVE_VFK)     += vfk
 SUBDIRS-$(HAVE_LIBKML)  += libkml
 SUBDIRS-$(CURL_SETTING) += wfs
 SUBDIRS-$(MDB_ENABLED)  += mdb
 SUBDIRS-$(CURL_SETTING) += gft
 SUBDIRS-$(CURL_SETTING) += couchdb
 SUBDIRS-$(HAVE_FREEXL)  += xls
-SUBDIRS-$(HAVE_EXPAT)   += ods
-SUBDIRS-$(HAVE_EXPAT)   += xlsx
-SUBDIRS-$(CURL_SETTING) += elastic
-SUBDIRS-$(HAVE_SQLITE)	+= osm
 
 ifeq ($(PCIDSK_SETTING),internal)
 SUBDIRS-yes  += pcidsk
 endif
 ifeq ($(PCIDSK_SETTING),external)
 SUBDIRS-yes  += pcidsk
-endif
-
-ifneq ($(LIBZ_SETTING),no)
-SUBDIRS-yes  += pdf
 endif
 
 default:	$(foreach d,$(SUBDIRS-yes),$(d)-target)

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: nearblack.cpp 25582 2013-01-29 21:13:43Z rouault $
+ * $Id: nearblack.cpp 22783 2011-07-23 19:28:16Z rouault $
  *
  * Project:  GDAL Utilities
  * Purpose:  Convert nearly black or nearly white border to exact black/white.
@@ -33,7 +33,7 @@
 #include <vector>
 #include "commonutils.h"
 
-CPL_CVSID("$Id: nearblack.cpp 25582 2013-01-29 21:13:43Z rouault $");
+CPL_CVSID("$Id: nearblack.cpp 22783 2011-07-23 19:28:16Z rouault $");
 
 typedef std::vector<int> Color;
 typedef std::vector< Color > Colors;
@@ -70,24 +70,16 @@ int IsInt( const char *pszArg )
 /*                               Usage()                                */
 /************************************************************************/
 
-void Usage(const char* pszErrorMsg = NULL)
+void Usage()
 {
     printf( "nearblack [-of format] [-white | [-color c1,c2,c3...cn]*] [-near dist] [-nb non_black_pixels]\n"
             "          [-setalpha] [-setmask] [-o outfile] [-q] [-co \"NAME=VALUE\"]* infile\n" );
-
-    if( pszErrorMsg != NULL )
-        fprintf(stderr, "\nFAILURE: %s\n", pszErrorMsg);
-
     exit( 1 );
 }
 
 /************************************************************************/
 /*                                main()                                */
 /************************************************************************/
-
-#define CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(nExtraArg) \
-    do { if (i + nExtraArg >= argc) \
-        Usage(CPLSPrintf("%s option requires %d argument(s)", argv[i], nExtraArg)); } while(0)
 
 int main( int argc, char ** argv )
 
@@ -136,16 +128,10 @@ int main( int argc, char ** argv )
                    argv[0], GDAL_RELEASE_NAME, GDALVersionInfo("RELEASE_NAME"));
             return 0;
         }
-        else if( EQUAL(argv[i], "--help") )
-            Usage();
-        else if( EQUAL(argv[i], "-o") )
-        {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
+        else if( EQUAL(argv[i], "-o") && i < argc-1 )
             pszOutFile = argv[++i];
-        }
-        else if( EQUAL(argv[i], "-of") )
+        else if( EQUAL(argv[i], "-of") && i < argc-1 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             pszDriverName = argv[++i];
             bFormatExplicitelySet = TRUE;
         }
@@ -155,8 +141,7 @@ int main( int argc, char ** argv )
 
         /***** -color c1,c2,c3...cn *****/
         
-        else if( EQUAL(argv[i], "-color") ) {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
+        else if( EQUAL(argv[i], "-color") && i < argc-1 ) {
             Color oColor;
             
             /***** tokenize the arg on , *****/
@@ -200,37 +185,28 @@ int main( int argc, char ** argv )
             
         }
         
-        else if( EQUAL(argv[i], "-nb") )
-        {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
+        else if( EQUAL(argv[i], "-nb") && i < argc-1 )
             nMaxNonBlack = atoi(argv[++i]);
-        }
-        else if( EQUAL(argv[i], "-near") )
-        {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
+        else if( EQUAL(argv[i], "-near") && i < argc-1 )
             nNearDist = atoi(argv[++i]);
-        }
         else if( EQUAL(argv[i], "-setalpha") )
             bSetAlpha = TRUE;
         else if( EQUAL(argv[i], "-setmask") )
             bSetMask = TRUE;
         else if( EQUAL(argv[i], "-q") || EQUAL(argv[i], "-quiet") )
             bQuiet = TRUE;
-        else if( EQUAL(argv[i], "-co") )
-        {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
+        else if( EQUAL(argv[i], "-co") && i < argc-1 )
             papszCreationOptions = CSLAddString(papszCreationOptions, argv[++i]);
-        }
         else if( argv[i][0] == '-' )
-            Usage(CPLSPrintf("Unkown option name '%s'", argv[i]));
+            Usage();
         else if( pszInFile == NULL )
             pszInFile = argv[i];
         else
-            Usage("Too many command options.");
+            Usage();
     }
 
     if( pszInFile == NULL )
-        Usage("No input file specified.");
+        Usage();
 
     if( pszOutFile == NULL )
         pszOutFile = pszInFile;

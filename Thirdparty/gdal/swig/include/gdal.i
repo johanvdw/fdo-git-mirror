@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal.i 25897 2013-04-10 22:30:30Z rouault $
+ * $Id: gdal.i 20712 2010-09-30 03:35:27Z warmerdam $
  *
  * Name:     gdal.i
  * Project:  GDAL Python Interface
@@ -55,7 +55,6 @@ using namespace std;
 #include "cpl_port.h"
 #include "cpl_string.h"
 #include "cpl_multiproc.h"
-#include "cpl_http.h"
 
 #include "gdal.h"
 #include "gdal_priv.h"
@@ -164,9 +163,6 @@ typedef enum {
   /*! Bilinear (2x2 kernel) */                         GRA_Bilinear=1,
   /*! Cubic Convolution Approximation (4x4 kernel) */  GRA_Cubic=2,
   /*! Cubic B-Spline Approximation (4x4 kernel) */     GRA_CubicSpline=3,
-  /*! Lanczos windowed sinc interpolation (6x6 kernel) */ GRA_Lanczos=4,
-  /*! Average (computes the average of all non-NODATA contributing pixels) */ GRA_Average=5, 
-  /*! Mode (selects the value which appears most often of all the sampled points) */ GRA_Mode=6
 } GDALResampleAlg;
 
 %rename (AsyncStatusType) GDALAsyncStatusType;

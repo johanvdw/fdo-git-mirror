@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_fromepsg.cpp 25727 2013-03-10 14:56:33Z rouault $
+ * $Id: ogr_fromepsg.cpp 23396 2011-11-19 19:52:17Z etourigny $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Generate an OGRSpatialReference object based on an EPSG
@@ -32,7 +32,7 @@
 #include "ogr_p.h"
 #include "cpl_csv.h"
 
-CPL_CVSID("$Id: ogr_fromepsg.cpp 25727 2013-03-10 14:56:33Z rouault $");
+CPL_CVSID("$Id: ogr_fromepsg.cpp 23396 2011-11-19 19:52:17Z etourigny $");
 
 #ifndef PI
 #  define PI 3.14159265358979323846
@@ -1550,12 +1550,12 @@ static OGRErr SetEPSGProjCS( OGRSpatialReference * poSRS, int nPCSCode )
         break;
 
       case 9815:
-        poSRS->SetHOMAC( OGR_FP( ProjCenterLat ), OGR_FP( ProjCenterLong ),
-                         OGR_FP( Azimuth ), 
-                         OGR_FP( AngleRectifiedToSkewedGrid ),
-                         OGR_FP( InitialLineScaleFactor ),
-                         OGR_FP( ProjCenterEasting ), 
-                         OGR_FP( ProjCenterNorthing ) );
+        poSRS->SetHOM( OGR_FP( ProjCenterLat ), OGR_FP( ProjCenterLong ),
+                       OGR_FP( Azimuth ), 
+                       OGR_FP( AngleRectifiedToSkewedGrid ),
+                       OGR_FP( InitialLineScaleFactor ),
+                       OGR_FP( ProjCenterEasting ), 
+                       OGR_FP( ProjCenterNorthing ) );
         break;
 
       case 9816:
@@ -1569,7 +1569,6 @@ static OGRErr SetEPSGProjCS( OGRSpatialReference * poSRS, int nPCSCode )
                              OGR_FP( FalseEasting ), OGR_FP( FalseNorthing ) );
         break;
 
-      case 1041: /* used by EPSG:5514 */
       case 9819:
       {
           double dfCenterLong = OGR_FP( ProjCenterLong );
@@ -1614,8 +1613,6 @@ static OGRErr SetEPSGProjCS( OGRSpatialReference * poSRS, int nPCSCode )
         break;
 
       case 9823: /* Equidistant Cylindrical / Plate Carre / Equirectangular */
-      case 1028:
-      case 1029:
         poSRS->SetEquirectangular( OGR_FP( NatOriginLat ),
                                    OGR_FP( NatOriginLong ), 
                                    0.0, 0.0 );
@@ -2077,9 +2074,7 @@ static OGRErr SetEPSGGeocCS( OGRSpatialReference * poSRS, int nGCSCode )
  * This method is similar to importFromEPSGA() except that EPSG preferred 
  * axis ordering will *not* be applied for geographic coordinate systems.
  * EPSG normally defines geographic coordinate systems to use lat/long 
- * contrary to typical GIS use). Since OGR 1.10.0, EPSG preferred
- * axis ordering will also *not* be applied for projected coordinate systems
- * that use northing/easting order.
+ * contrary to typical GIS use). 
  *
  * This method is the same as the C function OSRImportFromEPSG().
  *
@@ -2100,10 +2095,6 @@ OGRErr OGRSpatialReference::importFromEPSG( int nCode )
 
         if( poGEOGCS != NULL )
             poGEOGCS->StripNodes( "AXIS" );
-
-        OGR_SRSNode *poPROJCS = GetAttrNode( "PROJCS" );
-        if (poPROJCS != NULL && EPSGTreatsAsNorthingEasting())
-            poPROJCS->StripNodes( "AXIS" );
     }
 
     return eErr;
@@ -2138,10 +2129,9 @@ OGRErr CPL_STDCALL OSRImportFromEPSG( OGRSpatialReferenceH hSRS, int nCode )
  * passed in EPSG GCS or PCS code.  
  * 
  * This method is similar to importFromEPSG() except that EPSG preferred 
- * axis ordering *will* be applied for geographic and projected coordinate systems.
- * EPSG normally defines geographic coordinate systems to use lat/long, and
- * also there are also a few projected coordinate systems that use northing/easting
- * order contrary to typical GIS use).  See OGRSpatialReference::importFromEPSG()
+ * axis ordering *will* be applied for geographic coordinate systems.
+ * EPSG normally defines geographic coordinate systems to use lat/long 
+ * contrary to typical GIS use).  See OGRSpatialReference::importFromEPSG() 
  * for more details on operation of this method.
  *
  * This method is the same as the C function OSRImportFromEPSGA().
@@ -2701,70 +2691,5 @@ int OSREPSGTreatsAsLatLong( OGRSpatialReferenceH hSRS )
     VALIDATE_POINTER1( hSRS, "OSREPSGTreatsAsLatLong", CE_Failure );
 
     return ((OGRSpatialReference *) hSRS)->EPSGTreatsAsLatLong();
-}
-
-/************************************************************************/
-/*                     EPSGTreatsAsNorthingEasting()                    */
-/************************************************************************/
-
-/**
- * \brief This method returns TRUE if EPSG feels this projected coordinate
- * system should be treated as having northing/easting coordinate ordering.
- *
- * Currently this returns TRUE for all projected coordinate systems
- * with an EPSG code set, and AXIS values set defining it as northing, easting.
- *
- * FALSE will be returned for all coordinate systems that are not projected,
- * or that do not have an EPSG code set.
- *
- * This method is the same as the C function EPSGTreatsAsNorthingEasting().
- *
- * @return TRUE or FALSE.
- *
- * @since OGR 1.10.0
- */
-
-int OGRSpatialReference::EPSGTreatsAsNorthingEasting()
-
-{
-    if( !IsProjected() )
-        return FALSE;
-
-    const char *pszAuth = GetAuthorityName( "PROJCS" );
-
-    if( pszAuth == NULL || !EQUAL(pszAuth,"EPSG") )
-        return FALSE;
-
-    OGR_SRSNode *poFirstAxis = GetAttrNode( "PROJCS|AXIS" );
-
-    if( poFirstAxis == NULL )
-        return FALSE;
-
-    if( poFirstAxis->GetChildCount() >= 2
-        && EQUAL(poFirstAxis->GetChild(1)->GetValue(),"NORTH") )
-        return TRUE;
-
-    return FALSE;
-}
-
-/************************************************************************/
-/*                     OSREPSGTreatsAsNorthingEasting()                 */
-/************************************************************************/
-
-/**
- * \brief This function returns TRUE if EPSG feels this geographic coordinate
- * system should be treated as having northing/easting coordinate ordering.
- *
- * This function is the same as OGRSpatialReference::EPSGTreatsAsNorthingEasting().
- *
- * @since OGR 1.10.0
- */
-
-int OSREPSGTreatsAsNorthingEasting( OGRSpatialReferenceH hSRS )
-
-{
-    VALIDATE_POINTER1( hSRS, "OSREPSGTreatsAsNorthingEasting", CE_Failure );
-
-    return ((OGRSpatialReference *) hSRS)->EPSGTreatsAsNorthingEasting();
 }
 

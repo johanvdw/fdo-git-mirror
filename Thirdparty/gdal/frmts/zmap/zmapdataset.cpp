@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: zmapdataset.cpp 24593 2012-06-16 18:58:42Z rouault $
+ * $Id: zmapdataset.cpp 22671 2011-07-08 18:08:12Z rouault $
  *
  * Project:  ZMap driver
  * Purpose:  GDALDataset driver for ZMap dataset.
@@ -31,7 +31,7 @@
 #include "cpl_string.h"
 #include "gdal_pam.h"
 
-CPL_CVSID("$Id: zmapdataset.cpp 24593 2012-06-16 18:58:42Z rouault $");
+CPL_CVSID("$Id: zmapdataset.cpp 22671 2011-07-08 18:08:12Z rouault $");
 
 CPL_C_START
 void    GDALRegister_ZMap(void);
@@ -667,10 +667,7 @@ GDALDataset* ZMapDataset::CreateCopy( const char * pszFilename,
             VSIFPrintfL(fp, "\n");
 
         if (!pfnProgress( (j+1) * 1.0 / nYSize, NULL, pProgressData))
-        {
-            eErr = CE_Failure;
             break;
-        }
     }
     CPLFree(padfLineBuffer);
     VSIFCloseL(fp);

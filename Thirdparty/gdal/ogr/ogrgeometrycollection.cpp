@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgeometrycollection.cpp 25426 2013-01-01 17:51:35Z rouault $
+ * $Id: ogrgeometrycollection.cpp 23589 2011-12-17 14:21:01Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRGeometryCollection class.
@@ -30,7 +30,7 @@
 #include "ogr_geometry.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrgeometrycollection.cpp 25426 2013-01-01 17:51:35Z rouault $");
+CPL_CVSID("$Id: ogrgeometrycollection.cpp 23589 2011-12-17 14:21:01Z rouault $");
 
 /************************************************************************/
 /*                       OGRGeometryCollection()                        */
@@ -119,20 +119,7 @@ OGRwkbGeometryType OGRGeometryCollection::getGeometryType() const
 int OGRGeometryCollection::getDimension() const
 
 {
-    int nDimension = 0;
-    /* FIXME? Not sure if it is really appropriate to take the max in case */
-    /* of geometries of different dimension... */
-    for( int i = 0; i < nGeomCount; i++ )
-    {
-        int nSubGeomDimension = papoGeoms[i]->getDimension();
-        if( nSubGeomDimension > nDimension )
-        {
-            nDimension = nSubGeomDimension;
-            if( nDimension == 2 )
-                break;
-        }
-    }
-    return nDimension;
+    return 2; // This isn't strictly correct.  It should be based on members.
 }
 
 /************************************************************************/
@@ -499,7 +486,6 @@ OGRErr OGRGeometryCollection::importFromWkbInternal( unsigned char * pabyData,
         if( eErr != OGRERR_NONE )
         {
             nGeomCount = iGeom;
-            delete poSubGeom;
             return eErr;
         }
 

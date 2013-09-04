@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrsfdriverregistrar.cpp 25329 2012-12-17 18:38:43Z mloskot $
+ * $Id: ogrsfdriverregistrar.cpp 22812 2011-07-25 04:50:23Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRSFDriverRegistrar class implementation.
@@ -37,7 +37,7 @@
 #include <unistd.h>
 #endif
 
-CPL_CVSID("$Id: ogrsfdriverregistrar.cpp 25329 2012-12-17 18:38:43Z mloskot $");
+CPL_CVSID("$Id: ogrsfdriverregistrar.cpp 22812 2011-07-25 04:50:23Z warmerdam $");
 
 static void *hDRMutex = NULL;
 static OGRSFDriverRegistrar * volatile poRegistrar = NULL;
@@ -108,11 +108,11 @@ OGRSFDriverRegistrar::~OGRSFDriverRegistrar()
     {
         delete papoDrivers[i];
     }
-    nDrivers = 0;
+
     CPLFree( papoDrivers );
     papoDrivers = NULL;
 
-    poRegistrar = NULL; /* equivalent to this = NULL; */
+    poRegistrar = NULL;
 }
 
 /************************************************************************/

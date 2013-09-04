@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2012, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2009, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -18,15 +18,25 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
+ * $Id: nonblock.c,v 1.2 2009-12-30 17:59:56 yangtse Exp $
  ***************************************************************************/
 
-#include "curl_setup.h"
+#include "setup.h"
 
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
 #ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
 #endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
+#endif
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
 #endif
 
 #if (defined(HAVE_IOCTL_FIONBIO) && defined(NETWARE))
@@ -55,34 +65,35 @@ int curlx_nonblock(curl_socket_t sockfd,    /* operate on this */
 
   /* most recent unix versions */
   int flags;
-  flags = sfcntl(sockfd, F_GETFL, 0);
-  if(nonblock)
-    return sfcntl(sockfd, F_SETFL, flags | O_NONBLOCK);
+  flags = fcntl(sockfd, F_GETFL, 0);
+  if(FALSE != nonblock)
+    return fcntl(sockfd, F_SETFL, flags | O_NONBLOCK);
   else
-    return sfcntl(sockfd, F_SETFL, flags & (~O_NONBLOCK));
+    return fcntl(sockfd, F_SETFL, flags & (~O_NONBLOCK));
 
 #elif defined(HAVE_IOCTL_FIONBIO)
 
   /* older unix versions */
-  int flags = nonblock ? 1 : 0;
+  int flags;
+  flags = nonblock;
   return ioctl(sockfd, FIONBIO, &flags);
 
 #elif defined(HAVE_IOCTLSOCKET_FIONBIO)
 
   /* Windows */
-  unsigned long flags = nonblock ? 1UL : 0UL;
+  unsigned long flags;
+  flags = nonblock;
   return ioctlsocket(sockfd, FIONBIO, &flags);
 
 #elif defined(HAVE_IOCTLSOCKET_CAMEL_FIONBIO)
 
   /* Amiga */
-  long flags = nonblock ? 1L : 0L;
-  return IoctlSocket(sockfd, FIONBIO, flags);
+  return IoctlSocket(sockfd, FIONBIO, (long)nonblock);
 
 #elif defined(HAVE_SETSOCKOPT_SO_NONBLOCK)
 
   /* BeOS */
-  long b = nonblock ? 1L : 0L;
+  long b = nonblock ? 1 : 0;
   return setsockopt(sockfd, SOL_SOCKET, SO_NONBLOCK, &b, sizeof(b));
 
 #else

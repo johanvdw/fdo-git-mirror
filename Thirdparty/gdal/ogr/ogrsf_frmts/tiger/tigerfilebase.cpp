@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: tigerfilebase.cpp 23871 2012-02-02 03:24:07Z warmerdam $
+ * $Id: tigerfilebase.cpp 22961 2011-08-20 17:09:59Z rouault $
  *
  * Project:  TIGER/Line Translator
  * Purpose:  Implements TigerBaseFile class, providing common services to all
@@ -33,7 +33,7 @@
 #include "cpl_error.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: tigerfilebase.cpp 23871 2012-02-02 03:24:07Z warmerdam $");
+CPL_CVSID("$Id: tigerfilebase.cpp 22961 2011-08-20 17:09:59Z rouault $");
 
 /************************************************************************/
 /*                           TigerFileBase()                            */
@@ -73,7 +73,7 @@ TigerFileBase::~TigerFileBase()
 
     if( fpPrimary != NULL )
     {
-      VSIFCloseL( fpPrimary );
+        VSIFClose( fpPrimary );
         fpPrimary = NULL;
     }
 }
@@ -95,7 +95,7 @@ int TigerFileBase::OpenFile( const char * pszModuleToOpen,
     
     if( fpPrimary != NULL )
     {
-        VSIFCloseL( fpPrimary );
+        VSIFClose( fpPrimary );
         fpPrimary = NULL;
     }
 
@@ -104,7 +104,7 @@ int TigerFileBase::OpenFile( const char * pszModuleToOpen,
 
     pszFilename = poDS->BuildFilename( pszModuleToOpen, pszExtension );
 
-    fpPrimary = VSIFOpenL( pszFilename, "rb" );
+    fpPrimary = VSIFOpen( pszFilename, "rb" );
 
     CPLFree( pszFilename );
 
@@ -135,11 +135,11 @@ void TigerFileBase::SetupVersion()
 {
     char        aszRecordHead[6];
 
-    VSIFSeekL( fpPrimary, 0, SEEK_SET );
-    VSIFReadL( aszRecordHead, 1, 5, fpPrimary );
+    VSIFSeek( fpPrimary, 0, SEEK_SET );
+    VSIFRead( aszRecordHead, 1, 5, fpPrimary );
     aszRecordHead[5] = '\0';
     nVersionCode = atoi(aszRecordHead+1);
-    VSIFSeekL( fpPrimary, 0, SEEK_SET );
+    VSIFSeek( fpPrimary, 0, SEEK_SET );
 
     nVersion = TigerClassifyVersion( nVersionCode );
 }
@@ -148,20 +148,20 @@ void TigerFileBase::SetupVersion()
 /*                       EstablishRecordLength()                        */
 /************************************************************************/
 
-int TigerFileBase::EstablishRecordLength( VSILFILE * fp )
+int TigerFileBase::EstablishRecordLength( FILE * fp )
 
 {
     char        chCurrent;
     int         nRecLen = 0;
     
-    if( fp == NULL || VSIFSeekL( fp, 0, SEEK_SET ) != 0 )
+    if( fp == NULL || VSIFSeek( fp, 0, SEEK_SET ) != 0 )
         return -1;
 
 /* -------------------------------------------------------------------- */
 /*      Read through to the end of line.                                */
 /* -------------------------------------------------------------------- */
     chCurrent = '\0';
-    while( VSIFReadL( &chCurrent, 1, 1, fp ) == 1
+    while( VSIFRead( &chCurrent, 1, 1, fp ) == 1
            && chCurrent != 10
            && chCurrent != 13 )
     {
@@ -182,13 +182,13 @@ int TigerFileBase::EstablishRecordLength( VSILFILE * fp )
 /*      Read through line terminator characters.  We are trying to      */
 /*      handle cases of CR, CR/LF and LF/CR gracefully.                 */
 /* -------------------------------------------------------------------- */
-    while( VSIFReadL( &chCurrent, 1, 1, fp ) == 1
+    while( VSIFRead( &chCurrent, 1, 1, fp ) == 1
            && (chCurrent == 10 || chCurrent == 13 ) )
     {
         nRecLen++;
     }
 
-    VSIFSeekL( fp, 0, SEEK_SET );
+    VSIFSeek( fp, 0, SEEK_SET );
 
     return nRecLen;
 }
@@ -219,8 +219,8 @@ void TigerFileBase::EstablishFeatureCount()
 /* -------------------------------------------------------------------- */
     long        nFileSize;
     
-    VSIFSeekL( fpPrimary, 0, SEEK_END );
-    nFileSize = VSIFTellL( fpPrimary );
+    VSIFSeek( fpPrimary, 0, SEEK_END );
+    nFileSize = VSIFTell( fpPrimary );
 
     if( (nFileSize % nRecordLength) != 0 )
     {
@@ -359,7 +359,7 @@ int TigerFileBase::WritePoint( char *pachRecord, int nStart,
 /************************************************************************/
 
 int TigerFileBase::WriteRecord( char *pachRecord, int nRecLen, 
-                                const char *pszType, VSILFILE * fp )
+                                const char *pszType, FILE * fp )
 
 {
     if( fp == NULL )
@@ -381,8 +381,8 @@ int TigerFileBase::WriteRecord( char *pachRecord, int nRecLen,
         strncpy( pachRecord + 1, szVersion, 4 );
     }
 
-    VSIFWriteL( pachRecord, nRecLen, 1, fp );
-    VSIFWriteL( (void *) "\r\n", 2, 1, fp );
+    VSIFWrite( pachRecord, nRecLen, 1, fp );
+    VSIFWrite( (void *) "\r\n", 2, 1, fp );
 
     return TRUE;
 }
@@ -422,7 +422,7 @@ int TigerFileBase::SetWriteModule( const char *pszExtension, int nRecLen,
 /* -------------------------------------------------------------------- */
     if( fpPrimary != NULL )
     {
-        VSIFCloseL( fpPrimary );
+        VSIFClose( fpPrimary );
         fpPrimary = NULL;
     }
 
@@ -449,7 +449,7 @@ int TigerFileBase::SetWriteModule( const char *pszExtension, int nRecLen,
 
     pszFilename = poDS->BuildFilename( szFullModule, pszExtension );
 
-    fpPrimary = VSIFOpenL( pszFilename, "ab" );
+    fpPrimary = VSIFOpen( pszFilename, "ab" );
     CPLFree(pszFilename);
     if( fpPrimary == NULL )
         return FALSE;
@@ -574,7 +574,7 @@ OGRFeature *TigerFileBase::GetFeature( int nRecordId )
     if( fpPrimary == NULL )
         return NULL;
 
-    if( VSIFSeekL( fpPrimary, nRecordId * nRecordLength, SEEK_SET ) != 0 )
+    if( VSIFSeek( fpPrimary, nRecordId * nRecordLength, SEEK_SET ) != 0 )
     {
         CPLError( CE_Failure, CPLE_FileIO,
                   "Failed to seek to %d of %s",
@@ -582,7 +582,7 @@ OGRFeature *TigerFileBase::GetFeature( int nRecordId )
         return NULL;
     }
 
-    if( VSIFReadL( achRecord, psRTInfo->nRecordLength, 1, fpPrimary ) != 1 )
+    if( VSIFRead( achRecord, psRTInfo->nRecordLength, 1, fpPrimary ) != 1 )
     {
         CPLError( CE_Failure, CPLE_FileIO,
                   "Failed to read record %d of %s",

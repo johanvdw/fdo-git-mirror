@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgeojsondatasource.cpp 25665 2013-02-22 16:09:22Z rouault $
+ * $Id: ogrgeojsondatasource.cpp 23367 2011-11-12 22:46:13Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implementation of OGRGeoJSONDataSource class (OGR GeoJSON Driver).
@@ -139,8 +139,6 @@ int OGRGeoJSONDataSource::Open( const char* pszName )
 
     poLayer->DetectGeometryType();
 
-    /* Return layer in readable state. */
-    poLayer->ResetReading();
 /* -------------------------------------------------------------------- */
 /*      NOTE: Currently, the driver generates only one layer per        */
 /*      single GeoJSON file, input or service request.                  */
@@ -148,7 +146,8 @@ int OGRGeoJSONDataSource::Open( const char* pszName )
     const int nLayerIndex = 0;
     nLayers_ = 1;
     
-    papoLayers_ = (OGRLayer**)CPLMalloc( sizeof(OGRLayer*) * nLayers_ );
+    papoLayers_ =
+        (OGRGeoJSONLayer**)CPLMalloc( sizeof(OGRGeoJSONLayer*) * nLayers_ );
     papoLayers_[nLayerIndex] = poLayer; 
 
     CPLAssert( NULL != papoLayers_ );
@@ -182,7 +181,13 @@ OGRLayer* OGRGeoJSONDataSource::GetLayer( int nLayer )
 {
     if( 0 <= nLayer || nLayer < nLayers_ )
     {
-        return papoLayers_[nLayer];
+        CPLAssert( NULL != papoLayers_[nLayer] );
+
+        OGRLayer* poLayer = papoLayers_[nLayer];
+
+        /* Return layer in readable state. */
+        poLayer->ResetReading();
+        return poLayer;
     }
 
     return NULL;
@@ -197,13 +202,14 @@ OGRLayer* OGRGeoJSONDataSource::CreateLayer( const char* pszName_,
                                              OGRwkbGeometryType eGType,
                                              char** papszOptions )
 {
-    if ( NULL == fpOut_ )
-    {
-        CPLError(CE_Failure, CPLE_NotSupported,
-                 "GeoJSON driver doesn't support creating a layer on a read-only datasource");
-        return NULL;
-    }
+    OGRGeoJSONLayer* poLayer = NULL;
+    poLayer = new OGRGeoJSONLayer( pszName_, poSRS, eGType, papszOptions, this );
 
+/* -------------------------------------------------------------------- */
+/*      Add layer to data source layer list.                            */
+/* -------------------------------------------------------------------- */
+    
+    // TOOD: Waiting for multi-layer support
     if ( nLayers_ != 0 )
     {
         CPLError(CE_Failure, CPLE_NotSupported,
@@ -211,62 +217,27 @@ OGRLayer* OGRGeoJSONDataSource::CreateLayer( const char* pszName_,
         return NULL;
     }
 
-    OGRGeoJSONWriteLayer* poLayer = NULL;
-    poLayer = new OGRGeoJSONWriteLayer( pszName_, eGType, papszOptions, this );
-
-/* -------------------------------------------------------------------- */
-/*      Add layer to data source layer list.                            */
-/* -------------------------------------------------------------------- */
+    papoLayers_ = (OGRGeoJSONLayer **)
+        CPLRealloc( papoLayers_,  sizeof(OGRGeoJSONLayer*) * (nLayers_ + 1) );
     
-    papoLayers_ = (OGRLayer **)
-        CPLRealloc( papoLayers_,  sizeof(OGRLayer*) * (nLayers_ + 1) );
-
     papoLayers_[nLayers_++] = poLayer;
 
-    VSIFPrintfL( fpOut_, "{\n\"type\": \"FeatureCollection\",\n" );
-
-    if (poSRS)
+    if( NULL != fpOut_ )
     {
-        const char* pszAuthority = poSRS->GetAuthorityName(NULL);
-        const char* pszAuthorityCode = poSRS->GetAuthorityCode(NULL);
-        if (pszAuthority != NULL && pszAuthorityCode != NULL &&
-            strcmp(pszAuthority, "EPSG") == 0)
+        VSIFPrintfL( fpOut_, "{\n\"type\": \"FeatureCollection\",\n" );
+
+        if (bFpOutputIsSeekable_)
         {
-            json_object* poObjCRS = json_object_new_object();
-            json_object_object_add(poObjCRS, "type",
-                                json_object_new_string("name"));
-            json_object* poObjProperties = json_object_new_object();
-            json_object_object_add(poObjCRS, "properties", poObjProperties);
+            nBBOXInsertLocation_ = (int) VSIFTellL( fpOut_ );
 
-            if (strcmp(pszAuthorityCode, "4326") == 0)
-            {
-                json_object_object_add(poObjProperties, "name",
-                                    json_object_new_string("urn:ogc:def:crs:OGC:1.3:CRS84"));
-            }
-            else
-            {
-                json_object_object_add(poObjProperties, "name",
-                                    json_object_new_string(CPLSPrintf("urn:ogc:def:crs:EPSG::%s", pszAuthorityCode)));
-            }
-
-            const char* pszCRS = json_object_to_json_string( poObjCRS );
-            VSIFPrintfL( fpOut_, "\"crs\": %s,\n", pszCRS );
-
-            json_object_put(poObjCRS);
+            char szSpaceForBBOX[SPACE_FOR_BBOX+1];
+            memset(szSpaceForBBOX, ' ', SPACE_FOR_BBOX);
+            szSpaceForBBOX[SPACE_FOR_BBOX] = '\0';
+            VSIFPrintfL( fpOut_, "%s\n", szSpaceForBBOX);
         }
+
+        VSIFPrintfL( fpOut_, "\"features\": [\n" );
     }
-
-    if (bFpOutputIsSeekable_)
-    {
-        nBBOXInsertLocation_ = (int) VSIFTellL( fpOut_ );
-
-        char szSpaceForBBOX[SPACE_FOR_BBOX+1];
-        memset(szSpaceForBBOX, ' ', SPACE_FOR_BBOX);
-        szSpaceForBBOX[SPACE_FOR_BBOX] = '\0';
-        VSIFPrintfL( fpOut_, "%s\n", szSpaceForBBOX);
-    }
-
-    VSIFPrintfL( fpOut_, "\"features\": [\n" );
 
     return poLayer;
 }
@@ -278,16 +249,12 @@ OGRLayer* OGRGeoJSONDataSource::CreateLayer( const char* pszName_,
 int OGRGeoJSONDataSource::TestCapability( const char* pszCap )
 {
     if( EQUAL( pszCap, ODsCCreateLayer ) )
-        return fpOut_ != NULL /* && nLayers_ == 0 */;
+        return TRUE;
     else if( EQUAL( pszCap, ODsCDeleteLayer ) )
         return FALSE;
     else
         return FALSE;
 }
-
-/************************************************************************/
-/*                              Create()                                */
-/************************************************************************/
 
 int OGRGeoJSONDataSource::Create( const char* pszName, char** papszOptions )
 {
@@ -459,7 +426,7 @@ int OGRGeoJSONDataSource::ReadFromService( const char* pszSource )
     CPLErrorReset();
 
     CPLHTTPResult* pResult = NULL;
-    char* papsOptions[] = { (char*) "HEADERS=Accept: text/plain, application/json", NULL };
+    char* papsOptions[] = { (char*) "HEADERS=Accept: text/plain Accept: application/json", NULL };
 
     pResult = CPLHTTPFetch( pszSource, papsOptions );
 
@@ -497,9 +464,17 @@ int OGRGeoJSONDataSource::ReadFromService( const char* pszSource )
         return FALSE;
     }
 
-    // Directly assign CPLHTTPResult::pabyData to pszGeoData_
-    pszGeoData_ = (char*) pszData;
-    pResult->pabyData = NULL;
+    // TODO: Eventually, CPLHTTPResult::pabyData could be assigned
+    //       to pszGeoData_, so we will avoid copying of potentially (?) big data.
+    pszGeoData_ = (char*)VSIMalloc( sizeof(char) * pResult->nDataLen + 1 );
+    if( NULL == pszGeoData_ )
+    {
+        CPLHTTPDestroyResult( pResult );
+        return FALSE;
+    }
+
+    strncpy( pszGeoData_, pszData, pResult->nDataLen );
+    pszGeoData_[pResult->nDataLen] = '\0';
 
     pszName_ = CPLStrdup( pszSource );
 
@@ -513,7 +488,7 @@ int OGRGeoJSONDataSource::ReadFromService( const char* pszSource )
 }
 
 /************************************************************************/
-/*                           LoadLayer()                                */
+/*                           LoadLayer()                          */
 /************************************************************************/
 
 OGRGeoJSONLayer* OGRGeoJSONDataSource::LoadLayer()

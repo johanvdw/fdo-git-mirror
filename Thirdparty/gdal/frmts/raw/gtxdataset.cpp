@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gtxdataset.cpp 25795 2013-03-24 13:16:52Z rouault $
+ * $Id: gtxdataset.cpp 20996 2010-10-28 18:38:15Z rouault $
  *
  * Project:  Vertical Datum Transformation
  * Purpose:  Implementation of NOAA .gtx vertical datum shift file format.
@@ -31,7 +31,7 @@
 #include "cpl_string.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id: gtxdataset.cpp 25795 2013-03-24 13:16:52Z rouault $");
+CPL_CVSID("$Id: gtxdataset.cpp 20996 2010-10-28 18:38:15Z rouault $");
 
 /**
 
@@ -200,24 +200,13 @@ GDALDataset *GTXDataset::Open( GDALOpenInfo * poOpenInfo )
     }
 
 /* -------------------------------------------------------------------- */
-/*      Guess the data type. Since October 1, 2009, it should be        */
-/*      Float32. Before it was double.                                  */
-/* -------------------------------------------------------------------- */
-    GDALDataType eDT = GDT_Float32;
-    VSIFSeekL(poDS->fpImage, 0, SEEK_END);
-    vsi_l_offset nSize = VSIFTellL(poDS->fpImage);
-    if( nSize == 40 + 8 * (vsi_l_offset)poDS->nRasterXSize * poDS->nRasterYSize )
-        eDT = GDT_Float64;
-    int nDTSize = GDALGetDataTypeSize(eDT) / 8;
-
-/* -------------------------------------------------------------------- */
 /*      Create band information object.                                 */
 /* -------------------------------------------------------------------- */
     poDS->SetBand( 
         1, new RawRasterBand( poDS, 1, poDS->fpImage, 
-                              (poDS->nRasterYSize-1)*poDS->nRasterXSize*nDTSize + 40,
-                              nDTSize, poDS->nRasterXSize * -nDTSize,
-                              eDT,
+                              (poDS->nRasterYSize-1)*poDS->nRasterXSize*4 + 40,
+                              4, poDS->nRasterXSize * -4,
+                              GDT_Float32,
                               !CPL_IS_LSB, TRUE, FALSE ) );
 
 /* -------------------------------------------------------------------- */

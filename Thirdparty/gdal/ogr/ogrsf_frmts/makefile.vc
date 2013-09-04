@@ -2,25 +2,15 @@ GDAL_ROOT	=	..\..
 
 DIRLIST		=	generic geojson shape ntf sdts tiger s57 dgn mitab gml \
 			avc rec mem vrt csv gmt bna kml gpx \
-			geoconcept xplane georss gtm dxf pgdump gpsbabel \
+			geoconcept xplane georss gtm dxf vfk pgdump gpsbabel \
 			sua openair pds htf aeronavfaa edigeo svg idrisi arcgen \
-			segukooa segy pdf \
+			segukooa segy \
 			$(ARCOBJECTS_DIR) \
 			$(OGDIDIR) $(FMEDIR) $(OCIDIR) $(PG_DIR) $(DWGDIR) \
 			$(ODBCDIR) $(SQLITE_DIR) $(MYSQL_DIR) $(ILI_DIR) \
 			$(SDE_DIR) $(IDB_DIR) $(NAS_DIR) $(DODSDIR) \
 			$(PCIDSK_DIR) $(LIBKMLDIR) $(WFSDIR) $(SOSIDIR) $(GFTDIR) \
-			$(COUCHDBDIR) $(FGDB_DIR) $(XLSDIR) $(ODSDIR) $(XLSXDIR) \
-			$(INGRESDIR) $(ELASTICDIR) $(OSMDIR) $(VFKDIR)
-
-PLUGINDIRLIST	=	$(PLUGIN_ARCOBJECTS_DIR) \
-			$(PLUGIN_DWG_DIR) \
-			$(PLUGIN_PG_DIR) \
-			$(PLUGIN_FGDB_DIR) \
-			$(PLUGIN_OCIDIR) \
-			$(PLUGIN_SDE_DIR) \
-			$(PLUGIN_INGRESDIR) \
-			$(PLUGIN_LIBKMLDIR)
+			$(COUCHDBDIR) $(FGDB_DIR) $(XLSDIR)
 
 !INCLUDE $(GDAL_ROOT)\nmake.opt
 
@@ -49,21 +39,8 @@ SQLITE_OBJ =	sqlite\*.obj
 !ENDIF
 
 !IFDEF OCI_LIB
-!IF "$(OCI_PLUGIN)" != "YES"
-OCIDIR =	oci
+OCIDIR	=	oci
 OCIOBJ =	oci\*.obj
-!ELSE
-PLUGIN_OCIDIR = oci
-!ENDIF
-!ENDIF
-
-!IFDEF INGRES_HOME
-!IF "$(INGRES_PLUGIN)" != "YES"
-INGRESDIR	=	ingres
-INGRESOBJ =	ingres\*.obj
-!ELSE
-PLUGIN_INGRESDIR =	ingres
-!ENDIF
 !ENDIF
 
 !IFDEF FME_DIR
@@ -72,49 +49,31 @@ FMEOBJ = fme\*.obj
 !ENDIF
 
 !IFDEF PG_INC_DIR
-!IF "$(PG_PLUGIN)" != "YES"
 PG_DIR = pg
 PG_OBJ = pg\*.obj
-!ELSE
-PLUGIN_PG_DIR = pg
-!ENDIF
 !ENDIF
 
 !IFDEF DWGDIRECT
-!IF "$(DWG_PLUGIN)" != "YES"
 DWGDIR = dxfdwg
 DWG_OBJ = dxfdwg\*.obj
-!ELSE
-PLUGIN_DWGDIR = dxfdwg
-!ENDIF
 !ENDIF
 
 !IFDEF SDE_LIB
-!IF "$(SDE_PLUGIN)" != "YES"
 SDE_DIR = sde
 SDE_OBJ = sde\*.obj
-!ELSE
-PLUGIN_SDE_DIR = sde
-!ENDIF
 !ENDIF
 
 !IFDEF FGDB_LIB
 !IF "$(FGDB_PLUGIN)" != "YES"
 FGDB_DIR = filegdb
 FGDB_OBJ = filegdb\*.obj
-!ELSE
-PLUGIN_FGDB_DIR = filegdb
 !ENDIF
 !ENDIF
 
 
 !IFDEF HAS_ARCOBJECTS
-!IF "$(ARCOBJECTS_PLUGIN)" != "YES"
 ARCOBJECTS_DIR = arcobjects
 ARCOBJECTS_OBJ = arcobjects\*.obj
-!ELSE
-PLUGIN_ARCOBJECTS_DIR = arcobjects
-!ENDIF
 !ENDIF
 
 
@@ -144,12 +103,8 @@ DODS_OBJ = dods\*.obj
 !ENDIF
 
 !IFDEF LIBKML_DIR
-!IF "$(LIBKML_PLUGIN)" != "YES"
 LIBKMLDIR = libkml
 LIBKMLOBJ =	libkml\*.obj
-!ELSE
-PLUGIN_LIBKMLDIR = libkml
-!ENDIF
 !ENDIF
 
 !IFDEF CURL_LIB
@@ -177,28 +132,6 @@ XLSDIR = xls
 XLS_OBJ = xls\*.obj
 !ENDIF
 
-!IFDEF EXPAT_INCLUDE
-ODSDIR = ods
-ODS_OBJ = ods\*.obj
-!ENDIF
-
-!IFDEF EXPAT_INCLUDE
-XLSXDIR = xlsx
-XLSX_OBJ = xlsx\*.obj
-!ENDIF
-
-!IFDEF CURL_LIB
-ELASTICDIR = elastic
-ELASTIC_OBJ = elastic\*.obj
-!ENDIF
-
-!IFDEF SQLITE_LIB
-OSMDIR	=	osm
-OSM_OBJ =	osm\*.obj
-VFKDIR	=	vfk
-VFK_OBJ =	vfk\*.obj
-!ENDIF
-
 default:
 	for %d in ( $(DIRLIST) ) do \
 		cd %d \
@@ -213,16 +146,15 @@ default:
 				 gmt\*.obj bna\*.obj geoconcept\*.obj \
 				 geojson\*.obj geojson\jsonc\*.obj \
 				 gpx\*.obj xplane\*.obj georss\*.obj gtm\*.obj \
-				 dxf\*.obj pgdump\*.obj gpsbabel\*.obj \
+				 dxf\*.obj vfk\*.obj pgdump\*.obj gpsbabel\*.obj \
 				 sua\*.obj openair\*.obj pds\*.obj htf\*.obj \
 				 aeronavfaa\*.obj edigeo\*.obj svg\*.obj idrisi\*.obj \
-				 arcgen\*.obj segukooa\*.obj segy\*.obj pdf\*.obj \
+				 arcgen\*.obj segukooa\*.obj segy\*.obj \
 				$(OGDIOBJ) $(ODBCOBJ) $(SQLITE_OBJ) \
 				$(FMEOBJ) $(OCIOBJ) $(PG_OBJ) $(MYSQL_OBJ) \
 				$(ILI_OBJ) $(DWG_OBJ) $(SDE_OBJ) $(FGDB_OBJ) $(ARCDRIVER_OBJ) $(IDB_OBJ) \
 				$(DODS_OBJ) $(NAS_OBJ) $(PCIDSKOBJ) $(LIBKMLOBJ) $(WFS_OBJ) \
-				$(SOSI_OBJ) $(GFT_OBJ) $(COUCHDB_OBJ) $(XLS_OBJ) $(ODS_OBJ) $(XLSX_OBJ)  \
-				$(INGRESOBJ) $(ELASTIC_OBJ) $(OSM_OBJ) $(VFK_OBJ)
+				$(SOSI_OBJ) $(GFT_OBJ) $(COUCHDB_OBJ) $(XLS_OBJ)
 	lib /out:ogrsf_frmts_sup.lib \
 				 ..\..\frmts\iso8211\*.obj \
 				 ..\..\frmts\sdts\sdtsattrreader.obj \
@@ -237,14 +169,6 @@ default:
 				 ..\..\frmts\sdts\sdtsindexedreader.obj \
 				 ..\..\frmts\sdts\sdtsxref.obj
 
-plugindirs:
-	@echo plugins: $(PLUGINDIRLIST)
-        -for %d in ( $(PLUGINDIRLIST) ) do \
-                cd %d \
-                && $(MAKE) /f makefile.vc plugin \
-                && cd .. \
-                || exit 1
-
 clean:
 	-del ogrsf_frmts.lib
 	-del ogrsf_frmts_sup.lib
@@ -253,13 +177,6 @@ clean:
 		&& $(MAKE) /f makefile.vc clean \
 		&& cd .. \
 		|| exit 1
-
-plugins-install:
-        -for %d in ( $(PLUGINDIRLIST) ) do \
-                cd %d \
-                && $(MAKE) /f makefile.vc plugin-install \
-                && cd .. \
-                || exit 1
 
 html-install:
 	copy *.html $(HTMLDIR)

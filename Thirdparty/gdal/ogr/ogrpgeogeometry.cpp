@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrpgeogeometry.cpp 25499 2013-01-13 22:07:12Z rouault $
+ * $Id: ogrpgeogeometry.cpp 22752 2011-07-18 17:42:07Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements decoder of shapebin geometry for PGeo
@@ -32,8 +32,9 @@
 #include "ogrpgeogeometry.h"
 #include "ogr_p.h"
 #include "cpl_string.h"
+#include "zlib.h"
 
-CPL_CVSID("$Id: ogrpgeogeometry.cpp 25499 2013-01-13 22:07:12Z rouault $");
+CPL_CVSID("$Id: ogrpgeogeometry.cpp 22752 2011-07-18 17:42:07Z rouault $");
 
 #define SHPP_TRISTRIP   0
 #define SHPP_TRIFAN     1
@@ -896,20 +897,46 @@ OGRErr OGRCreateFromShapeBin( GByte *pabyShape,
                 return OGRERR_FAILURE;
             }
 
-            size_t nRealUncompressedSize = 0;
-            if( CPLZLibInflate( pabyShape + 12, nCompressedSize,
-                                pabyUncompressedBuffer, nUncompressedSize,
-                                &nRealUncompressedSize ) == NULL )
+            z_stream      stream;
+            stream.zalloc = (alloc_func)0;
+            stream.zfree = (free_func)0;
+            stream.opaque = (voidpf)0;
+            stream.next_in = pabyShape + 12;
+            stream.next_out = pabyUncompressedBuffer;
+            stream.avail_in = nCompressedSize;
+            stream.avail_out = nUncompressedSize;
+            int err;
+            if ( (err = inflateInit(&stream)) != Z_OK )
             {
                 CPLError(CE_Failure, CPLE_AppDefined,
-                         "CPLZLibInflate() failed");
+                         "inflateInit() failed : err code = %d", err);
                 VSIFree(pabyUncompressedBuffer);
                 return OGRERR_FAILURE;
             }
+            if ( (err = inflate(&stream, Z_NO_FLUSH)) != Z_STREAM_END )
+            {
+                CPLError(CE_Failure, CPLE_AppDefined,
+                         "inflate() failed : err code = %d", err);
+                VSIFree(pabyUncompressedBuffer);
+                inflateEnd(&stream);
+                return OGRERR_FAILURE;
+            }
+            if (stream.avail_in != 0)
+            {
+                CPLDebug("OGR", "%d remaining in bytes after zlib uncompression",
+                         stream.avail_in);
+            }
+            if (stream.avail_out != 0)
+            {
+                CPLDebug("OGR", "%d remaining out bytes after zlib uncompression",
+                         stream.avail_out);
+            }
+
+            inflateEnd(&stream);
 
             OGRErr eErr = OGRCreateFromShapeBin(pabyUncompressedBuffer,
                                                 ppoGeom,
-                                                nRealUncompressedSize);
+                                                nUncompressedSize - stream.avail_out);
 
             VSIFree(pabyUncompressedBuffer);
 
@@ -1267,8 +1294,7 @@ OGRErr OGRCreateFromShapeBin( GByte *pabyShape,
         CPLFree( padfY );
         CPLFree( padfZ );
 
-        if (*ppoGeom != NULL)
-            (*ppoGeom)->setCoordinateDimension( bHasZ ? 3 : 2 );
+        (*ppoGeom)->setCoordinateDimension( bHasZ ? 3 : 2 );
 
         return OGRERR_NONE;
     }

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_geojson.h 23662 2011-12-30 11:16:59Z rouault $
+ * $Id: ogr_geojson.h 23367 2011-11-12 22:46:13Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Definitions of OGR OGRGeoJSON driver types.
@@ -52,6 +52,7 @@ public:
     OGRGeoJSONLayer( const char* pszName,
                      OGRSpatialReference* poSRS,
                      OGRwkbGeometryType eGType,
+                     char** papszOptions,
                      OGRGeoJSONDataSource* poDS );
     ~OGRGeoJSONLayer();
 
@@ -64,6 +65,9 @@ public:
     int GetFeatureCount( int bForce = TRUE );
     void ResetReading();
     OGRFeature* GetNextFeature();
+    OGRFeature* GetFeature( long nFID );
+    OGRErr CreateFeature( OGRFeature* poFeature );
+    OGRErr CreateField(OGRFieldDefn* poField, int bApproxOK);
     int TestCapability( const char* pszCap );
     const char* GetFIDColumn();
     void SetFIDColumn( const char* pszFIDColumn );
@@ -85,37 +89,6 @@ private:
     OGRFeatureDefn* poFeatureDefn_;
     OGRSpatialReference* poSRS_;
     CPLString sFIDColumn_;
-};
-
-/************************************************************************/
-/*                         OGRGeoJSONWriteLayer                         */
-/************************************************************************/
-
-class OGRGeoJSONWriteLayer : public OGRLayer
-{
-public:
-    OGRGeoJSONWriteLayer( const char* pszName,
-                     OGRwkbGeometryType eGType,
-                     char** papszOptions,
-                     OGRGeoJSONDataSource* poDS );
-    ~OGRGeoJSONWriteLayer();
-
-    //
-    // OGRLayer Interface
-    //
-    OGRFeatureDefn* GetLayerDefn() { return poFeatureDefn_; }
-    OGRSpatialReference* GetSpatialRef() { return NULL; }
-
-    void ResetReading() { }
-    OGRFeature* GetNextFeature() { return NULL; }
-    OGRErr CreateFeature( OGRFeature* poFeature );
-    OGRErr CreateField(OGRFieldDefn* poField, int bApproxOK);
-    int TestCapability( const char* pszCap );
-
-private:
-
-    OGRGeoJSONDataSource* poDS_;
-    OGRFeatureDefn* poFeatureDefn_;
     int nOutCounter_;
 
     int bWriteBBOX;
@@ -181,7 +154,7 @@ private:
     //
     char* pszName_;
     char* pszGeoData_;
-    OGRLayer** papoLayers_;
+    OGRGeoJSONLayer** papoLayers_;
     int nLayers_;
     VSILFILE* fpOut_;
     

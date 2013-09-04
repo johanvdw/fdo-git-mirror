@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_alg_priv.h 25627 2013-02-10 10:17:19Z rouault $
+ * $Id: gdal_alg_priv.h 22502 2011-06-04 21:33:58Z rouault $
  *
  * Project:  GDAL Image Processing Algorithms
  * Purpose:  Prototypes and definitions for various GDAL based algorithms:
@@ -160,18 +160,6 @@ void* GDALRegisterTransformDeserializer(const char* pszTransformName,
                                        GDALTransformerFunc pfnTransformerFunc,
                                        GDALTransformDeserializeFunc pfnDeserializeFunc);
 void GDALUnregisterTransformDeserializer(void* pData);
-
-void GDALCleanupTransformDeserializerMutex();
-
-/* Transformer cloning */
-
-void* GDALCloneTPSTransformer( void *pTransformArg );
-void* GDALCloneGenImgProjTransformer( void *pTransformArg );
-void* GDALCloneApproxTransformer( void *pTransformArg );
-/* TODO : GDALCloneGeoLocTransformer? , GDALCloneRPCTransformer? */ 
-
-
-void CPL_DLL * GDALCloneTransformer( void *pTranformerArg );
 
 /************************************************************************/
 /*      Float comparison function.                                      */

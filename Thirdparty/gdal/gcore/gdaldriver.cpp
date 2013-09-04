@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdaldriver.cpp 25606 2013-02-06 19:22:07Z rouault $
+ * $Id: gdaldriver.cpp 22294 2011-05-03 18:38:45Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of GDALDriver class (and C wrappers)
@@ -29,11 +29,7 @@
 
 #include "gdal_priv.h"
 
-CPL_CVSID("$Id: gdaldriver.cpp 25606 2013-02-06 19:22:07Z rouault $");
-
-CPL_C_START
-const char* GDALClientDatasetGetFilename(const char* pszFilename);
-CPL_C_END
+CPL_CVSID("$Id: gdaldriver.cpp 22294 2011-05-03 18:38:45Z rouault $");
 
 /************************************************************************/
 /*                             GDALDriver()                             */
@@ -105,9 +101,6 @@ void CPL_STDCALL GDALDestroyDriver( GDALDriverH hDriver )
  * also ensures that all the data and metadata has been written to the dataset
  * (GDALFlushCache() is not sufficient for that purpose).
  *
- * In some situations, the new dataset can be created in another process through the
- * \ref gdal_api_proxy mechanism.
- *
  * Equivelent of the C function GDALCreate().
  * 
  * @param pszFilename the name of the dataset to create.  UTF-8 encoded.
@@ -157,38 +150,6 @@ GDALDataset * GDALDriver::Create( const char * pszFilename,
                   "sizes must be larger than zero.",
                   nXSize, nYSize );
         return NULL;
-    }
-
-    const char* pszClientFilename = GDALClientDatasetGetFilename(pszFilename);
-    if( pszClientFilename != NULL && !EQUAL(GetDescription(), "MEM") &&
-        !EQUAL(GetDescription(), "VRT")  )
-    {
-        GDALDriver* poAPIPROXYDriver = GDALGetAPIPROXYDriver();
-        if( poAPIPROXYDriver != this )
-        {
-            if( poAPIPROXYDriver == NULL || poAPIPROXYDriver->pfnCreate == NULL )
-                return NULL;
-            char** papszOptionsDup = CSLDuplicate(papszOptions);
-            papszOptionsDup = CSLAddNameValue(papszOptionsDup, "SERVER_DRIVER",
-                                               GetDescription());
-            GDALDataset* poDstDS = poAPIPROXYDriver->pfnCreate(
-                pszClientFilename, nXSize, nYSize, nBands,
-                eType, papszOptionsDup);
-
-            CSLDestroy(papszOptionsDup);
-
-            if( poDstDS != NULL )
-            {
-                if( poDstDS->GetDescription() == NULL 
-                    || strlen(poDstDS->GetDescription()) == 0 )
-                    poDstDS->SetDescription( pszFilename );
-
-                if( poDstDS->poDriver == NULL )
-                    poDstDS->poDriver = poAPIPROXYDriver;
-            }
-
-            return poDstDS;
-        }
     }
 
 /* -------------------------------------------------------------------- */
@@ -602,9 +563,6 @@ GDALDataset *GDALDriver::DefaultCreateCopy( const char * pszFilename,
  * also ensures that all the data and metadata has been written to the dataset
  * (GDALFlushCache() is not sufficient for that purpose).
  *
- * In some situations, the new dataset can be created in another process through the
- * \ref gdal_api_proxy mechanism.
- *
  * @param pszFilename the name for the new dataset.  UTF-8 encoded.
  * @param poSrcDS the dataset being duplicated. 
  * @param bStrict TRUE if the copy must be strictly equivelent, or more
@@ -629,36 +587,6 @@ GDALDataset *GDALDriver::CreateCopy( const char * pszFilename,
 
     if( pfnProgress == NULL )
         pfnProgress = GDALDummyProgress;
-
-    const char* pszClientFilename = GDALClientDatasetGetFilename(pszFilename);
-    if( pszClientFilename != NULL && !EQUAL(GetDescription(), "MEM") &&
-        !EQUAL(GetDescription(), "VRT") )
-    {
-        GDALDriver* poAPIPROXYDriver = GDALGetAPIPROXYDriver();
-        if( poAPIPROXYDriver != this )
-        {
-            if( poAPIPROXYDriver->pfnCreateCopy == NULL )
-                return NULL;
-            char** papszOptionsDup = CSLDuplicate(papszOptions);
-            papszOptionsDup = CSLAddNameValue(papszOptionsDup, "SERVER_DRIVER",
-                                               GetDescription());
-            GDALDataset* poDstDS = poAPIPROXYDriver->pfnCreateCopy(
-                pszClientFilename, poSrcDS, bStrict, papszOptionsDup,
-                pfnProgress, pProgressData);
-            if( poDstDS != NULL )
-            {
-                if( poDstDS->GetDescription() == NULL 
-                    || strlen(poDstDS->GetDescription()) == 0 )
-                    poDstDS->SetDescription( pszFilename );
-
-                if( poDstDS->poDriver == NULL )
-                    poDstDS->poDriver = poAPIPROXYDriver;
-            }
-
-            CSLDestroy(papszOptionsDup);
-            return poDstDS;
-        }
-    }
 
 /* -------------------------------------------------------------------- */
 /*      Make sure we cleanup if there is an existing dataset of this    */
@@ -1389,22 +1317,14 @@ int CPL_STDCALL GDALValidateCreationOptions( GDALDriverH hDriver,
                 CPLXMLNode* psStringSelect = psChildNode->psChild;
                 while(psStringSelect)
                 {
-                    if (psStringSelect->eType == CXT_Element &&
-                        EQUAL(psStringSelect->pszValue, "Value"))
+                    CPLXMLNode* psOptionNode = psStringSelect->psChild;
+                    if (psOptionNode && EQUAL(psStringSelect->pszValue, "Value"))
                     {
-                        CPLXMLNode* psOptionNode = psStringSelect->psChild;
-                        while(psOptionNode)
+                        if (EQUAL(psOptionNode->pszValue, pszValue))
                         {
-                            if (psOptionNode->eType == CXT_Text &&
-                                EQUAL(psOptionNode->pszValue, pszValue))
-                            {
-                                bMatchFound = TRUE;
-                                break;
-                            }
-                            psOptionNode = psOptionNode->psNext;
-                        }
-                        if (bMatchFound)
+                            bMatchFound = TRUE;
                             break;
+                        }
                     }
                     psStringSelect = psStringSelect->psNext;
                 }
@@ -1502,15 +1422,10 @@ GDALIdentifyDriver( const char * pszFilename,
     CPLErrorReset();
     CPLAssert( NULL != poDM );
     
-    for( iDriver = -1; iDriver < poDM->GetDriverCount(); iDriver++ )
+    for( iDriver = 0; iDriver < poDM->GetDriverCount(); iDriver++ )
     {
-        GDALDriver      *poDriver;
+        GDALDriver      *poDriver = poDM->GetDriver( iDriver );
         GDALDataset     *poDS;
-
-        if( iDriver < 0 )
-            poDriver = GDALGetAPIPROXYDriver();
-        else
-            poDriver = poDM->GetDriver( iDriver );
 
         VALIDATE_POINTER1( poDriver, "GDALIdentifyDriver", NULL );
 

@@ -133,7 +133,7 @@ echo %MSACTION% %TYPEBUILD% WFS provider dlls
 SET FDOACTIVEBUILD=%cd%\Src\WFSOS%VCBEXTENSION%
 cscript //Nologo //job:prepare preparebuilds.wsf
 pushd Src
-msbuild WFSOS%VCBEXTENSION%_temp.sln /t:%MSACTION% /p:Configuration=%TYPEBUILD% /p:Platform=%TYPEPLATFORM% %EXTRA_MSBUILD_PROPERTIES% /nologo /consoleloggerparameters:NoSummary /maxcpucount:4
+msbuild WFSOS%VCBEXTENSION%_temp.sln /t:%MSACTION% /p:Configuration=%TYPEBUILD% /p:Platform=%TYPEPLATFORM% %EXTRA_MSBUILD_PROPERTIES% /nologo /consoleloggerparameters:NoSummary
 SET FDOERROR=%errorlevel%
 if exist WFSOS%VCBEXTENSION%_temp.sln del /Q /F WFSOS%VCBEXTENSION%_temp.sln
 popd
@@ -149,10 +149,6 @@ copy /y "Bin\%INTERMEDIATEDIR%\%TYPEBUILD%\WFSProvider.dll" "%FDOBINPATH%"
 copy /y "Bin\%INTERMEDIATEDIR%\%TYPEBUILD%\WFSProvider.pdb" "%FDOBINPATH%"
 copy /y "Bin\%INTERMEDIATEDIR%\%TYPEBUILD%\WFSMessage.dll" "%FDOBINPATH%"
 copy /y "Bin\%INTERMEDIATEDIR%\%TYPEBUILD%\WFSMessage.pdb" "%FDOBINPATH%"
-copy /y "%FDOTHIRDPARTY%\boost\stage\%INTERMEDIATEDIR%\%TYPEBUILDTHR%\lib\boost_thread-%VC_COMPILER%-mt%TYPEBUILDTHRPATH%-1_54.dll" "%FDOBINPATHTHR%"
-copy /y "%FDOTHIRDPARTY%\boost\stage\%INTERMEDIATEDIR%\%TYPEBUILDTHR%\lib\boost_date_time-%VC_COMPILER%-mt%TYPEBUILDTHRPATH%-1_54.dll" "%FDOBINPATHTHR%"
-copy /y "%FDOTHIRDPARTY%\boost\stage\%INTERMEDIATEDIR%\%TYPEBUILDTHR%\lib\boost_system-%VC_COMPILER%-mt%TYPEBUILDTHRPATH%-1_54.dll" "%FDOBINPATHTHR%"
-copy /y "%FDOTHIRDPARTY%\boost\stage\%INTERMEDIATEDIR%\%TYPEBUILDTHR%\lib\boost_chrono-%VC_COMPILER%-mt%TYPEBUILDTHRPATH%-1_54.dll" "%FDOBINPATHTHR%"
 
 echo copy header files
 
@@ -161,11 +157,8 @@ if "%DOCENABLE%"=="skip" goto install_docs
 echo Creating WFS provider html and chm documentation
 if exist "Docs\HTML\WFS" rmdir /S /Q "Docs\HTML\WFS"
 if not exist "Docs\HTML\WFS" mkdir "Docs\HTML\WFS"
-copy ..\..\DocResources\geospatial.css Docs\HTML\WFS
 copy ..\..\DocResources\geospatial.js Docs\HTML\WFS
 copy ..\..\DocResources\osgeo.css Docs\HTML\WFS
-if exist ..\..\DocResources\comment.htm copy ..\..\DocResources\comment.htm Docs\HTML\WFS
-if exist ..\..\DocResources\comment.js copy ..\..\DocResources\comment.js Docs\HTML\WFS
 if exist Docs\WFS_Provider_API.chm attrib -r Docs\WFS_Provider_API.chm
 pushd Docs\doc_src
 doxygen Doxyfile_WFS

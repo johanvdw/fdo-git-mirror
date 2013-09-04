@@ -12,10 +12,7 @@ public enum ResampleAlg {
   GRA_NearestNeighbour = 0,
   GRA_Bilinear = 1,
   GRA_Cubic = 2,
-  GRA_CubicSpline = 3,
-  GRA_Lanczos = 4,
-  GRA_Average = 5,
-  GRA_Mode = 6
+  GRA_CubicSpline = 3
 }
 
 }

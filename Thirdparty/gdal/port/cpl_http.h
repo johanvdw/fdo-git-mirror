@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_http.h 25478 2013-01-10 00:28:54Z warmerdam $
+ * $Id: cpl_http.h 19840 2010-06-11 13:29:45Z chaitanya $
  *
  * Project:  Common Portability Library
  * Purpose:  Function wrapper for libcurl HTTP access.
@@ -84,20 +84,6 @@ CPLHTTPResult CPL_DLL *CPLHTTPFetch( const char *pszURL, char **papszOptions);
 void CPL_DLL  CPLHTTPCleanup( void );
 void CPL_DLL  CPLHTTPDestroyResult( CPLHTTPResult *psResult );
 int  CPL_DLL  CPLHTTPParseMultipartMime( CPLHTTPResult *psResult );
-
-/* -------------------------------------------------------------------- */
-/*      The following is related to OAuth2 authorization around         */
-/*      google services like fusion tables, and potentially others      */
-/*      in the future.  Code in cpl_google_oauth2.cpp.                  */
-/*                                                                      */
-/*      These services are built on CPL HTTP services.                  */
-/* -------------------------------------------------------------------- */
-
-char CPL_DLL *GOA2GetAuthorizationURL( const char *pszScope );
-char CPL_DLL *GOA2GetRefreshToken( const char *pszAuthToken,
-                                   const char *pszScope );
-char CPL_DLL *GOA2GetAccessToken( const char *pszRefreshToken,
-                                  const char *pszScope );
 
 CPL_C_END
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalconst.i 25897 2013-04-10 22:30:30Z rouault $
+ * $Id: gdalconst.i 20604 2010-09-13 21:02:41Z rouault $
  *
  * Name:     gdalconst.i
  * Project:  GDAL Python Interface
@@ -96,8 +96,6 @@
 %constant GRA_Cubic            = GRA_Cubic;
 %constant GRA_CubicSpline      = GRA_CubicSpline;
 %constant GRA_Lanczos          = GRA_Lanczos;
-%constant GRA_Average          = GRA_Average;
-%constant GRA_Mode             = GRA_Mode;
 
 // GDALPaletteInterp
 %constant GPI_Gray  = GPI_Gray;
@@ -132,7 +130,7 @@
 %constant CPLE_NoWriteAccess              = CPLE_NoWriteAccess;
 %constant CPLE_UserInterrupt              = CPLE_UserInterrupt;
 
-#if !defined(SWIGCSHARP) && !defined(SWIGJAVA)
+#ifndef SWIGCSHARP
 
 %constant char *DMD_LONGNAME           = GDAL_DMD_LONGNAME;
 %constant char *DMD_HELPTOPIC          = GDAL_DMD_HELPTOPIC;
@@ -140,7 +138,6 @@
 %constant char *DMD_EXTENSION          = GDAL_DMD_EXTENSION;
 %constant char *DMD_CREATIONOPTIONLIST = GDAL_DMD_CREATIONOPTIONLIST;
 %constant char *DMD_CREATIONDATATYPES  = GDAL_DMD_CREATIONDATATYPES;
-%constant char *DMD_SUBDATASETS        = GDAL_DMD_SUBDATASETS;
 
 %constant char *DCAP_CREATE     = GDAL_DCAP_CREATE;
 %constant char *DCAP_CREATECOPY = GDAL_DCAP_CREATECOPY;
@@ -154,7 +151,6 @@
 #define GDAL_DMD_EXTENSION "DMD_EXTENSION"
 #define GDAL_DMD_CREATIONOPTIONLIST "DMD_CREATIONOPTIONLIST"
 #define GDAL_DMD_CREATIONDATATYPES "DMD_CREATIONDATATYPES"
-#define GDAL_DMD_SUBDATASETS "DMD_SUBDATASETS"
 
 #define GDAL_DCAP_CREATE     "DCAP_CREATE"
 #define GDAL_DCAP_CREATECOPY "DCAP_CREATECOPY"

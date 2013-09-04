@@ -1,7 +1,7 @@
 /******************************************************************************
- * $Id: ogrgftdatasource.cpp 25483 2013-01-10 17:06:59Z warmerdam $
+ * $Id: ogrgftdatasource.cpp 22871 2011-08-06 20:29:35Z rouault $
  *
- * Project:  Google Fusion Table Translator
+ * Project:  GFT Translator
  * Purpose:  Implements OGRGFTDataSource class
  * Author:   Even Rouault, even dot rouault at mines dash paris dot org
  *
@@ -29,10 +29,7 @@
 
 #include "ogr_gft.h"
 
-CPL_CVSID("$Id: ogrgftdatasource.cpp 25483 2013-01-10 17:06:59Z warmerdam $");
-
-#define GDAL_API_KEY "AIzaSyA_2h1_wXMOLHNSVeo-jf1ACME-M1XMgP0"
-#define FUSION_TABLE_SCOPE "https://www.googleapis.com/Fauth/fusiontables"
+CPL_CVSID("$Id: ogrgftdatasource.cpp 22871 2011-08-06 20:29:35Z rouault $");
 
 /************************************************************************/
 /*                          OGRGFTDataSource()                          */
@@ -148,6 +145,50 @@ OGRLayer *OGRGFTDataSource::GetLayerByName(const char * pszLayerName)
 }
 
 /************************************************************************/
+/*                             FetchAuth()                              */
+/************************************************************************/
+
+int OGRGFTDataSource::FetchAuth(const char* pszEmail, const char* pszPassword)
+{
+
+    char** papszOptions = NULL;
+
+    const char* pszAuthURL = CPLGetConfigOption("GFT_AUTH_URL", NULL);
+    if (pszAuthURL == NULL)
+        pszAuthURL = "https://www.google.com/accounts/ClientLogin";
+
+    papszOptions = CSLAddString(papszOptions, "HEADERS=Content-Type: application/x-www-form-urlencoded");
+    papszOptions = CSLAddString(papszOptions, CPLSPrintf("POSTFIELDS=Email=%s&Passwd=%s&service=fusiontables", pszEmail, pszPassword));
+    CPLHTTPResult * psResult = CPLHTTPFetch( pszAuthURL, papszOptions);
+    CSLDestroy(papszOptions);
+    papszOptions = NULL;
+
+    if (psResult == NULL)
+        return FALSE;
+
+    const char* pszAuth = NULL;
+    if (psResult->pabyData == NULL ||
+        psResult->pszErrBuf != NULL ||
+        (pszAuth = strstr((const char*)psResult->pabyData, "Auth=")) == NULL)
+    {
+        CPLHTTPDestroyResult(psResult);
+        return FALSE;
+    }
+    osAuth = pszAuth + 5;
+    pszAuth = NULL;
+
+    while(osAuth.size() &&
+          (osAuth[osAuth.size()-1] == 13 || osAuth[osAuth.size()-1] == 10))
+        osAuth.resize(osAuth.size()-1);
+
+    CPLDebug("GFT", "Auth key : %s", osAuth.c_str());
+
+    CPLHTTPDestroyResult(psResult);
+
+    return TRUE;
+}
+
+/************************************************************************/
 /*                      OGRGFTGetOptionValue()                          */
 /************************************************************************/
 
@@ -181,39 +222,26 @@ int OGRGFTDataSource::Open( const char * pszFilename, int bUpdateIn)
 
     pszName = CPLStrdup( pszFilename );
 
+    const char* pszEmail = CPLGetConfigOption("GFT_EMAIL", NULL);
+    CPLString osEmail = OGRGFTGetOptionValue(pszFilename, "email");
+    if (osEmail.size() != 0)
+        pszEmail = osEmail.c_str();
+
+    const char* pszPassword = CPLGetConfigOption("GFT_PASSWORD", NULL);
+    CPLString osPassword = OGRGFTGetOptionValue(pszFilename, "password");
+    if (osPassword.size() != 0)
+        pszPassword = osPassword.c_str();
+
+    const char* pszAuth = CPLGetConfigOption("GFT_AUTH", NULL);
     osAuth = OGRGFTGetOptionValue(pszFilename, "auth");
-    if (osAuth.size() == 0)
-        osAuth = CPLGetConfigOption("GFT_AUTH", "");
-
-    osRefreshToken = OGRGFTGetOptionValue(pszFilename, "refresh");
-    if (osRefreshToken.size() == 0)
-        osRefreshToken = CPLGetConfigOption("GFT_REFRESH_TOKEN", "");
-
-    osAPIKey = CPLGetConfigOption("GFT_APIKEY", GDAL_API_KEY);
+    if (osAuth.size() == 0 && pszAuth != NULL)
+        osAuth = pszAuth;
 
     CPLString osTables = OGRGFTGetOptionValue(pszFilename, "tables");
 
-    bUseHTTPS = TRUE;
+    bUseHTTPS = strstr(pszFilename, "protocol=https") != NULL;
 
-    osAccessToken = OGRGFTGetOptionValue(pszFilename, "access");
-    if (osAccessToken.size() == 0)
-        osAccessToken = CPLGetConfigOption("GFT_ACCESS_TOKEN","");
-    if (osAccessToken.size() == 0 && osRefreshToken.size() > 0) 
-    {
-        osAccessToken.Seize(GOA2GetAccessToken(osRefreshToken,
-                                               FUSION_TABLE_SCOPE));
-        if (osAccessToken.size() == 0)
-            return FALSE;
-    }
-
-    if (osAccessToken.size() == 0 && osAuth.size() > 0)
-    {
-        osRefreshToken.Seize(GOA2GetRefreshToken(osAuth, FUSION_TABLE_SCOPE));
-        if (osRefreshToken.size() == 0)
-            return FALSE;
-    }
-
-    if (osAccessToken.size() == 0)
+    if (osAuth.size() == 0 && (pszEmail == NULL || pszPassword == NULL))
     {
         if (osTables.size() == 0)
         {
@@ -221,6 +249,11 @@ int OGRGFTDataSource::Open( const char * pszFilename, int bUpdateIn)
                     "Unauthenticated access requires explicit tables= parameter");
             return FALSE;
         }
+    }
+    else if (osAuth.size() == 0 && !FetchAuth(pszEmail, pszPassword))
+    {
+        CPLError(CE_Failure, CPLE_AppDefined, "Authentication failed");
+        return FALSE;
     }
 
     if (osTables.size() != 0)
@@ -295,9 +328,9 @@ const char*  OGRGFTDataSource::GetAPIURL() const
     if (pszAPIURL)
         return pszAPIURL;
     else if (bUseHTTPS)
-        return "https://www.googleapis.com/fusiontables/v1/query";
+        return "https://www.google.com/fusiontables/api/query";
     else
-        return "http://www.googleapis.com/fusiontables/v1/query";
+        return "http://www.google.com/fusiontables/api/query";
 }
 
 /************************************************************************/
@@ -315,7 +348,7 @@ OGRLayer   *OGRGFTDataSource::CreateLayer( const char *pszName,
         return NULL;
     }
 
-    if (osAccessToken.size() == 0)
+    if (osAuth.size() == 0)
     {
         CPLError(CE_Failure, CPLE_AppDefined, "Operation not available in unauthenticated mode");
         return NULL;
@@ -398,7 +431,7 @@ OGRErr OGRGFTDataSource::DeleteLayer(int iLayer)
         return OGRERR_FAILURE;
     }
 
-    if (osAccessToken.size() == 0)
+    if (osAuth.size() == 0)
     {
         CPLError(CE_Failure, CPLE_AppDefined,
                  "Operation not available in unauthenticated mode");
@@ -436,9 +469,18 @@ OGRErr OGRGFTDataSource::DeleteLayer(int iLayer)
 
     CPLHTTPResult* psResult = RunSQL( osSQL );
 
-    if (psResult == NULL || psResult->nStatus != 0)
+    if (psResult == NULL)
     {
-        CPLError(CE_Failure, CPLE_AppDefined, "Table deletion failed (1)");
+        CPLError(CE_Failure, CPLE_AppDefined, "Table deletion failed");
+        return OGRERR_FAILURE;
+    }
+
+    char* pszLine = (char*) psResult->pabyData;
+    if (pszLine == NULL ||
+        !EQUALN(pszLine, "OK", 2) ||
+        psResult->pszErrBuf != NULL)
+    {
+        CPLError(CE_Failure, CPLE_AppDefined, "Table deletion failed");
         CPLHTTPDestroyResult(psResult);
         return OGRERR_FAILURE;
     }
@@ -455,12 +497,8 @@ OGRErr OGRGFTDataSource::DeleteLayer(int iLayer)
 char** OGRGFTDataSource::AddHTTPOptions(char** papszOptions)
 {
     bMustCleanPersistant = TRUE;
-
-    if (strlen(osAccessToken) > 0)
-      papszOptions = CSLAddString(papszOptions,
-        CPLSPrintf("HEADERS=Authorization: Bearer %s", 
-                   osAccessToken.c_str()));
-
+    papszOptions = CSLAddString(papszOptions,
+        CPLSPrintf("HEADERS=Authorization: GoogleLogin auth=%s", osAuth.c_str()));
     return CSLAddString(papszOptions, CPLSPrintf("PERSISTENT=GFT:%p", this));
 }
 
@@ -480,49 +518,17 @@ CPLHTTPResult * OGRGFTDataSource::RunSQL(const char* pszUnescapedSQL)
         else
             osSQL += CPLSPrintf("%%%02X", ch);
     }
-
-/* -------------------------------------------------------------------- */
-/*      Provide the API Key - used to rate limit access (see            */
-/*      GFT_APIKEY config)                                              */
-/* -------------------------------------------------------------------- */
-    osSQL += "&key=";
-    osSQL += osAPIKey;
-
-/* -------------------------------------------------------------------- */
-/*      Force old style CSV output from calls - maybe we want to        */
-/*      migrate to JSON output at some point?                           */
-/* -------------------------------------------------------------------- */
-    osSQL += "&alt=csv";
-
-/* -------------------------------------------------------------------- */
-/*      Collection the header options and execute request.              */
-/* -------------------------------------------------------------------- */
     char** papszOptions = CSLAddString(AddHTTPOptions(), osSQL);
+    CPLDebug("GFT", "Run %s", pszUnescapedSQL);
     CPLHTTPResult * psResult = CPLHTTPFetch( GetAPIURL(), papszOptions);
     CSLDestroy(papszOptions);
-
-/* -------------------------------------------------------------------- */
-/*      Check for some error conditions and report.  HTML Messages      */
-/*      are transformed info failure.                                   */
-/* -------------------------------------------------------------------- */
     if (psResult && psResult->pszContentType &&
         strncmp(psResult->pszContentType, "text/html", 9) == 0)
     {
-        CPLDebug( "GFT", "RunSQL HTML Response:%s", psResult->pabyData );
-        CPLError(CE_Failure, CPLE_AppDefined, 
-                 "HTML error page returned by server");
+        CPLError(CE_Failure, CPLE_AppDefined, "HTML error page returned by server");
         CPLHTTPDestroyResult(psResult);
         psResult = NULL;
     }
-    if (psResult && psResult->pszErrBuf != NULL) 
-    {
-        CPLDebug( "GFT", "RunSQL Error Message:%s", psResult->pszErrBuf );
-    }
-    else if (psResult && psResult->nStatus != 0) 
-    {
-        CPLDebug( "GFT", "RunSQL Error Status:%d", psResult->nStatus );
-    }
-
     return psResult;
 }
 

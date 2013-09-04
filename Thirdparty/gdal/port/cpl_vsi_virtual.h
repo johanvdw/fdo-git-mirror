@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_vsi_virtual.h 23995 2012-02-19 22:39:17Z rouault $
+ * $Id: cpl_vsi_virtual.h 23467 2011-12-04 22:56:00Z rouault $
  *
  * Project:  VSI Virtual File System
  * Purpose:  Declarations for classes related to the virtual filesystem.
@@ -188,6 +188,5 @@ public:
 
 VSIVirtualHandle* VSICreateBufferedReaderHandle(VSIVirtualHandle* poBaseHandle);
 VSIVirtualHandle* VSICreateCachedFile( VSIVirtualHandle* poBaseHandle );
-VSIVirtualHandle* VSICreateGZipWritable( VSIVirtualHandle* poBaseHandle, int bRegularZLibIn, int bAutoCloseBaseHandle );
 
 #endif /* ndef CPL_VSI_VIRTUAL_H_INCLUDED */

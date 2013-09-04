@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_vsi_mem.cpp 24698 2012-07-23 09:10:33Z rouault $
+ * $Id: cpl_vsi_mem.cpp 23596 2011-12-18 23:20:12Z rouault $
  *
  * Project:  VSI Virtual File System
  * Purpose:  Implementation of Memory Buffer virtual IO functions.
@@ -42,7 +42,7 @@
 #endif
 
 
-CPL_CVSID("$Id: cpl_vsi_mem.cpp 24698 2012-07-23 09:10:33Z rouault $");
+CPL_CVSID("$Id: cpl_vsi_mem.cpp 23596 2011-12-18 23:20:12Z rouault $");
 
 /*
 ** Notes on Multithreading:
@@ -213,12 +213,7 @@ bool VSIMemFile::SetLength( vsi_l_offset nNewLength )
 
         pabyNewData = (GByte *) VSIRealloc(pabyData, (size_t)nNewAlloc);
         if( pabyNewData == NULL )
-        {
-            CPLError(CE_Failure, CPLE_OutOfMemory,
-                     "Cannot extend in-memory file to " CPL_FRMT_GUIB " bytes due to out-of-memory situation",
-                     nNewAlloc);
             return false;
-        }
             
         /* Clear the new allocated part of the buffer */
         memset(pabyNewData + nAllocLength, 0, 

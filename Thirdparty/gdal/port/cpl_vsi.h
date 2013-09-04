@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_vsi.h 24442 2012-05-18 15:47:54Z rouault $
+ * $Id: cpl_vsi.h 23467 2011-12-04 22:56:00Z rouault $
  *
  * Project:  CPL - Common Portability Library
  * Author:   Frank Warmerdam, warmerdam@pobox.com
@@ -200,7 +200,6 @@ void CPL_DLL *VSIMalloc3( size_t nSize1, size_t nSize2, size_t nSize3 ) CPL_WARN
 
 #define CPLReadDir VSIReadDir
 char CPL_DLL **VSIReadDir( const char * );
-char CPL_DLL **VSIReadDirRecursive( const char *pszPath );
 int CPL_DLL VSIMkdir( const char * pathname, long mode );
 int CPL_DLL VSIRmdir( const char * pathname );
 int CPL_DLL VSIUnlink( const char * pathname );
@@ -214,7 +213,6 @@ void CPL_DLL VSIInstallMemFileHandler(void);
 void CPL_DLL VSIInstallLargeFileHandler(void);
 void CPL_DLL VSIInstallSubFileHandler(void);
 void VSIInstallCurlFileHandler(void);
-void VSIInstallCurlStreamingFileHandler(void);
 void VSIInstallGZipFileHandler(void); /* No reason to export that */
 void VSIInstallZipFileHandler(void); /* No reason to export that */
 void VSIInstallStdinHandler(void); /* No reason to export that */

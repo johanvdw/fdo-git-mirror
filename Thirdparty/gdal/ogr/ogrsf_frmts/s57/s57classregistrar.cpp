@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: s57classregistrar.cpp 25822 2013-03-31 15:29:55Z rouault $
+ * $Id: s57classregistrar.cpp 22616 2011-06-29 19:19:03Z rouault $
  *
  * Project:  S-57 Translator
  * Purpose:  Implements S57ClassRegistrar class for keeping track of
@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: s57classregistrar.cpp 25822 2013-03-31 15:29:55Z rouault $");
+CPL_CVSID("$Id: s57classregistrar.cpp 22616 2011-06-29 19:19:03Z rouault $");
 
 
 #ifdef S57_BUILTIN_CLASSES
@@ -103,7 +103,7 @@ S57ClassRegistrar::~S57ClassRegistrar()
 int S57ClassRegistrar::FindFile( const char *pszTarget, 
                                  const char *pszDirectory, 
                                  int bReportErr,
-                                 VSILFILE **pfp )
+                                 FILE **pfp )
 
 {
     const char *pszFilename;
@@ -119,7 +119,7 @@ int S57ClassRegistrar::FindFile( const char *pszTarget,
         pszFilename = CPLFormFilename( pszDirectory, pszTarget, NULL );
     }
 
-    *pfp = VSIFOpenL( pszFilename, "rb" );
+    *pfp = VSIFOpen( pszFilename, "rb" );
 
 #ifdef S57_BUILTIN_CLASSES
     if( *pfp == NULL )
@@ -150,11 +150,11 @@ int S57ClassRegistrar::FindFile( const char *pszTarget,
 /*      configuration file line list if the file is NULL.               */
 /************************************************************************/
 
-const char *S57ClassRegistrar::ReadLine( VSILFILE * fp )
+const char *S57ClassRegistrar::ReadLine( FILE * fp )
 
 {
     if( fp != NULL )
-        return CPLReadLineL( fp );
+        return CPLReadLine( fp );
 
     if( papszNextLine == NULL )
         return NULL;
@@ -177,7 +177,7 @@ int S57ClassRegistrar::LoadInfo( const char * pszDirectory,
                                  int bReportErr )
 
 {
-    VSILFILE   *fp;
+    FILE        *fp;
     char        szTargetFile[1024];
 
     if( pszDirectory == NULL )
@@ -221,7 +221,7 @@ int S57ClassRegistrar::LoadInfo( const char * pszDirectory,
         CPLError( CE_Failure, CPLE_AppDefined,
                   "s57objectclasses columns don't match expected format!\n" );
         if( fp != NULL )
-            VSIFCloseL( fp );
+            VSIFClose( fp );
         return FALSE;
     }
 
@@ -252,7 +252,7 @@ int S57ClassRegistrar::LoadInfo( const char * pszDirectory,
 /*      Cleanup, and establish state.                                   */
 /* -------------------------------------------------------------------- */
     if( fp != NULL )
-        VSIFCloseL( fp );
+        VSIFClose( fp );
     iCurrentClass = -1;
 
     if( nClasses == 0 )
@@ -293,7 +293,7 @@ int S57ClassRegistrar::LoadInfo( const char * pszDirectory,
         CPLError( CE_Failure, CPLE_AppDefined,
                   "s57attributes columns don't match expected format!\n" );
         if( fp != NULL )
-            VSIFCloseL( fp );
+            VSIFClose( fp );
         return FALSE;
     }
     
@@ -342,7 +342,7 @@ int S57ClassRegistrar::LoadInfo( const char * pszDirectory,
     }
 
     if( fp != NULL )
-        VSIFCloseL( fp );
+        VSIFClose( fp );
     
 /* -------------------------------------------------------------------- */
 /*      Build unsorted index of attributes.                             */
@@ -576,7 +576,7 @@ char **S57ClassRegistrar::GetPrimitives()
 /*                         FindAttrByAcronym()                          */
 /************************************************************************/
 
-int    S57ClassRegistrar::FindAttrByAcronym( const char * pszName )
+GInt16    S57ClassRegistrar::FindAttrByAcronym( const char * pszName )
 
 {
     int         iStart, iEnd, iCandidate;

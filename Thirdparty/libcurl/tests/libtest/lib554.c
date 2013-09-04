@@ -1,24 +1,13 @@
-/***************************************************************************
+/*****************************************************************************
  *                                  _   _ ____  _
  *  Project                     ___| | | |  _ \| |
  *                             / __| | | | |_) | |
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2012, Daniel Stenberg, <daniel@haxx.se>, et al.
- *
- * This software is licensed as described in the file COPYING, which
- * you should have received as part of this distribution. The terms
- * are also available at http://curl.haxx.se/docs/copyright.html.
- *
- * You may opt to use, copy, modify, merge, publish, distribute and/or sell
- * copies of the Software, and permit persons to whom the Software is
- * furnished to do so, under the terms of the COPYING file.
- *
- * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
- * KIND, either express or implied.
- *
- ***************************************************************************/
+ * $Id: lib554.c,v 1.8 2010-02-05 18:07:20 yangtse Exp $
+ */
+
 #include "test.h"
 
 #include "memdebug.h"
@@ -40,14 +29,6 @@ struct WriteThis {
 
 static size_t read_callback(void *ptr, size_t size, size_t nmemb, void *userp)
 {
-#ifdef LIB587
-  (void)ptr;
-  (void)size;
-  (void)nmemb;
-  (void)userp;
-  return CURL_READFUNC_ABORT;
-#else
-
   struct WriteThis *pooh = (struct WriteThis *)userp;
 
   if(size*nmemb < 1)
@@ -61,7 +42,6 @@ static size_t read_callback(void *ptr, size_t size, size_t nmemb, void *userp)
   }
 
   return 0;                         /* no more data left to deliver */
-#endif
 }
 
 int test(char *URL)
@@ -73,7 +53,6 @@ int test(char *URL)
   struct curl_httppost *formpost=NULL;
   struct curl_httppost *lastptr=NULL;
   struct WriteThis pooh;
-  struct WriteThis pooh2;
 
   if (curl_global_init(CURL_GLOBAL_ALL) != CURLE_OK) {
     fprintf(stderr, "curl_global_init() failed\n");
@@ -88,25 +67,8 @@ int test(char *URL)
                         &lastptr,
                         CURLFORM_COPYNAME, "sendfile",
                         CURLFORM_STREAM, &pooh,
-                        CURLFORM_CONTENTSLENGTH, (long)pooh.sizeleft,
+                        CURLFORM_CONTENTSLENGTH, pooh.sizeleft,
                         CURLFORM_FILENAME, "postit2.c",
-                        CURLFORM_END);
-
-  if(formrc)
-    printf("curl_formadd(1) = %d\n", (int)formrc);
-
-  /* Now add the same data with another name and make it not look like
-     a file upload but still using the callback */
-
-  pooh2.readptr = data;
-  pooh2.sizeleft = strlen(data);
-
-  /* Fill in the file upload field */
-  formrc = curl_formadd(&formpost,
-                        &lastptr,
-                        CURLFORM_COPYNAME, "callbackdata",
-                        CURLFORM_STREAM, &pooh2,
-                        CURLFORM_CONTENTSLENGTH, (long)pooh2.sizeleft,
                         CURLFORM_END);
 
   if(formrc)
@@ -144,16 +106,6 @@ int test(char *URL)
 
   if(formrc)
     printf("curl_formadd(3) = %d\n", (int)formrc);
-
-  formrc = curl_formadd(&formpost, &lastptr,
-                        CURLFORM_COPYNAME, "somename",
-                        CURLFORM_BUFFER, "somefile.txt",
-                        CURLFORM_BUFFERPTR, "blah blah",
-                        CURLFORM_BUFFERLENGTH, (long)9,
-                        CURLFORM_END);
-
-  if(formrc)
-    printf("curl_formadd(4) = %d\n", (int)formrc);
 
   if ((curl = curl_easy_init()) == NULL) {
     fprintf(stderr, "curl_easy_init() failed\n");

@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: gmlfeatureclass.cpp 24434 2012-05-17 16:39:42Z rouault $
+ * $Id: gmlfeatureclass.cpp 22954 2011-08-19 21:47:19Z rouault $
  *
  * Project:  GML Reader
  * Purpose:  Implementation of GMLFeatureClass.
@@ -73,16 +73,6 @@ GMLFeatureClass::~GMLFeatureClass()
         delete m_papoProperty[i];
     CPLFree( m_papoProperty );
     CPLFree( m_pszSRSName );
-}
-
-/************************************************************************/
-/*                            SetName()                                 */
-/************************************************************************/
-
-void GMLFeatureClass::SetName(const char* pszNewName)
-{
-    CPLFree( m_pszName );
-    m_pszName = CPLStrdup( pszNewName );
 }
 
 /************************************************************************/

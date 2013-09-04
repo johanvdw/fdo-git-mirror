@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgeorsslayer.cpp 25445 2013-01-04 18:46:53Z rouault $
+ * $Id: ogrgeorsslayer.cpp 23001 2011-08-28 17:33:04Z rouault $
  *
  * Project:  GeoRSS Translator
  * Purpose:  Implements OGRGeoRSSLayer class.
@@ -33,7 +33,7 @@
 #include "ogr_api.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrgeorsslayer.cpp 25445 2013-01-04 18:46:53Z rouault $");
+CPL_CVSID("$Id: ogrgeorsslayer.cpp 23001 2011-08-28 17:33:04Z rouault $");
 
 static const char* apszAllowedATOMFieldNamesWithSubElements[] = { "author", "contributor", NULL };
 
@@ -536,6 +536,52 @@ void OGRGeoRSSLayer::startElementCbk(const char *pszName, const char **ppszAttr)
 }
 
 /************************************************************************/
+/*                  OGRGeoRSS_GetGMLEnvelope()                          */
+/************************************************************************/
+
+static OGRGeometry* OGRGeoRSS_GetGMLEnvelope(const char* pszGML)
+{
+    OGRGeometry* poGeom = NULL;
+    CPLXMLNode* poNode = CPLParseXMLString(pszGML);
+    const char* pszLowerCorner = CPLGetXMLValue(poNode, "gml:lowerCorner", NULL);
+    const char* pszUpperCorner = CPLGetXMLValue(poNode, "gml:upperCorner", NULL);
+    if (pszLowerCorner && pszUpperCorner)
+    {
+        char **papszTokensLower;
+        char **papszTokensUpper;
+
+        papszTokensLower = CSLTokenizeStringComplex( 
+            pszLowerCorner, " ,", FALSE, FALSE );
+        papszTokensUpper = CSLTokenizeStringComplex( 
+            pszUpperCorner, " ,", FALSE, FALSE );
+        if (CSLCount(papszTokensLower) == 2 &&
+            CSLCount(papszTokensUpper) == 2)
+        {
+            OGRPolygon* poPolygon = new OGRPolygon();
+            OGRLinearRing* poLinearRing = new OGRLinearRing();
+            poPolygon->addRingDirectly(poLinearRing);
+            double x1 = CPLAtof(papszTokensLower[0]);
+            double y1 = CPLAtof(papszTokensLower[1]);
+            double x2 = CPLAtof(papszTokensUpper[0]);
+            double y2 = CPLAtof(papszTokensUpper[1]);
+            poLinearRing->addPoint( x1, y1 );
+            poLinearRing->addPoint( x2, y1 );
+            poLinearRing->addPoint( x2, y2 );
+            poLinearRing->addPoint( x1, y2 );
+            poLinearRing->addPoint( x1, y1 );
+
+            poGeom = poPolygon;
+        }
+
+        CSLDestroy(papszTokensLower);
+        CSLDestroy(papszTokensUpper);
+    }
+    CPLDestroyXMLNode(poNode);
+    return poGeom;
+}
+
+
+/************************************************************************/
 /*            OGRGeoRSSLayerTrimLeadingAndTrailingSpaces()              */
 /************************************************************************/
 
@@ -648,7 +694,10 @@ void OGRGeoRSSLayer::endElementCbk(const char *pszName)
         {
             pszSubElementValue[nSubElementValueLen] = 0;
             CPLAssert(strncmp(pszName, "gml:", 4) == 0);
-            poGeom = (OGRGeometry*) OGR_G_CreateFromGML(pszSubElementValue);
+            if (strcmp(pszName, "gml:Envelope") == 0)
+                poGeom =  OGRGeoRSS_GetGMLEnvelope(pszSubElementValue);
+            else
+                poGeom = (OGRGeometry*) OGR_G_CreateFromGML(pszSubElementValue);
 
             if (poGeom != NULL && !poGeom->IsEmpty() )
             {

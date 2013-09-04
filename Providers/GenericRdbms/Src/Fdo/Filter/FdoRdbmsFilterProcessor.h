@@ -173,8 +173,6 @@ private:
 	short				mNextTabAliasId;
 	bool				mUseTableAliases;
     bool                mUseNesting;
-    bool                mFoundTopLevel;
-    bool                mParenthesizeTopLevelOperands;
     bool                mUseGrouping;
     bool                mContainsCustomObjects;
     bool                mAddNegationBracket;

@@ -784,8 +784,6 @@ int TABFile::ParseTABFileFields()
                                                                0,
                                                                0);
                     poFieldDefn = new OGRFieldDefn(papszTok[0], OFTInteger);
-                    if( numTok > 2 && atoi(papszTok[2]) > 0 )
-                        poFieldDefn->SetWidth( atoi(papszTok[2]) );
                 }
                 else if (numTok >= 2 && EQUAL(papszTok[1], "smallint"))
                 {
@@ -798,8 +796,6 @@ int TABFile::ParseTABFileFields()
                                                                0,
                                                                0);
                     poFieldDefn = new OGRFieldDefn(papszTok[0], OFTInteger);
-                    if( numTok > 2 && atoi(papszTok[2]) > 0 )
-                        poFieldDefn->SetWidth( atoi(papszTok[2]) );
                 }
                 else if (numTok >= 4 && EQUAL(papszTok[1], "decimal"))
                 {
@@ -1004,19 +1000,11 @@ int TABFile::WriteTABFile()
                                               poFieldDefn->GetWidth(),
                                               poFieldDefn->GetPrecision());
                     break;
-                  case TABFInteger:
-                    if( poFieldDefn->GetWidth() == 0 )
-                        pszFieldType = "Integer";
-                    else
-                        pszFieldType = CPLSPrintf("Integer (%d)", 
-                                                  poFieldDefn->GetWidth());
+                case TABFInteger:
+                    pszFieldType = "Integer";
                     break;
                   case TABFSmallInt:
-                    if( poFieldDefn->GetWidth() == 0 )
-                        pszFieldType = "SmallInt";
-                    else
-                        pszFieldType = CPLSPrintf("SmallInt (%d)", 
-                                                  poFieldDefn->GetWidth());
+                    pszFieldType = "SmallInt";
                     break;
                   case TABFFloat:
                     pszFieldType = "Float";
@@ -1687,10 +1675,7 @@ int TABFile::SetFeatureDefn(OGRFeatureDefn *poFeatureDefn,
                 eMapInfoType = TABFInteger;
                 break;
               case OFTReal:
-                if( poFieldDefn->GetWidth()>0 || poFieldDefn->GetPrecision()>0 )
-                    eMapInfoType = TABFDecimal;
-                else
-                    eMapInfoType = TABFFloat;
+                eMapInfoType = TABFFloat;
                 break;
               case OFTDateTime:
                 eMapInfoType = TABFDateTime;
@@ -1856,16 +1841,12 @@ int TABFile::AddFieldNative(const char *pszName, TABFieldType eMapInfoType,
          * INTEGER type
          *------------------------------------------------*/
         poFieldDefn = new OGRFieldDefn(szNewFieldName, OFTInteger);
-        if (nWidth <= 10)
-            poFieldDefn->SetWidth(nWidth);
         break;
       case TABFSmallInt:
         /*-------------------------------------------------
          * SMALLINT type
          *------------------------------------------------*/
         poFieldDefn = new OGRFieldDefn(szNewFieldName, OFTInteger);
-        if (nWidth <= 5)
-            poFieldDefn->SetWidth(nWidth);
         break;
       case TABFDecimal:
         /*-------------------------------------------------

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: OSRTransform.java 25229 2012-11-16 19:06:58Z rouault $
+ * $Id: OSRTransform.java 16341 2009-02-14 17:15:33Z rouault $
  *
  * Name:     OSRTransform.java
  * Project:  GDAL Java Interface
@@ -60,8 +60,7 @@ public class OSRTransform {
 			/* -------------------------------------------------------------------- */
 			/*      making the transform                                            */
 			/* -------------------------------------------------------------------- */
-            /* New in GDAL 1.10. Before was "new CoordinateTransformation(srs,dst)". */
-			CoordinateTransformation ct = CoordinateTransformation.CreateCoordinateTransformation(src, dst);
+			CoordinateTransformation ct = new CoordinateTransformation(src, dst);
 			double[] p = new double[3];
 			p[0] = 19; p[1] = 47; p[2] = 0;
 			ct.TransformPoint(p);

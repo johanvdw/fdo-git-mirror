@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gifabstractdataset.cpp 25287 2012-12-05 21:17:14Z rouault $
+ * $Id: gifabstractdataset.cpp 22685 2011-07-10 19:31:35Z rouault $
  *
  * Project:  GIF Driver
  * Purpose:  GIF Abstract Dataset
@@ -29,7 +29,7 @@
 
 #include "gifabstractdataset.h"
 
-CPL_CVSID("$Id: gifabstractdataset.cpp 25287 2012-12-05 21:17:14Z rouault $");
+CPL_CVSID("$Id: gifabstractdataset.cpp 22685 2011-07-10 19:31:35Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -225,6 +225,21 @@ char  **GIFAbstractDataset::GetMetadata( const char * pszDomain )
 }
 
 /************************************************************************/
+/*                       GetMetadataItem()                              */
+/************************************************************************/
+
+const char *GIFAbstractDataset::GetMetadataItem( const char * pszName,
+                                         const char * pszDomain )
+{
+    if (fp == NULL)
+        return NULL;
+    if (eAccess == GA_ReadOnly && !bHasReadXMPMetadata &&
+        (pszDomain != NULL && EQUAL(pszDomain, "xml:XMP")))
+        CollectXMPMetadata();
+    return GDALPamDataset::GetMetadataItem(pszName, pszDomain);
+}
+
+/************************************************************************/
 /*                        GetProjectionRef()                            */
 /************************************************************************/
 
@@ -323,5 +338,17 @@ void GIFAbstractDataset::DetectGeoreferencing( GDALOpenInfo * poOpenInfo )
         bGeoTransformValid =
             GDALReadWorldFile( poOpenInfo->pszFilename, ".wld",
                                adfGeoTransform );
+
+        if ( !bGeoTransformValid )
+        {
+            int bOziFileOK =
+                GDALReadOziMapFile( poOpenInfo->pszFilename,
+                                    adfGeoTransform,
+                                    &pszProjection,
+                                    &nGCPCount, &pasGCPList );
+
+            if ( bOziFileOK && nGCPCount == 0 )
+                 bGeoTransformValid = TRUE;
+        }
     }
 }

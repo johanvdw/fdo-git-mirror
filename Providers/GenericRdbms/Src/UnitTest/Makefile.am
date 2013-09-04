@@ -103,6 +103,8 @@ UnitTestMySql_LDADD =  \
   -lxalan-c \
   -lxalanMsg \
   -lxerces-c \
+  -lz \
+  -lmysql \
   ./Common/libCommonUnitTests.la \
   ./MySql/libMySqlUnitTests.la  \
   ../MySQL/libFdoRdbmsMySQL.la  \
@@ -135,13 +137,12 @@ UnitTestMySql_LDADD =  \
   $(FDOUTILITIES)/SchemaMgr/Src/Sm/Ov/libSmOverrides.la \
   ../Rdbi/librdbi.la \
   ../Util/libutil.la \
-  -lmysqlclient \
+  -lmysql \
   -lz
 
 UnitTestMySql_LDFLAGS = \
-  -L/usr/lib$(LIB64) \
-  -L/usr/lib$(LIB64)/mysql \
-  -L$(FDOMYSQL)/lib$(LIB64)
+  -L/usr/lib/mysql \
+  -L$(FDOMYSQL)/lib
 
 #Odbc
 UnitTestOdbc_SOURCES = OdbcTestRegister.cpp
@@ -150,6 +151,9 @@ UnitTestOdbc_LDADD =  \
   -lxalan-c \
   -lxalanMsg \
   -lxerces-c \
+  -lz \
+  -lodbc \
+  -lodbcinst \
   ./Common/libCommonUnitTests.la \
   ./Odbc/libOdbcUnitTests.la  \
   ../ODBC/libFdoRdbmsODBC.la  \
@@ -189,7 +193,7 @@ UnitTestOdbc_LDADD =  \
   -lz
 
 UnitTestOdbc_LDFLAGS = \
-  -L$(FDOODBC)/lib$(LIB64)
+  -L$(FDOODBC)/lib
   
 #PostGis
 UnitTestPostGis_SOURCES = PostGisTestRegister.cpp
@@ -198,6 +202,8 @@ UnitTestPostGis_LDADD =  \
   -lxalan-c \
   -lxalanMsg \
   -lxerces-c \
+  -lz \
+  -lpq \
   -lcrypt \
   ./Common/libCommonUnitTests.la \
   ./PostGis/libPostGisUnitTests.la  \
@@ -240,7 +246,7 @@ UnitTestPostGis_LDADD =  \
   -lcom_err
 
 UnitTestPostGis_LDFLAGS = \
-  -L$(FDOPOSTGRESQL)/lib$(LIB64)
+  -L$(FDOTHIRDPARTY)/pgsql/lib
   
 INCLUDES = \
   -I$(FDO)/Unmanaged/Inc \
@@ -262,7 +268,7 @@ INCLUDES = \
   -I../Fdo/FeatureCommands \
   -I./Common \
   -I./MySql \
-  -I./Odbc \
+  -I./Odbc  \
   -I./PostGis
 
 CXXFLAGS = @CXXFLAGS@ -D__USE_GNU -DLINUX -DLINUX_IA32 -D__STDC_LIMIT_MACROS -DRDBI_STATIC

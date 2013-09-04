@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: osr.i 25229 2012-11-16 19:06:58Z rouault $
+ * $Id: osr.i 22687 2011-07-10 21:59:49Z rouault $
  *
  * Project:  GDAL SWIG Interfaces.
  * Purpose:  OGRSpatialReference related declarations.
@@ -804,13 +804,6 @@ public:
     return OSRImportFromMICoordSys( self, pszCoordSys );
   }
 
-%apply Pointer NONNULL {char const *projParms};
-  OGRErr ImportFromOzi( char const *datum,
-                        char const *proj,
-                        char const *projParms ) {
-    return OSRImportFromOzi( self, datum, proj, projParms );
-  }
-
   OGRErr ExportToWkt( char **argout ) {
     return OSRExportToWkt( self, argout );
   }
@@ -950,12 +943,3 @@ public:
 
 } /*extend */
 };
-
-/* New in GDAL 1.10 */
-%newobject CreateCoordinateTransformation;
-%inline %{
-  OSRCoordinateTransformationShadow *CreateCoordinateTransformation( OSRSpatialReferenceShadow *src, OSRSpatialReferenceShadow *dst ) {
-    OSRCoordinateTransformationShadow *obj = (OSRCoordinateTransformationShadow*) OCTNewCoordinateTransformation( src, dst );
-    return obj;
-}
-%}

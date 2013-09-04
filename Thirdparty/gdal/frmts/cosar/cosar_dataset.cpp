@@ -60,6 +60,7 @@ public:
 class COSARRasterBand : public GDALRasterBand
 {
 	unsigned long nRTNB;
+	int nRSLength;
 	int nBurstNumber;
 public:
 	COSARRasterBand(COSARDataset *, unsigned long nRTNB);
@@ -72,6 +73,7 @@ public:
 
 COSARRasterBand::COSARRasterBand(COSARDataset *pDS, unsigned long nRTNB) {
 	this->nRTNB = nRTNB;
+	this->nRSLength = nRSLength;
 	nBurstNumber = 1;
 	nBlockXSize = pDS->GetRasterXSize();
 	nBlockYSize = 1;

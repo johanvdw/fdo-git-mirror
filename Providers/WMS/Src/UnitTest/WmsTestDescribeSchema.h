@@ -28,28 +28,26 @@
 class WmsTestDescribeSchema : public WmsTests
 {
 	CPPUNIT_TEST_SUITE (WmsTestDescribeSchema);
-
-	CPPUNIT_TEST (testServer1);			// TODO: might need to replace server
-	CPPUNIT_TEST (testInheritance1);	// TODO: might need to replace server
+//#ifdef _FDO_RUN_INTERNAL_TEST
+	CPPUNIT_TEST (testServer1);      //Todo: might need to replace server
+	CPPUNIT_TEST (testInheritance1); //Todo: might need to replace server
+//#endif
 
 	CPPUNIT_TEST (testServer2);
+	// This server cannot connect any more
+    //CPPUNIT_TEST (testServer3);
+	//CPPUNIT_TEST (testServer4);
 	CPPUNIT_TEST (testServer5);
 	CPPUNIT_TEST (testCeoware2);
     CPPUNIT_TEST (testKortPlandk);
 	CPPUNIT_TEST (testSchemaMapping);
-
-#if 0
-	// These servers cannot connect any more
-    CPPUNIT_TEST (testServer3);
-	CPPUNIT_TEST (testServer4);
-    CPPUNIT_TEST (testLibCwms);
-#endif 
-
+    // This server cannot connect any more
+    //CPPUNIT_TEST (testLibCwms);
 	CPPUNIT_TEST_SUITE_END ();
 
 public:
 	WmsTestDescribeSchema(void);
-	virtual ~WmsTestDescribeSchema(void);
+	~WmsTestDescribeSchema(void);
 
 	void _setUp () {}
 	void _tearDown () {}

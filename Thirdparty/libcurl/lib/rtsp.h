@@ -1,5 +1,6 @@
-#ifndef HEADER_CURL_RTSP_H
-#define HEADER_CURL_RTSP_H
+#ifndef __RTSP_H_
+#define __RTSP_H_
+
 /***************************************************************************
  *                                  _   _ ____  _
  *  Project                     ___| | | |  _ \| |
@@ -7,7 +8,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2011, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2010, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -20,18 +21,32 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
+ * $Id: rtsp.h,v 1.3 2010-01-28 01:39:16 yangtse Exp $
  ***************************************************************************/
 #ifndef CURL_DISABLE_RTSP
 
 extern const struct Curl_handler Curl_handler_rtsp;
 
-bool Curl_rtsp_connisdead(struct connectdata *check);
-CURLcode Curl_rtsp_parseheader(struct connectdata *conn, char *header);
+/*
+ * Parse and write out any available RTP data.
+ *
+ * nread: amount of data left after k->str. will be modified if RTP
+ *        data is parsed and k->str is moved up
+ * readmore: whether or not the RTP parser needs more data right away
+ */
+CURLcode Curl_rtsp_rtp_readwrite(struct SessionHandle *data,
+                                 struct connectdata *conn,
+                                 ssize_t *nread,
+                                 bool *readmore);
 
-#else
-/* disabled */
-#define Curl_rtsp_parseheader(x,y) CURLE_NOT_BUILT_IN
-#define Curl_rtsp_connisdead(x) TRUE
+
+/* protocol-specific functions set up to be called by the main engine */
+CURLcode Curl_rtsp(struct connectdata *conn, bool *done);
+CURLcode Curl_rtsp_done(struct connectdata *conn, CURLcode, bool premature);
+CURLcode Curl_rtsp_connect(struct connectdata *conn, bool *done);
+CURLcode Curl_rtsp_disconnect(struct connectdata *conn);
+
+CURLcode Curl_rtsp_parseheader(struct connectdata *conn, char *header);
 
 #endif /* CURL_DISABLE_RTSP */
 
@@ -65,5 +80,4 @@ struct RTSP {
 };
 
 
-#endif /* HEADER_CURL_RTSP_H */
-
+#endif /* __RTSP_H_ */

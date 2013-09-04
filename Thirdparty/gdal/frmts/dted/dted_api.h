@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: dted_api.h 24601 2012-06-19 20:29:36Z rouault $
+ * $Id: dted_api.h 20996 2010-10-28 18:38:15Z rouault $
  *
  * Project:  DTED Translator
  * Purpose:  Public (C callable) interface for DTED/CDED reading.
@@ -120,10 +120,6 @@ typedef struct {
 
   int           nDataOffset;
 
-  int           bRewriteHeaders;
-
-  int           *panMapLogicalColsToOffsets; /* size of nXSize elements. Might be NULL */
-
 } DTEDInfo;
 
 /* -------------------------------------------------------------------- */
@@ -187,8 +183,7 @@ typedef enum {
     DTEDMD_ORIGINLONG = 20,             /* UHL 5+7 */
     DTEDMD_ORIGINLAT = 21,              /* UHL 13+7 */
     DTEDMD_NIMA_DESIGNATOR = 22,        /* DSI 60 + 5 */
-    DTEDMD_PARTIALCELL_DSI = 23,        /* DSI 289 + 2 */ 
-    DTEDMD_MAX = 23
+    DTEDMD_MAX = 22
 } DTEDMetaDataCode;
 
     

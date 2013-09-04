@@ -1,4 +1,7 @@
-/* lib/curl_config.h.in.  Generated somehow by cmake.  */
+/* lib/curl_config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Define to 1 if you have the $func function. */
+#cmakedefine AS_TR_CPP ${AS_TR_CPP}
 
 /* when building libcurl itself */
 #cmakedefine BUILDING_LIBCURL ${BUILDING_LIBCURL}
@@ -52,7 +55,13 @@
 #define CURL_EXTERN_SYMBOL
 #endif
 
-/* Use Windows LDAP implementation */
+/* to enable hidden symbols */
+#cmakedefine CURL_HIDDEN_SYMBOLS ${CURL_HIDDEN_SYMBOLS}
+
+/* W$ LDAP with non-W$ compiler */
+#cmakedefine CURL_LDAP_HYBRID ${CURL_LDAP_HYBRID}
+
+/* Use W$ LDAP implementation */
 #cmakedefine CURL_LDAP_WIN ${CURL_LDAP_WIN}
 
 /* when not building a shared library */
@@ -441,6 +450,9 @@
 /* Define to 1 if you have the `pipe' function. */
 #cmakedefine HAVE_PIPE ${HAVE_PIPE}
 
+/* if you have the function PK11_CreateGenericObject */
+#cmakedefine HAVE_PK11_CREATEGENERICOBJECT ${HAVE_PK11_CREATEGENERICOBJECT}
+
 /* Define to 1 if you have a working poll function. */
 #cmakedefine HAVE_POLL ${HAVE_POLL}
 
@@ -718,6 +730,9 @@
    */
 #cmakedefine LT_OBJDIR ${LT_OBJDIR}
 
+/* Define to 1 if you are building a native Windows target. */
+#cmakedefine NATIVE_WINDOWS ${NATIVE_WINDOWS}
+
 /* If you lack a fine basename() prototype */
 #cmakedefine NEED_BASENAME_PROTO ${NEED_BASENAME_PROTO}
 
@@ -838,9 +853,6 @@
 /* The size of `int', as computed by sizeof. */
 #cmakedefine SIZEOF_INT ${SIZEOF_INT}
 
-/* The size of `short', as computed by sizeof. */
-#cmakedefine SIZEOF_SHORT ${SIZEOF_SHORT}
-
 /* The size of `long', as computed by sizeof. */
 #cmakedefine SIZEOF_LONG ${SIZEOF_LONG}
 
@@ -873,9 +885,6 @@
 
 /* if GnuTLS is enabled */
 #cmakedefine USE_GNUTLS ${USE_GNUTLS}
-
-/* if PolarSSL is enabled */
-#cmakedefine USE_POLARSSL ${USE_POLARSSL}
 
 /* if libSSH2 is in use */
 #cmakedefine USE_LIBSSH2 ${USE_LIBSSH2}

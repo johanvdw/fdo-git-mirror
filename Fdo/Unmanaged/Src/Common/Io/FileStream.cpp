@@ -249,12 +249,12 @@ void FdoIoFileStream::SetLength( FdoInt64 length )
 #ifdef _WIN32
 //Todo: support changing length of large files on Windows.
 //Haven't been able to find an int64 version of chsize yet.
-        if ( length > INT_MAX )
+        if ( length > LONG_MAX )
             throw FdoException::Create(
                 FdoException::NLSGetMessage(
                     FDO_NLSID(FDO_51_SETFILESIZE),
                     length,
-                    INT_MAX
+                    LONG_MAX
                 )
             );
 

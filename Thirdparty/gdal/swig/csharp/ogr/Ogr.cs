@@ -85,13 +85,6 @@ public delegate void GDALErrorHandlerDelegate(int eclass, int code, IntPtr msg);
     return ret;
   }
 
-  public static Geometry ForceToLineString(Geometry geom_in) {
-    IntPtr cPtr = OgrPINVOKE.ForceToLineString(Geometry.getCPtr(geom_in));
-    Geometry ret = (cPtr == IntPtr.Zero) ? null : new Geometry(cPtr, true, ThisOwn_true());
-    if (OgrPINVOKE.SWIGPendingException.Pending) throw OgrPINVOKE.SWIGPendingException.Retrieve();
-    return ret;
-  }
-
   public static Geometry ForceToMultiPolygon(Geometry geom_in) {
     IntPtr cPtr = OgrPINVOKE.ForceToMultiPolygon(Geometry.getCPtr(geom_in));
     Geometry ret = (cPtr == IntPtr.Zero) ? null : new Geometry(cPtr, true, ThisOwn_true());

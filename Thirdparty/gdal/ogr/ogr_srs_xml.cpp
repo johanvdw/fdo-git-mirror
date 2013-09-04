@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_srs_xml.cpp 25019 2012-09-30 13:25:39Z rouault $
+ * $Id: ogr_srs_xml.cpp 16587 2009-03-15 00:09:42Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  OGRSpatialReference interface to OGC XML (014r4).
@@ -1331,7 +1331,6 @@ OGRErr OSRImportFromXML( OGRSpatialReferenceH hSRS, const char *pszXML )
 
 {
     VALIDATE_POINTER1( hSRS, "OSRImportFromXML", CE_Failure );
-    VALIDATE_POINTER1( pszXML, "OSRImportFromXML", CE_Failure );
 
     return ((OGRSpatialReference *) hSRS)->importFromXML( pszXML );
 }

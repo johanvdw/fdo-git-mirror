@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: vrtrasterband.cpp 25873 2013-04-07 11:06:58Z rouault $
+ * $Id: vrtrasterband.cpp 22761 2011-07-21 18:53:58Z rouault $
  *
  * Project:  Virtual GDAL Datasets
  * Purpose:  Implementation of VRTRasterBand
@@ -31,7 +31,7 @@
 #include "cpl_minixml.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: vrtrasterband.cpp 25873 2013-04-07 11:06:58Z rouault $");
+CPL_CVSID("$Id: vrtrasterband.cpp 22761 2011-07-21 18:53:58Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -883,8 +883,6 @@ CPLErr VRTRasterBand::SetDefaultHistogram( double dfMin, double dfMax,
 
     psHistItem = PamHistogramToXMLTree( dfMin, dfMax, nBuckets, 
                                         panHistogram, TRUE, FALSE );
-    if( psHistItem == NULL )
-        return CE_Failure;
 
 /* -------------------------------------------------------------------- */
 /*      Insert our new default histogram at the front of the            */

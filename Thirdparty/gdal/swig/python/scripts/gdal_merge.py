@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ###############################################################################
-# $Id: gdal_merge.py 24064 2012-03-04 00:34:19Z warmerdam $
+# $Id: gdal_merge.py 22325 2011-05-07 19:50:58Z rouault $
 #
 # Project:  InSAR Peppers
 # Purpose:  Module to extract data from many rasters into one output.
@@ -42,6 +42,7 @@ except:
 
 
 import sys
+import glob
 import math
 
 __version__ = '$id$'[5:-1]
@@ -366,8 +367,11 @@ def main( argv=None ):
             sys.exit( 1 )
 
         else:
-            names.append(arg)
-
+            # Expand any possible wildcards from command line arguments
+            f = glob.glob( arg )
+            if len(f) == 0:
+                print('File not found: "%s"' % (str( arg )))
+            names += f # append 1 or more files
         i = i + 1
 
     if len(names) == 0:

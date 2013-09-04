@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrxlslayer.cpp 24172 2012-03-29 19:16:09Z rouault $
+ * $Id: ogrxlslayer.cpp 23695 2012-01-03 22:04:16Z rouault $
  *
  * Project:  XLS Translator
  * Purpose:  Implements OGRXLSLayer class.
@@ -33,7 +33,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrxlslayer.cpp 24172 2012-03-29 19:16:09Z rouault $");
+CPL_CVSID("$Id: ogrxlslayer.cpp 23695 2012-01-03 22:04:16Z rouault $");
 
 /************************************************************************/
 /*                            OGRXLSLayer()                             */
@@ -354,8 +354,7 @@ OGRFeature *OGRXLSLayer::GetNextRawFeature()
         }
     }
 
-    poFeature->SetFID(nNextFID + 1);
-    nNextFID ++;
+    poFeature->SetFID(nNextFID ++);
 
     return poFeature;
 }

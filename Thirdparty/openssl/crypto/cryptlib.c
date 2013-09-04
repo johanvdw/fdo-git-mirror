@@ -409,10 +409,6 @@ int (*CRYPTO_get_add_lock_callback(void))(int *num,int mount,int type,
 void CRYPTO_set_locking_callback(void (*func)(int mode,int type,
 					      const char *file,int line))
 	{
-	/* Calling this here ensures initialisation before any threads
-	 * are started.
-	 */
-	OPENSSL_init();
 	locking_callback=func;
 	}
 
@@ -504,7 +500,7 @@ void CRYPTO_THREADID_current(CRYPTO_THREADID *id)
 	CRYPTO_THREADID_set_numeric(id, (unsigned long)find_thread(NULL));
 #else
 	/* For everything else, default to using the address of 'errno' */
-	CRYPTO_THREADID_set_pointer(id, (void*)&errno);
+	CRYPTO_THREADID_set_pointer(id, &errno);
 #endif
 	}
 
@@ -665,53 +661,28 @@ const char *CRYPTO_get_lock_name(int type)
 	defined(__INTEL__) || \
 	defined(__x86_64) || defined(__x86_64__) || defined(_M_AMD64) || defined(_M_X64)
 
-unsigned int  OPENSSL_ia32cap_P[2];
-unsigned long *OPENSSL_ia32cap_loc(void)
-{   if (sizeof(long)==4)
-	/*
-	 * If 32-bit application pulls address of OPENSSL_ia32cap_P[0]
-	 * clear second element to maintain the illusion that vector
-	 * is 32-bit.
-	 */
-	OPENSSL_ia32cap_P[1]=0;
-    return (unsigned long *)OPENSSL_ia32cap_P;
-}
+unsigned long  OPENSSL_ia32cap_P=0;
+unsigned long *OPENSSL_ia32cap_loc(void) { return &OPENSSL_ia32cap_P; }
 
 #if defined(OPENSSL_CPUID_OBJ) && !defined(OPENSSL_NO_ASM) && !defined(I386_ONLY)
 #define OPENSSL_CPUID_SETUP
-#if defined(_WIN32)
-typedef unsigned __int64 IA32CAP;
-#else
-typedef unsigned long long IA32CAP;
-#endif
 void OPENSSL_cpuid_setup(void)
 { static int trigger=0;
-  IA32CAP OPENSSL_ia32_cpuid(void);
-  IA32CAP vec;
+  unsigned long OPENSSL_ia32_cpuid(void);
   char *env;
 
     if (trigger)	return;
 
     trigger=1;
-    if ((env=getenv("OPENSSL_ia32cap"))) {
-	int off = (env[0]=='~')?1:0;
-#if defined(_WIN32)
-	if (!sscanf(env+off,"%I64i",&vec)) vec = strtoul(env+off,NULL,0);
-#else
-	if (!sscanf(env+off,"%lli",(long long *)&vec)) vec = strtoul(env+off,NULL,0);
-#endif
-	if (off) vec = OPENSSL_ia32_cpuid()&~vec;
-    }
+    if ((env=getenv("OPENSSL_ia32cap")))
+	OPENSSL_ia32cap_P = strtoul(env,NULL,0)|(1<<10);
     else
-	vec = OPENSSL_ia32_cpuid();
-
+	OPENSSL_ia32cap_P = OPENSSL_ia32_cpuid()|(1<<10);
     /*
      * |(1<<10) sets a reserved bit to signal that variable
      * was initialized already... This is to avoid interference
      * with cpuid snippets in ELF .init segment.
      */
-    OPENSSL_ia32cap_P[0] = (unsigned int)vec|(1<<10);
-    OPENSSL_ia32cap_P[1] = (unsigned int)(vec>>32);
 }
 #endif
 
@@ -760,6 +731,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason,
 	case DLL_THREAD_ATTACH:
 		break;
 	case DLL_THREAD_DETACH:
+		ERR_remove_state(0);
 		break;
 	case DLL_PROCESS_DETACH:
 		break;
@@ -771,34 +743,12 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason,
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #include <tchar.h>
 #include <signal.h>
-#ifdef __WATCOMC__
-#if defined(_UNICODE) || defined(__UNICODE__)
-#define _vsntprintf _vsnwprintf
-#else
-#define _vsntprintf _vsnprintf
-#endif
-#endif
-#ifdef _MSC_VER
-#define alloca _alloca
-#endif
 
 #if defined(_WIN32_WINNT) && _WIN32_WINNT>=0x0333
 int OPENSSL_isservice(void)
 { HWINSTA h;
   DWORD len;
   WCHAR *name;
-  static union { void *p; int (*f)(void); } _OPENSSL_isservice = { NULL };
-
-    if (_OPENSSL_isservice.p == NULL) {
-	HANDLE h = GetModuleHandle(NULL);
-	if (h != NULL)
-	    _OPENSSL_isservice.p = GetProcAddress(h,"_OPENSSL_isservice");
-	if (_OPENSSL_isservice.p == NULL)
-	    _OPENSSL_isservice.p = (void *)-1;
-    }
-
-    if (_OPENSSL_isservice.p != (void *)-1)
-	return (*_OPENSSL_isservice.f)();
 
     (void)GetDesktopWindow(); /* return value is ignored */
 
@@ -811,7 +761,11 @@ int OPENSSL_isservice(void)
 
     if (len>512) return -1;		/* paranoia */
     len++,len&=~1;			/* paranoia */
+#ifdef _MSC_VER
+    name=(WCHAR *)_alloca(len+sizeof(WCHAR));
+#else
     name=(WCHAR *)alloca(len+sizeof(WCHAR));
+#endif
     if (!GetUserObjectInformationW (h,UOI_NAME,name,len,&len))
 	return -1;
 
@@ -856,7 +810,11 @@ void OPENSSL_showfatal (const char *fmta,...)
       size_t len_0=strlen(fmta)+1,i;
       WCHAR *fmtw;
 
-	fmtw = (WCHAR *)alloca(len_0*sizeof(WCHAR));
+#ifdef _MSC_VER
+	fmtw = (WCHAR *)_alloca (len_0*sizeof(WCHAR));
+#else
+	fmtw = (WCHAR *)alloca (len_0*sizeof(WCHAR));
+#endif
 	if (fmtw == NULL) { fmt=(const TCHAR *)L"no stack?"; break; }
 
 #ifndef OPENSSL_NO_MULTIBYTE
@@ -925,16 +883,3 @@ void OpenSSLDie(const char *file,int line,const char *assertion)
 	}
 
 void *OPENSSL_stderr(void)	{ return stderr; }
-
-int CRYPTO_memcmp(const void *in_a, const void *in_b, size_t len)
-	{
-	size_t i;
-	const unsigned char *a = in_a;
-	const unsigned char *b = in_b;
-	unsigned char x = 0;
-
-	for (i = 0; i < len; i++)
-		x |= a[i] ^ b[i];
-
-	return x;
-	}

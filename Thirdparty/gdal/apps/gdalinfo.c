@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalinfo.c 25582 2013-01-29 21:13:43Z rouault $
+ * $Id: gdalinfo.c 23245 2011-10-17 06:55:42Z etourigny $
  *
  * Project:  GDAL Utilities
  * Purpose:  Commandline application to list info about a file.
@@ -33,9 +33,8 @@
 #include "cpl_string.h"
 #include "cpl_conv.h"
 #include "cpl_multiproc.h"
-#include "commonutils.h"
 
-CPL_CVSID("$Id: gdalinfo.c 25582 2013-01-29 21:13:43Z rouault $");
+CPL_CVSID("$Id: gdalinfo.c 23245 2011-10-17 06:55:42Z etourigny $");
 
 static int 
 GDALInfoReportCorner( GDALDatasetH hDataset, 
@@ -47,16 +46,12 @@ GDALInfoReportCorner( GDALDatasetH hDataset,
 /*                               Usage()                                */
 /************************************************************************/
 
-void Usage(const char* pszErrorMsg)
+void Usage()
 
 {
     printf( "Usage: gdalinfo [--help-general] [-mm] [-stats] [-hist] [-nogcp] [-nomd]\n"
             "                [-norat] [-noct] [-nofl] [-checksum] [-proj4] [-mdd domain]*\n"
             "                [-sd subdataset] datasetname\n" );
-
-    if( pszErrorMsg != NULL )
-        fprintf(stderr, "\nFAILURE: %s\n", pszErrorMsg);
-
     exit( 1 );
 }
 
@@ -64,15 +59,11 @@ void Usage(const char* pszErrorMsg)
 /*                                main()                                */
 /************************************************************************/
 
-#define CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(nExtraArg) \
-    do { if (i + nExtraArg >= argc) \
-        Usage(CPLSPrintf("%s option requires %d argument(s)", argv[i], nExtraArg)); } while(0)
-
 int main( int argc, char ** argv ) 
 
 {
-    GDALDatasetH	hDataset = NULL;
-    GDALRasterBandH	hBand = NULL;
+    GDALDatasetH	hDataset;
+    GDALRasterBandH	hBand;
     int			i, iBand;
     double		adfGeoTransform[6];
     GDALDriverH		hDriver;
@@ -99,7 +90,19 @@ int main( int argc, char ** argv )
         exit(1);
     }
 
-    EarlySetConfigOptions(argc, argv);
+
+    /* Must process GDAL_SKIP before GDALAllRegister(), but we can't call */
+    /* GDALGeneralCmdLineProcessor before it needs the drivers to be registered */
+    /* for the --format or --formats options */
+    for( i = 1; i < argc; i++ )
+    {
+        if( EQUAL(argv[i],"--config") && i + 2 < argc && EQUAL(argv[i + 1], "GDAL_SKIP") )
+        {
+            CPLSetConfigOption( argv[i+1], argv[i+2] );
+
+            i += 2;
+        }
+    }
 
     GDALAllRegister();
 
@@ -118,8 +121,6 @@ int main( int argc, char ** argv )
                    argv[0], GDAL_RELEASE_NAME, GDALVersionInfo("RELEASE_NAME"));
             return 0;
         }
-        else if( EQUAL(argv[i],"--help") )
-            Usage(NULL);
         else if( EQUAL(argv[i], "-mm") )
             bComputeMinMax = TRUE;
         else if( EQUAL(argv[i], "-hist") )
@@ -148,63 +149,34 @@ int main( int argc, char ** argv )
             bShowRAT = FALSE;
         else if( EQUAL(argv[i], "-noct") )
             bShowColorTable = FALSE;
-        else if( EQUAL(argv[i], "-mdd") )
-        {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
+        else if( EQUAL(argv[i], "-mdd") && i < argc-1 )
             papszExtraMDDomains = CSLAddString( papszExtraMDDomains,
                                                 argv[++i] );
-        }
         else if( EQUAL(argv[i], "-nofl") )
             bShowFileList = FALSE;
-        else if( EQUAL(argv[i], "-sd") )
-        {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
+        else if( EQUAL(argv[i], "-sd") && i < argc-1 )
             nSubdataset = atoi(argv[++i]);
-        }
         else if( argv[i][0] == '-' )
-            Usage(CPLSPrintf("Unkown option name '%s'", argv[i]));
+            Usage();
         else if( pszFilename == NULL )
             pszFilename = argv[i];
         else
-            Usage("Too many command options.");
+            Usage();
     }
 
     if( pszFilename == NULL )
-        Usage("No datasource specified.");
+        Usage();
 
 /* -------------------------------------------------------------------- */
 /*      Open dataset.                                                   */
 /* -------------------------------------------------------------------- */
     hDataset = GDALOpen( pszFilename, GA_ReadOnly );
-
+    
     if( hDataset == NULL )
     {
         fprintf( stderr,
                  "gdalinfo failed - unable to open '%s'.\n",
                  pszFilename );
-
-/* -------------------------------------------------------------------- */
-/*      If argument is a VSIFILE, then print its contents               */
-/* -------------------------------------------------------------------- */
-        if ( strncmp( pszFilename, "/vsizip/", 8 ) == 0 || 
-             strncmp( pszFilename, "/vsitar/", 8 ) == 0 ) 
-        {
-            papszFileList = VSIReadDirRecursive( pszFilename );
-            if ( papszFileList )
-            {
-                int nCount = CSLCount( papszFileList );
-                fprintf( stdout, 
-                         "Unable to open source `%s' directly.\n"
-                         "The archive contains %d files:\n", 
-                         pszFilename, nCount );
-                for ( i = 0; i < nCount; i++ )
-                {
-                    fprintf( stdout, "       %s/%s\n", pszFilename, papszFileList[i] );
-                }
-                CSLDestroy( papszFileList );
-                papszFileList = NULL;
-            }
-        }
 
         CSLDestroy( argv );
         CSLDestroy( papszExtraMDDomains );
@@ -848,6 +820,7 @@ GDALInfoReportCorner( GDALDatasetH hDataset,
     if( ABS(dfGeoX) < 181 && ABS(dfGeoY) < 91 )
     {
         printf( "(%12.7f,%12.7f) ", dfGeoX, dfGeoY );
+
     }
     else
     {

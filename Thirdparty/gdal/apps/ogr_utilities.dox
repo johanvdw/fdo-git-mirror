@@ -49,8 +49,7 @@ form of the queries used in the SQL WHERE statement.   Only features matching
 the attribute query will be reported.</dd>
 <dt> <b>-sql</b> <i>statement</i>:</dt><dd> Execute the indicated SQL statement
 and return the result.</dd>
-<dt> <b>-dialect</b> <em>dialect</em>:</dt><dd> SQL dialect.  In some cases can be used to use (unoptimized) OGR SQL instead of the native SQL of an RDBMS by passing OGRSQL.
-Starting with GDAL 1.10, the "SQLITE" dialect can also be used with any datasource.</dd>
+<dt> <b>-dialect</b> <em>dialect</em>:</dt><dd> SQL dialect.  In some cases can be used to use (unoptimized) OGR SQL instead of the native SQL of an RDBMS by passing OGRSQL. </dd>
 <dt> <b>-spat</b> <i>xmin ymin xmax ymax</i>:</dt><dd> The area of interest.  Only
 features within the rectangle will be reported.</dd>
 <dt> <b>-fid</b> <i>fid</i>:</dt><dd> If provided, only the feature with this feature
@@ -175,7 +174,7 @@ Usage: ogr2ogr [--help-general] [-skipfailures] [-append] [-update]
                [-a_srs srs_def] [-t_srs srs_def] [-s_srs srs_def]
                [-f format_name] [-overwrite] [[-dsco NAME=VALUE] ...]
                dst_datasource_name src_datasource_name
-               [-lco NAME=VALUE] [-nln name] [-nlt type] [-dim 2|3] [layer [layer ...]]
+               [-lco NAME=VALUE] [-nln name] [-nlt type] [layer [layer ...]]
 
 Advanced options :
                [-gt n]
@@ -185,13 +184,11 @@ Advanced options :
                [-clipdst [xmin ymin xmax ymax]|WKT|datasource]
                [-clipdstsql sql_statement] [-clipdstlayer layer]
                [-clipdstwhere expression]
-               [-wrapdateline] [-datelineoffset val]
+               [-wrapdateline]
                [[-simplify tolerance] | [-segmentize max_dist]]
                [-fieldTypeToString All|(type1[,type2]*)]
-               [-fieldmap identity | index1[,index2]*]
                [-splitlistfields] [-maxsubfields val]
                [-explodecollections] [-zfield field_name]
-               [-gcp pixel line easting northing [elevation]]* [-order n | -tps]
 
 \endverbatim
 
@@ -224,8 +221,7 @@ same name is found.)</dd>
 <dt> <b>-progress</b>:</dt><dd> (starting with GDAL 1.7.0) Display progress on terminal. Only works if input layers have the "fast feature count" capability.</dd>
 <dt> <b>-sql</b> <em>sql_statement</em>:</dt><dd> SQL statement to execute.
 The resulting table/layer will be saved to the output.</dd>
-<dt> <b>-dialect</b> <em>dialect</em>:</dt><dd> SQL dialect.  In some cases can be used to use (unoptimized) OGR SQL instead of the native SQL of an RDBMS by passing OGRSQL.
-Starting with GDAL 1.10, the "SQLITE" dialect can also be used with any datasource.</dd>
+<dt> <b>-dialect</b> <em>dialect</em>:</dt><dd> SQL dialect.  In some cases can be used to use (unoptimized) OGR SQL instead of the native SQL of an RDBMS by passing OGRSQL. </dd>
 <dt> <b>-where</b><em> restricted_where</em>:</dt><dd> Attribute query (like SQL WHERE)</dd>
 <dt> <b>-skipfailures</b>:</dt><dd>Continue after a failure, skipping the failed feature.</dd>
 <dt> <b>-spat</b><em> xmin ymin xmax ymax</em>:</dt><dd> spatial query extents. Only features
@@ -236,13 +232,7 @@ whose geometry intersects the extents will be selected. The geometries will not 
 <dt> <b>-nlt</b><em> type</em>:</dt><dd> Define the geometry type for the 
 created layer.  One of NONE, GEOMETRY, POINT, LINESTRING, POLYGON, 
 GEOMETRYCOLLECTION, MULTIPOINT, MULTIPOLYGON or MULTILINESTRING. 
-Add "25D" to the name to get 2.5D versions.
-Starting with GDAL 1.10, PROMOTE_TO_MULTI can be used to automatically promote layers
-that mix polygon or multipolygons to multipolygons, and layers that mix linestrings or
-multilinestrings to multilinestrings. Can be usefull when converting shapefiles to PostGIS
-(and other target drivers) that implements strict checks for geometry type.</dd>
-<dt> <b>-dim</b><em> val</em>:</dt><dd>(starting with GDAL 1.10) Force the coordinate dimension to val (valid values are 2 or 3).
-This affects both the layer geometry type, and feature geometries.</dd>
+Add "25D" to the name to get 2.5D versions.</dd>
 <dt> <b>-a_srs</b><em> srs_def</em>:</dt><dd> Assign an output SRS</dd>
 <dt> <b>-t_srs</b><em> srs_def</em>:</dt><dd> Reproject/transform to this SRS on output</dd>
 <dt> <b>-s_srs</b><em> srs_def</em>:</dt><dd> Override source SRS</dd>
@@ -279,9 +269,8 @@ you will generally want to use it in combination of the -clipdstlayer, -clipdstw
 <dt> <b>-clipdstlayer</b> <em>layername</em>:</dt><dd>Select the named layer from the destination clip datasource.</dd>
 <dt> <b>-clipdstwhere</b> <em>expression</em>:</dt><dd>Restrict desired geometries based on attribute query.</dd>
 <dt> <b>-wrapdateline</b>:</dt><dd> (starting with GDAL 1.7.0) split geometries crossing the dateline meridian (long. = +/- 180deg)</dd>
-<dt> <b>-datelineoffset</b>:</dt><dd> (starting with GDAL 1.10) offset from dateline in degrees (default long. = +/- 10deg, geometries within 170deg to -170deg will be splited)</dd>
 <dt> <b>-simplify</b><em> tolerance</em>:</dt><dd> (starting with GDAL 1.9.0) distance tolerance for simplification.
-Note: the algorithm used preserves topology per feature, in particular for polygon geometries, but not for a whole layer.</dd>
+This method will preserve topology, in particular for polygon geometries.</dd>
 <dt> <b>-segmentize</b><em> max_dist</em>:</dt><dd> (starting with GDAL 1.6.0) maximum distance between 2 nodes.
 Used to create intermediate points</dd>
 <dt> <b>-fieldTypeToString</b><em> type1, ...</em>:</dt><dd> (starting with GDAL 1.7.0) converts any field of the
@@ -292,20 +281,6 @@ This is an alternate way to using the CAST operator of OGR SQL, that may avoid t
 <dt> <b>-maxsubfields</b> <em>val</em>:</dt><dd>To be combined with -splitlistfields to limit the number of subfields created for each split field.</dd>
 <dt> <b>-explodecollections</b>:</dt><dd>(starting with GDAL 1.8.0) produce one feature for each geometry in any kind of geometry collection in the source file</dd>
 <dt> <b>-zfield</b> <em>field_name</em>:</dt><dd>(starting with GDAL 1.8.0) Uses the specified field to fill the Z coordinate of geometries</dd>
-<dt> <b>-gcp</b> <i>ungeoref_x ungeoref_y georef_x georef_y elevation</i>:</dt><dd>(starting with GDAL 1.10.0) 
-Add the indicated ground control point.  This option may be provided multiple times to provide a set of GCPs. 
-</dd>
-<dt> <b>-order</b> <em>n</em>:</dt><dd>(starting with GDAL 1.10.0) order of polynomial used for warping
-(1 to 3). The default is to select a polynomial order based on the number of
-GCPs.</dd>
-<dt> <b>-tps</b>:</dt><dd>(starting with GDAL 1.10.0) Force use of thin plate spline transformer based on
-available GCPs.</dd>
-<dt> <b>-fieldmap</b>:</dt><dd>(starting with GDAL 1.10.0) Specifies the list of field indexes to be copied 
-from the source to the destination. The (n)th value specified in the list is the index of the field in the 
-target layer definition in which the n(th) field of the source layer must be copied. Index count starts at 
-zero. There must be exactly as many values in the list as the count of the fields in the source layer. 
-We can use the 'identity' setting to specify that the fields should be transferred by using the same order. 
-This setting should be used along with the -append setting.</dd>
 </dl>
 
 \section ogr2ogr_performance PERFORMANCE HINTS
@@ -336,15 +311,6 @@ Example reprojecting from ETRS_1989_LAEA_52N_10E to EPSG:4326 and clipping to a 
 
 \verbatim
 % ogr2ogr -wrapdateline -t_srs EPSG:4326 -clipdst -5 40 15 55 france_4326.shp europe_laea.shp
-\endverbatim
-
-Example for using the -fieldmap setting. The first field of the source layer is used to 
-fill the third field (index 2 = third field) of the target layer, the second field of the 
-source layer is ignored, the third field of the source layer used to fill the fifth field 
-of the target layer.
-
-\verbatim
-% ogr2ogr -append -fieldmap 2,-1,4 dst.shp src.shp
 \endverbatim
 
 More examples are given in the individual format pages.

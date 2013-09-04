@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: mffdataset.cpp 25311 2012-12-15 12:48:14Z rouault $
+ * $Id: mffdataset.cpp 23425 2011-11-26 19:14:25Z rouault $
  *
  * Project:  GView
  * Purpose:  Implementation of Atlantis MFF Support
@@ -33,7 +33,7 @@
 #include "ogr_spatialref.h"
 #include "atlsci_spheroid.h"
 
-CPL_CVSID("$Id: mffdataset.cpp 25311 2012-12-15 12:48:14Z rouault $");
+CPL_CVSID("$Id: mffdataset.cpp 23425 2011-11-26 19:14:25Z rouault $");
 
 CPL_C_START
 void	GDALRegister_MFF(void);
@@ -56,6 +56,8 @@ static int         GetMFFProjectionType(const char * pszNewProjection);
 
 class MFFDataset : public RawDataset
 {
+    FILE	*fpImage;	// image data file.
+    
     int         nGCPCount;
     GDAL_GCP    *pasGCPList;
 
@@ -1304,7 +1306,6 @@ MFFDataset::CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
                     CPLError( CE_Failure, CPLE_UserInterrupt, 
                               "User terminated" );
                     delete poDS;
-                    CPLFree( pData );
 
                     GDALDriver *poMFFDriver = 
                         (GDALDriver *) GDALGetDriverByName( "MFF" );
@@ -1322,8 +1323,6 @@ MFFDataset::CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
                                             eType, 0, 0 );
                 if( eErr != CE_None )
                 {
-                    delete poDS;
-                    CPLFree( pData );
                     return NULL;
                 }
             
@@ -1335,8 +1334,6 @@ MFFDataset::CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 
                 if( eErr != CE_None )
                 {
-                    delete poDS;
-                    CPLFree( pData );
                     return NULL;
                 }
             }

@@ -10,12 +10,9 @@
 """ Support for toolset definition.
 """
 
-import feature, property, generators, property_set
-import b2.util.set
-from b2.util import cached, qualify_jam_action
+import feature, property, generators
 from b2.util.utility import *
-from b2.util import bjam_signature
-from b2.manager import get_manager
+from b2.util import set
 
 __re_split_last_segment = re.compile (r'^(.+)\.([^\.])*')
 __re_two_ampersands = re.compile ('(&&)')
@@ -68,17 +65,30 @@ def reset ():
 reset ()
 
 # FIXME: --ignore-toolset-requirements
-def using(toolset_module, *args):
-     loaded_toolset_module= get_manager().projects().load_module(toolset_module, [os.getcwd()]);
-     loaded_toolset_module.init(*args)
+# FIXME: using
     
+def normalize_condition (property_sets):
+    """ Expands subfeatures in each property set.
+        e.g
+            <toolset>gcc-3.2
+        will be converted to
+        <toolset>gcc/<toolset-version>3.2
+
+        TODO: does this one belong here or in feature?
+    """
+    result = []
+    for p in property_sets:
+        split = feature.split (p)
+        expanded = feature.expand_subfeatures (split)
+        result.append ('/'.join (expanded))
+
+    return result
+
 # FIXME push-checking-for-flags-module ....
 # FIXME: investigate existing uses of 'hack-hack' parameter
 # in jam code.
-    
-@bjam_signature((["rule_or_module", "variable_name", "condition", "*"],
-                 ["values", "*"]))
-def flags(rule_or_module, variable_name, condition, values = []):
+
+def flags (rule_or_module, variable_name, condition, values = []):
     """ Specifies the flags (variables) that must be set on targets under certain
         conditions, described by arguments.
         rule_or_module:   If contains dot, should be a rule name.
@@ -117,19 +127,6 @@ def flags(rule_or_module, variable_name, condition, values = []):
                           is specified, then the value of 'feature' 
                           will be added.
     """
-    caller = bjam.caller()
-    if not '.' in rule_or_module and caller and caller[:-1].startswith("Jamfile"):
-        # Unqualified rule name, used inside Jamfile. Most likely used with
-        # 'make' or 'notfile' rules. This prevents setting flags on the entire
-        # Jamfile module (this will be considered as rule), but who cares?
-        # Probably, 'flags' rule should be split into 'flags' and
-        # 'flags-on-module'.
-        rule_or_module = qualify_jam_action(rule_or_module, caller)
-    else:
-        # FIXME: revive checking that we don't set flags for a different
-        # module unintentionally
-        pass
-                          
     if condition and not replace_grist (condition, ''):
         # We have condition in the form '<feature>', that is, without
         # value. That's a previous syntax:
@@ -141,60 +138,63 @@ def flags(rule_or_module, variable_name, condition, values = []):
         condition = None
     
     if condition:
-        transformed = []
-        for c in condition:
-            # FIXME: 'split' might be a too raw tool here.
-            pl = [property.create_from_string(s,False,True) for s in c.split('/')]
-            pl = feature.expand_subfeatures(pl);
-            transformed.append(property_set.create(pl))
-        condition = transformed
-
-        property.validate_property_sets(condition)
+        property.validate_property_sets (condition)
+        condition = normalize_condition ([condition])
     
     __add_flag (rule_or_module, variable_name, condition, values)
 
-def set_target_variables (manager, rule_or_module, targets, ps):
+def set_target_variables (manager, rule_or_module, targets, properties):
     """
     """
-    settings = __set_target_variables_aux(manager, rule_or_module, ps)
+    key = rule_or_module + '.' + str (properties)
+    settings = __stv.get (key, None)
+    if not settings:
+        settings = __set_target_variables_aux  (manager, rule_or_module, properties)
+
+        __stv [key] = settings
         
     if settings:
         for s in settings:
             for target in targets:
                 manager.engine ().set_target_variable (target, s [0], s[1], True)
 
-def find_satisfied_condition(conditions, ps):
+def find_property_subset (property_sets, properties):
     """Returns the first element of 'property-sets' which is a subset of
     'properties', or an empty list if no such element exists."""
+    
+    prop_keys = get_grist(properties)
 
-    features = set(p.feature() for p in ps.all())
+    for s in property_sets:
+        # Handle value-less properties like '<architecture>' (compare with 
+        # '<architecture>x86').
 
-    for condition in conditions:
+        set = feature.split(s)
 
-        found_all = True
-        for i in condition.all():
+        # Find the set of features that
+        # - have no property specified in required property set 
+        # - are omitted in build property set
+        default_props = []
+        for i in set:       
+            # If $(i) is a value-less property it should match default 
+            # value of an optional property. See the first line in the 
+            # example below:
+            #
+            #  property set     properties     result
+            # <a> <b>foo      <b>foo           match
+            # <a> <b>foo      <a>foo <b>foo    no match
+            # <a>foo <b>foo   <b>foo           no match
+            # <a>foo <b>foo   <a>foo <b>foo    match
+            if not (get_value(i) or get_grist(i) in prop_keys):
+                default_props.append(i)
 
-            found = False
-            if i.value():
-                found = i.value() in ps.get(i.feature())
-            else:            
-                # Handle value-less properties like '<architecture>' (compare with 
-                # '<architecture>x86').
-                # If $(i) is a value-less property it should match default 
-                # value of an optional property. See the first line in the 
-                # example below:
-                #
-                #  property set     properties     result
-                # <a> <b>foo      <b>foo           match
-                # <a> <b>foo      <a>foo <b>foo    no match
-                # <a>foo <b>foo   <b>foo           no match
-                # <a>foo <b>foo   <a>foo <b>foo    match
-                found = not i.feature() in features
-
-            found_all = found_all and found
-
-        if found_all:
-            return condition
+        # FIXME: can this be expressed in a more pythonic way?
+        has_all = 1
+        for i in set:
+            if i not in (properties + default_props):
+                has_all = 0
+                break
+        if has_all:
+            return s
 
     return None
     
@@ -239,7 +239,7 @@ def inherit_flags(toolset, base, prohibited_properties = []):
     call it as needed."""
     for f in __module_flags.get(base, []):
         
-        if not f.condition or b2.util.set.difference(f.condition, prohibited_properties):
+        if not f.condition or set.difference(f.condition, prohibited_properties):
             match = __re_first_group.match(f.rule)
             rule_ = None
             if match:
@@ -290,8 +290,7 @@ def inherit_rules (toolset, base):
 ######################################################################################
 # Private functions
 
-@cached
-def __set_target_variables_aux (manager, rule_or_module, ps):
+def __set_target_variables_aux (manager, rule_or_module, properties):
     """ Given a rule name and a property set, returns a list of tuples of
         variables names and values, which must be set on targets for that
         rule/properties combination. 
@@ -300,12 +299,12 @@ def __set_target_variables_aux (manager, rule_or_module, ps):
 
     for f in __flags.get(rule_or_module, []):
            
-        if not f.condition or find_satisfied_condition (f.condition, ps):
+        if not f.condition or find_property_subset (f.condition, properties):
             processed = []
             for v in f.values:
                 # The value might be <feature-name> so needs special
                 # treatment.
-                processed += __handle_flag_value (manager, v, ps)
+                processed += __handle_flag_value (manager, v, properties)
 
             for r in processed:
                 result.append ((f.variable_name, r))
@@ -315,35 +314,40 @@ def __set_target_variables_aux (manager, rule_or_module, ps):
     
     if next:
         result.extend(__set_target_variables_aux(
-            manager, next.group(1), ps))
+            manager, next.group(1), properties))
 
     return result
 
-def __handle_flag_value (manager, value, ps):
+def __handle_flag_value (manager, value, properties):
     result = []
     
     if get_grist (value):
-        f = feature.get(value)
-        values = ps.get(f)
-        
-        for value in values:
+        matches = property.select (value, properties)
+        for p in matches:
+            att = feature.attributes (get_grist (p))
+            
+            ungristed = replace_grist (p, '')
 
-            if f.dependency():
+            if 'dependency' in att:
                 # the value of a dependency feature is a target
                 # and must be actualized
-                result.append(value.actualize())
+                # FIXME: verify that 'find' actually works, ick!
+                result.append (manager.targets ().find (ungristed).actualize ())
 
-            elif f.path() or f.free():
+            elif 'path' in att or 'free' in att:
+                values = []
                 
                 # Treat features with && in the value
                 # specially -- each &&-separated element is considered
                 # separate value. This is needed to handle searched
                 # libraries, which must be in specific order.
-                if not __re_two_ampersands.search(value):
-                    result.append(value)
+                if not __re_two_ampersands.search (ungristed):
+                    values.append (ungristed)
 
                 else:
-                    result.extend(value.split ('&&'))
+                    values.extend(value.split ('&&'))
+
+                result.extend(values)
             else:
                 result.append (ungristed)
     else:
@@ -365,8 +369,6 @@ def __add_flag (rule_or_module, variable_name, condition, values):
     __module_flags.setdefault(m, []).append(f)
     __flags.setdefault(rule_or_module, []).append(f)
 
-__requirements = []
-
 def requirements():
     """Return the list of global 'toolset requirements'.
     Those requirements will be automatically added to the requirements of any main target."""
@@ -378,6 +380,7 @@ def add_requirements(requirements):
     they were specified literally. For best results, all requirements added should
     be conditional or indirect conditional."""
     
+    # FIXME:
     #if ! $(.ignore-requirements)
     #{
     __requirements.extend(requirements)

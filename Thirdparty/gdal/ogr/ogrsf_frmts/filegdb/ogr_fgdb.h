@@ -1,5 +1,5 @@
 /******************************************************************************
-* $Id: ogr_fgdb.h 25025 2012-10-01 21:06:59Z rouault $
+* $Id: ogr_fgdb.h 23027 2011-09-02 22:19:29Z rouault $
 *
 * Project:  OpenGIS Simple Features Reference Implementation
 * Purpose:  Standard includes and class definitions ArcObjects OGR driver.
@@ -42,11 +42,6 @@
 /* FGDB API headers */
 #include "FileGDBAPI.h"
 
-/* Workaround needed for Linux, at least for FileGDB API 1.1 (#4455) */
-#if defined(__linux__)
-#define EXTENT_WORKAROUND
-#endif
-
 /************************************************************************
 * Default layer creation options
 */
@@ -59,33 +54,6 @@
 /* The ESRI FGDB API namespace */
 using namespace FileGDBAPI;
 
-/************************************************************************/
-/*                           FGdbBaseLayer                              */
-/************************************************************************/
-
-class FGdbBaseLayer : public OGRLayer
-{
-protected:
-
-  FGdbBaseLayer();
-  virtual ~FGdbBaseLayer();
-
-  OGRFeatureDefn* m_pFeatureDefn;
-  OGRSpatialReference* m_pSRS;
-
-  EnumRows*    m_pEnumRows;
-
-  std::vector<std::wstring> m_vOGRFieldToESRIField; //OGR Field Index to ESRI Field Name Mapping
-  std::vector<std::string> m_vOGRFieldToESRIFieldType; //OGR Field Index to ESRI Field Type Mapping
-
-  bool  m_supressColumnMappingError;
-  bool  m_forceMulti;
-
-  bool OGRFeatureFromGdbRow(Row* pRow, OGRFeature** ppFeature);
-
-public:
-          virtual OGRFeature* GetNextFeature();
-};
 
 /************************************************************************/
 /*                            FGdbLayer                                 */
@@ -93,30 +61,8 @@ public:
 
 class FGdbDataSource;
 
-class FGdbLayer : public FGdbBaseLayer
+class FGdbLayer : public OGRLayer
 {
-  int                 m_bBulkLoadAllowed;
-  int                 m_bBulkLoadInProgress;
-
-  void                StartBulkLoad();
-  void                EndBulkLoad();
-
-#ifdef EXTENT_WORKAROUND
-  bool                m_bLayerJustCreated;
-  OGREnvelope         sLayerEnvelope;
-  bool                m_bLayerEnvelopeValid;
-  void                WorkAroundExtentProblem();
-  bool                UpdateRowWithGeometry(Row& row, OGRGeometry* poGeom);
-#endif
-
-  OGRErr              PopulateRowWithFeature( Row& row, OGRFeature *poFeature );
-  OGRErr              GetRow( EnumRows& enumRows, Row& row, long nFID );
-
-  char*               CreateFieldDefn(OGRFieldDefn& oField,
-                                      int bApproxOK,
-                                      std::string& fieldname_clean,
-                                      std::string& gdbFieldType);
-
 public:
 
   FGdbLayer();
@@ -141,15 +87,7 @@ public:
   std::wstring GetType() const { return m_wstrType; }
 
   virtual OGRErr      CreateField( OGRFieldDefn *poField, int bApproxOK );
-  virtual OGRErr      DeleteField( int iFieldToDelete );
-#ifdef AlterFieldDefn_implemented_but_not_working
-  virtual OGRErr      AlterFieldDefn( int iFieldToAlter, OGRFieldDefn* poNewFieldDefn, int nFlags );
-#endif
-
   virtual OGRErr      CreateFeature( OGRFeature *poFeature );
-  virtual OGRErr      SetFeature( OGRFeature *poFeature );
-  virtual OGRErr      DeleteFeature( long nFID );
-
   virtual OGRErr      GetExtent( OGREnvelope *psExtent, int bForce );
   virtual int         GetFeatureCount( int bForce );
   virtual OGRErr      SetAttributeFilter( const char *pszQuery );
@@ -177,8 +115,12 @@ protected:
   bool ParseGeometryDef(CPLXMLNode* psGeometryDef);
   bool ParseSpatialReference(CPLXMLNode* psSpatialRefNode, std::string* pOutWkt, std::string* pOutWKID);
 
+  bool OGRFeatureFromGdbRow(Row* pRow, OGRFeature** ppFeature);
+  
   FGdbDataSource* m_pDS;
   Table* m_pTable;
+  OGRFeatureDefn* m_pFeatureDefn;
+  OGRSpatialReference* m_pSRS;
 
   std::string m_strName; //contains underlying FGDB table name (not catalog name)
 
@@ -191,36 +133,21 @@ protected:
   std::wstring m_wstrSubfields;
   std::wstring m_wstrWhereClause;
   OGRGeometry* m_pOGRFilterGeometry;
+  EnumRows*    m_pEnumRows;
 
   bool        m_bFilterDirty; //optimization to avoid multiple calls to search until necessary
 
-  bool  m_bLaunderReservedKeywords;
 
-};
+  std::vector<std::wstring> m_vOGRFieldToESRIField; //OGR Field Index to ESRI Field Name Mapping
+  std::vector<std::string> m_vOGRFieldToESRIFieldType; //OGR Field Index to ESRI Field Type Mapping
 
-/************************************************************************/
-/*                         FGdbResultLayer                              */
-/************************************************************************/
+  //buffers are used for avoiding constant reallocation of temp memory
+  //unsigned char* m_pBuffer;
+  //long  m_bufferSize; //in bytes
+  
+  bool  m_supressColumnMappingError;
+  bool  m_forceMulti;
 
-class FGdbResultLayer : public FGdbBaseLayer
-{
-public:
-
-  FGdbResultLayer(FGdbDataSource* pParentDataSource, const char* pszStatement, EnumRows* pEnumRows);
-  virtual ~FGdbResultLayer();
-
-  virtual void        ResetReading();
-
-  OGRFeatureDefn *    GetLayerDefn() { return m_pFeatureDefn; }
-
-  //virtual OGRSpatialReference *GetSpatialRef() { return m_pSRS; }
-
-  virtual int         TestCapability( const char * );
-
-protected:
-
-  FGdbDataSource* m_pDS;
-  CPLString       osSQL;
 };
 
 /************************************************************************/
@@ -243,11 +170,6 @@ public:
   virtual OGRLayer* CreateLayer( const char *, OGRSpatialReference* = NULL, OGRwkbGeometryType = wkbUnknown, char** = NULL );
 
   virtual OGRErr DeleteLayer( int );
-
-  virtual OGRLayer *  ExecuteSQL( const char *pszSQLCommand,
-                                  OGRGeometry *poSpatialFilter,
-                                  const char *pszDialect );
-  virtual void        ReleaseResultSet( OGRLayer * poResultsSet );
 
   int TestCapability( const char * );
 

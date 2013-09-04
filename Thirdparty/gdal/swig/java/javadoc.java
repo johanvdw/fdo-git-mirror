@@ -1,5 +1,5 @@
 /* ***************************************************************************
-* $Id: javadoc.java 25687 2013-02-25 17:41:30Z rouault $
+* $Id: javadoc.java 23513 2011-12-10 21:12:59Z rouault $
 *
 * Project:  GDAL/OGR Java bindings
 * Purpose:  Documentation for the Java bindings
@@ -154,32 +154,6 @@ public class gdal:public static int PushErrorHandler(String callbackName)
  * @since Java bindings 1.7.0
  */
 public class gdal:public static int PushErrorHandler()
-
-/**
- * Set a global error handler.
- *
- * This installs a global error handler.
- * 
- * Note; if a local handler is already installed with PushErrorHandler(), the global error
- * handler will not be used until the last local handler is uninstalled with PopErrorHandler().
-  *
- * @since Java bindings 1.10.0
- *
- * @param callbackName handler function name : "CPLQuietErrorHandler", "CPLDefaultErrorHandler", "CPLLoggingErrorHandler"
- */
-public class gdal:public static int SetErrorHandler(String callbackName)
-
-/**
- * Set a quiet global error handler.
- *
- * This installs a quiet global error handler.
- * 
- * Note; if a local handler is already installed with PushErrorHandler(), the global error
- * handler will not be used until the last local handler is uninstalled with PopErrorHandler().
-  *
- * @since Java bindings 1.10.0
- */
-public class gdal:public static int SetErrorHandler()
 
 /**
  * Report an error.
@@ -1149,7 +1123,6 @@ public class gdal:public static Dataset AutoCreateWarpedVRT(Dataset src_ds)
  * Available request values:
  * <ul>
  * <li> "VERSION_NUM": Returns GDAL_VERSION_NUM formatted as a string.  ie. "1170"
- *      Note: starting with GDAL 1.10, this string will be longer than 4 characters.
  * <li> "RELEASE_DATE": Returns GDAL_RELEASE_DATE formatted as a string.  
  * ie. "20020416".
  * <li> "RELEASE_NAME": Returns the GDAL_RELEASE_NAME. ie. "1.1.7"
@@ -6342,7 +6315,6 @@ public class DataSource:public int SyncToDisk()
  <p>
  <ul>
   <li> <b>ODsCCreateLayer</b>: True if this datasource can create new layers.<p>
-  <li> <b>ODsCDeleteLayer</b>: True if this datasource can delete existing layers.<p>
  </ul>
  <p>
  The constant forms of the capability names should be used in preference
@@ -7154,409 +7126,6 @@ Layers will return false for any unrecognised capabilities.<p>
 */
 public class Layer:public boolean TestCapability(String cap)
 
-/**
- * Intersection of two layers.
- * <p>
- * The result layer contains features whose geometries represent areas
- * that are common between features in the input layer and in the
- * method layer. The features in the result layer have attributes from
- * both input and method layers. The schema of the result layer can be
- * set by the user or, if it is empty, is initialized to contain all
- * fields in the input and method layers.
- * <p>
- * If the schema of the result is set by user and contains
- * fields that have the same name as a field in input and in method
- * layer, then the attribute in the result feature will get the value
- * from the feature of the method layer.
- * <p>
- * For best performance use the minimum amount of features in
- * the method layer and copy it into a memory layer.
- * <p>
- * The recognized list of options is :
- * <ul>
- * <li>SKIP_FAILURES=YES/NO. Set it to YES to go on, even when a
- *     feature could not be inserted.
- * <li>PROMOTE_TO_MULTI=YES/NO. Set it to YES to convert Polygons
- *     into MultiPolygons, or LineStrings to MultiLineStrings.
- * <li>INPUT_PREFIX=string. Set a prefix for the field names that
- *     will be created from the fields of the input layer.
- * <li>METHOD_PREFIX=string. Set a prefix for the field names that
- *     will be created from the fields of the method layer.
- * </ul>
- * <p>
- * This method relies on GEOS support. Do not use unless the
- * GEOS support is compiled in.
- *
- * @param pLayerMethod the method layer. Should not be null.
- *
- * @param pLayerResult the layer where the features resulting from the
- * operation are inserted. Should not be null. See above the note
- * about the schema.
- *
- * @param options list of options (may be null).
- *
- * @param callback a callback function for reporting progress or null.
- *
- * @return 0 on success. Otherwise throws a RuntimeException (or an error code if DontUseExceptions() has been called).
- *
- * @since OGR 1.10
- */
-public class Layer:public int Intersection( Layer pLayerMethod, Layer pLayerResult, java.util.Vector options, ProgressCallback callback )
-
-/**
- * Intersection of two layers.
- *
- * @see #Intersection( Layer pLayerMethod, Layer pLayerResult, java.util.Vector options, ProgressCallback callback )
- */
-public class Layer:public int Intersection( Layer pLayerMethod, Layer pLayerResult, java.util.Vector options )
-
-public class Layer:public int Intersection( Layer pLayerMethod, Layer pLayerResult)
-
-
-/**
- * Union of two layers.
- * <p>
- * The result layer contains features whose geometries represent areas
- * that are in either in the input layer or in the method layer. The
- * features in the result layer have attributes from both input and
- * method layers. For features which represent areas that are only in
- * the input or in the method layer the respective attributes have
- * undefined values. The schema of the result layer can be set by the
- * user or, if it is empty, is initialized to contain all fields in
- * the input and method layers.
- * <p>
- * If the schema of the result is set by user and contains
- * fields that have the same name as a field in input and in method
- * layer, then the attribute in the result feature will get the value
- * from the feature of the method layer (even if it is undefined).
- * <p>
- * For best performance use the minimum amount of features in
- * the method layer and copy it into a memory layer.
- * <p>
- * The recognized list of options is :
- * <ul>
- * <li>SKIP_FAILURES=YES/NO. Set it to YES to go on, even when a
- *     feature could not be inserted.
- * <li>PROMOTE_TO_MULTI=YES/NO. Set it to YES to convert Polygons
- *     into MultiPolygons, or LineStrings to MultiLineStrings.
- * <li>INPUT_PREFIX=string. Set a prefix for the field names that
- *     will be created from the fields of the input layer.
- * <li>METHOD_PREFIX=string. Set a prefix for the field names that
- *     will be created from the fields of the method layer.
- * </ul>
- * <p>
- * This method relies on GEOS support. Do not use unless the
- * GEOS support is compiled in.
- *
- * @param pLayerMethod the method layer. Should not be null.
- *
- * @param pLayerResult the layer where the features resulting from the
- * operation are inserted. Should not be null. See above the note
- * about the schema.
- *
- * @param options list of options (may be null).
- *
- * @param callback a callback function for reporting progress or null.
- *
- * @return 0 on success. Otherwise throws a RuntimeException (or an error code if DontUseExceptions() has been called).
- *
- * @since OGR 1.10
- */
-public class Layer:public int Union( Layer pLayerMethod, Layer pLayerResult, java.util.Vector options, ProgressCallback callback )
-
-/**
- * Union of two layers.
- *
- * @see #Union( Layer pLayerMethod, Layer pLayerResult, java.util.Vector options, ProgressCallback callback )
- */
-public class Layer:public int Union( Layer pLayerMethod, Layer pLayerResult, java.util.Vector options )
-
-public class Layer:public int Union( Layer pLayerMethod, Layer pLayerResult)
-
-/**
- * Symmetrical difference of two layers.
- * <p>
- * The result layer contains features whose geometries represent areas
- * that are in either in the input layer or in the method layer but
- * not in both. The features in the result layer have attributes from
- * both input and method layers. For features which represent areas
- * that are only in the input or in the method layer the respective
- * attributes have undefined values. The schema of the result layer
- * can be set by the user or, if it is empty, is initialized to
- * contain all fields in the input and method layers.
- * <p>
- * If the schema of the result is set by user and contains
- * fields that have the same name as a field in input and in method
- * layer, then the attribute in the result feature will get the value
- * from the feature of the method layer (even if it is undefined).
- * <p>
- * For best performance use the minimum amount of features in
- * the method layer and copy it into a memory layer.
- * <p>
- * The recognized list of options is :
- * <ul>
- * <li>SKIP_FAILURES=YES/NO. Set it to YES to go on, even when a
- *     feature could not be inserted.
- * <li>PROMOTE_TO_MULTI=YES/NO. Set it to YES to convert Polygons
- *     into MultiPolygons, or LineStrings to MultiLineStrings.
- * <li>INPUT_PREFIX=string. Set a prefix for the field names that
- *     will be created from the fields of the input layer.
- * <li>METHOD_PREFIX=string. Set a prefix for the field names that
- *     will be created from the fields of the method layer.
- * </ul>
- * <p>
- * This method relies on GEOS support. Do not use unless the
- * GEOS support is compiled in.
- *
- * @param pLayerMethod the method layer. Should not be null.
- *
- * @param pLayerResult the layer where the features resulting from the
- * operation are inserted. Should not be null. See above the note
- * about the schema.
- *
- * @param options list of options (may be null).
- *
- * @param callback a callback function for reporting progress or null.
- *
- * @return 0 on success. Otherwise throws a RuntimeException (or an error code if DontUseExceptions() has been called).
- *
- * @since OGR 1.10
- */
-public class Layer:public int SymDifference( Layer pLayerMethod, Layer pLayerResult, java.util.Vector options, ProgressCallback callback )
-
-/**
- * Symmetrical difference of two layers.
- *
- * @see #SymDifference( Layer pLayerMethod, Layer pLayerResult, java.util.Vector options, ProgressCallback callback )
- */
-public class Layer:public int SymDifference( Layer pLayerMethod, Layer pLayerResult, java.util.Vector options )
-
-public class Layer:public int SymDifference( Layer pLayerMethod, Layer pLayerResult)
-
-/**
- * Identify the features of this layer with the ones from the
- * identity layer.
- * <p>
- * The result layer contains features whose geometries represent areas
- * that are in the input layer. The features in the result layer have
- * attributes from both input and method layers. The schema of the
- * result layer can be set by the user or, if it is empty, is
- * initialized to contain all fields in input and method layers.
- * <p>
- * If the schema of the result is set by user and contains
- * fields that have the same name as a field in input and in method
- * layer, then the attribute in the result feature will get the value
- * from the feature of the method layer (even if it is undefined).
- * <p>
- * For best performance use the minimum amount of features in
- * the method layer and copy it into a memory layer.
- * <p>
- * The recognized list of options is :
- * <ul>
- * <li>SKIP_FAILURES=YES/NO. Set it to YES to go on, even when a
- *     feature could not be inserted.
- * <li>PROMOTE_TO_MULTI=YES/NO. Set it to YES to convert Polygons
- *     into MultiPolygons, or LineStrings to MultiLineStrings.
- * <li>INPUT_PREFIX=string. Set a prefix for the field names that
- *     will be created from the fields of the input layer.
- * <li>METHOD_PREFIX=string. Set a prefix for the field names that
- *     will be created from the fields of the method layer.
- * </ul>
- * <p>
- * This method relies on GEOS support. Do not use unless the
- * GEOS support is compiled in.
- *
- * @param pLayerMethod the method layer. Should not be null.
- *
- * @param pLayerResult the layer where the features resulting from the
- * operation are inserted. Should not be null. See above the note
- * about the schema.
- *
- * @param options list of options (may be null).
- *
- * @param callback a callback function for reporting progress or null.
- *
- * @return 0 on success. Otherwise throws a RuntimeException (or an error code if DontUseExceptions() has been called).
- *
- * @since OGR 1.10
- */
-public class Layer:public int Identity( Layer pLayerMethod, Layer pLayerResult, java.util.Vector options, ProgressCallback callback )
-
-/**
- * Identify the features of this layer with the ones from the
- * identity layer.
- *
- * @see #Identity( Layer pLayerMethod, Layer pLayerResult, java.util.Vector options, ProgressCallback callback )
- */
-public class Layer:public int Identity( Layer pLayerMethod, Layer pLayerResult, java.util.Vector options )
-
-public class Layer:public int Identity( Layer pLayerMethod, Layer pLayerResult)
-
-/**
- * Update this layer with features from the update layer.
- * <p>
- * The result layer contains features whose geometries represent areas
- * that are either in the input layer or in the method layer. The
- * features in the result layer have areas of the features of the
- * method layer or those ares of the features of the input layer that
- * are not covered by the method layer. The features of the result
- * layer get their attributes from the input layer. The schema of the
- * result layer can be set by the user or, if it is empty, is
- * initialized to contain all fields in the input layer.
- * <p>
- * If the schema of the result is set by user and contains
- * fields that have the same name as a field in the method layer, then
- * the attribute in the result feature the originates from the method
- * layer will get the value from the feature of the method layer.
- * <p>
- * For best performance use the minimum amount of features in
- * the method layer and copy it into a memory layer.
- * <p>
- * The recognized list of options is :
- * <ul>
- * <li>SKIP_FAILURES=YES/NO. Set it to YES to go on, even when a
- *     feature could not be inserted.
- * <li>PROMOTE_TO_MULTI=YES/NO. Set it to YES to convert Polygons
- *     into MultiPolygons, or LineStrings to MultiLineStrings.
- * <li>INPUT_PREFIX=string. Set a prefix for the field names that
- *     will be created from the fields of the input layer.
- * <li>METHOD_PREFIX=string. Set a prefix for the field names that
- *     will be created from the fields of the method layer.
- * </ul>
- * <p>
- * This method relies on GEOS support. Do not use unless the
- * GEOS support is compiled in.
- *
- * @param pLayerMethod the method layer. Should not be null.
- *
- * @param pLayerResult the layer where the features resulting from the
- * operation are inserted. Should not be null. See above the note
- * about the schema.
- *
- * @param options list of options (may be null).
- *
- * @param callback a callback function for reporting progress or null.
- *
- * @return 0 on success. Otherwise throws a RuntimeException (or an error code if DontUseExceptions() has been called).
- *
- * @since OGR 1.10
- */
-public class Layer:public int Update( Layer pLayerMethod, Layer pLayerResult, java.util.Vector options, ProgressCallback callback )
-
-/**
- * Update this layer with features from the update layer.
- *
- * @see #Update( Layer pLayerMethod, Layer pLayerResult, java.util.Vector options, ProgressCallback callback )
- */
-public class Layer:public int Update( Layer pLayerMethod, Layer pLayerResult, java.util.Vector options )
-
-public class Layer:public int Update( Layer pLayerMethod, Layer pLayerResult)
-
-/**
- * Clip off areas that are not covered by the method layer.
- * <p>
- * The result layer contains features whose geometries represent areas
- * that are in the input layer and in the method layer. The features
- * in the result layer have the (possibly clipped) areas of features
- * in the input layer and the attributes from the same features. The
- * schema of the result layer can be set by the user or, if it is
- * empty, is initialized to contain all fields in the input layer.
- * <p>
- * For best performance use the minimum amount of features in
- * the method layer and copy it into a memory layer.
- * <p>
- * The recognized list of options is :
- * <ul>
- * <li>SKIP_FAILURES=YES/NO. Set it to YES to go on, even when a
- *     feature could not be inserted.
- * <li>PROMOTE_TO_MULTI=YES/NO. Set it to YES to convert Polygons
- *     into MultiPolygons, or LineStrings to MultiLineStrings.
- * <li>INPUT_PREFIX=string. Set a prefix for the field names that
- *     will be created from the fields of the input layer.
- * <li>METHOD_PREFIX=string. Set a prefix for the field names that
- *     will be created from the fields of the method layer.
- * </ul>
- * <p>
- * This method relies on GEOS support. Do not use unless the
- * GEOS support is compiled in.
- *
- * @param pLayerMethod the method layer. Should not be null.
- *
- * @param pLayerResult the layer where the features resulting from the
- * operation are inserted. Should not be null. See above the note
- * about the schema.
- *
- * @param options list of options (may be null).
- *
- * @param callback a callback function for reporting progress or null.
- *
- * @return 0 on success. Otherwise throws a RuntimeException (or an error code if DontUseExceptions() has been called).
- *
- * @since OGR 1.10
- */
-public class Layer:public int Clip( Layer pLayerMethod, Layer pLayerResult, java.util.Vector options, ProgressCallback callback )
-
-/**
- * Clip off areas that are not covered by the method layer.
- *
- * @see #Clip( Layer pLayerMethod, Layer pLayerResult, java.util.Vector options, ProgressCallback callback )
- */
-public class Layer:public int Clip( Layer pLayerMethod, Layer pLayerResult, java.util.Vector options )
-
-public class Layer:public int Clip( Layer pLayerMethod, Layer pLayerResult)
-
-/**
- * Remove areas that are covered by the method layer.
- * <p>
- * The result layer contains features whose geometries represent areas
- * that are in the input layer but not in the method layer. The
- * features in the result layer have attributes from the input
- * layer. The schema of the result layer can be set by the user or, if
- * it is empty, is initialized to contain all fields in the input
- * layer.
- * <p>
- * For best performance use the minimum amount of features in
- * the method layer and copy it into a memory layer.
- * <p>
- * The recognized list of options is :
- * <ul>
- * <li>SKIP_FAILURES=YES/NO. Set it to YES to go on, even when a
- *     feature could not be inserted.
- * <li>PROMOTE_TO_MULTI=YES/NO. Set it to YES to convert Polygons
- *     into MultiPolygons, or LineStrings to MultiLineStrings.
- * <li>INPUT_PREFIX=string. Set a prefix for the field names that
- *     will be created from the fields of the input layer.
- * <li>METHOD_PREFIX=string. Set a prefix for the field names that
- *     will be created from the fields of the method layer.
- * </ul>
- * <p>
- * This method relies on GEOS support. Do not use unless the
- * GEOS support is compiled in.
- *
- * @param pLayerMethod the method layer. Should not be null.
- *
- * @param pLayerResult the layer where the features resulting from the
- * operation are inserted. Should not be null. See above the note
- * about the schema.
- *
- * @param options list of options (may be null).
- *
- * @param callback a callback function for reporting progress or null.
- *
- * @return 0 on success. Otherwise throws a RuntimeException (or an error code if DontUseExceptions() has been called).
- *
- * @since OGR 1.10
- */
-public class Layer:public int Erase( Layer pLayerMethod, Layer pLayerResult, java.util.Vector options, ProgressCallback callback )
-
-/**
- * Remove areas that are covered by the method layer.
- *
- * @see #Erase( Layer pLayerMethod, Layer pLayerResult, java.util.Vector options, ProgressCallback callback )
- */
-public class Layer:public int Erase( Layer pLayerMethod, Layer pLayerResult, java.util.Vector options )
-
-public class Layer:public int Erase( Layer pLayerMethod, Layer pLayerResult)
 
 
 /* Class Feature */
@@ -8555,26 +8124,6 @@ public class Geometry:public boolean Equal(Geometry other)
 public class Geometry:public String ExportToGML()
 
 /**
- * Convert a geometry into GML format.
- * <p>
- * The GML geometry is expressed directly in terms of GML basic data
- * types assuming the this is available in the gml namespace.
- *
- * The supported options in OGR 1.8.0 are :
- * <ul>
- * <li>FORMAT=GML3. Otherwise it will default to GML 2.1.2 output.</li>
- * <li>GML3_LINESTRING_ELEMENT=curve. (Only valid for FORMAT=GML3) To use gml:Curve element for linestrings. Otherwise gml:LineString will be used .</li>
- * <li>GML3_LONGSRS=YES/NO. (Only valid for FORMAT=GML3) Default to YES. If YES, SRS with EPSG authority will be written with the "urn:ogc:def:crs:EPSG::" prefix. In the case, if the SRS is a geographic SRS without explicit AXIS order, but that the same SRS authority code imported with ImportFromEPSGA() should be treated as lat/long, then the function will take care of coordinate order swapping. If set to NO, SRS with EPSG authority will be written with the "EPSG:" prefix, even if they are in lat/long order.</li>
- * </ul>
- *
- * @param options a list of strings.
- * @return A GML fragment or null in case of error.
- *
- * @since OGR 1.8.0
- */
-public class Geometry:public String ExportToGML(java.util.Vector options)
-
-/**
  * Convert a geometry into KML format.
  *
  * @param altitude_mode string which will be inserted in-between the &lt;altitude_mode&gt; tag.
@@ -8598,18 +8147,6 @@ public class Geometry:public String ExportToKML()
  * @return A GeoJSON fragment or null in case of error.
  */
 public class Geometry:public String ExportToJson()
-
-/**
- * Convert a geometry into GeoJSON format.
- *
- * @param options a list of strings. For now, only COORDINATE_PRECISION=int_number
- *                where int_number is the maximum number of figures after decimal separator to write in coordinates.
- * @return A GeoJSON fragment or null in case of error.
- *
- * @since OGR 1.9.0
- */
-public class Geometry:public String ExportToJson(java.util.Vector options)
-
 
 /**
  * Convert a geometry into well known binary format.
@@ -8754,15 +8291,6 @@ public class Geometry:public int GetDimension()
  * @param argout an allocated array of 4 doubles into which to place the result
  */
 public class Geometry:public void GetEnvelope(double[] argout)
-
-/**
- * Computes and returns the 3D bounding envelope for this geometry.
- * <p>
- * @param argout an allocated array of 6 doubles into which to place the result
- *
- * @since OGR 1.9.0
- */
-public class Geometry:public void GetEnvelope3D(double[] argout)
 
 /**
  * Fetch the number of elements in a geometry or number of geometries in
@@ -8959,37 +8487,26 @@ public class Geometry:public double GetZ()
 
 /**
  * Do these features intersect?
- *
- * @deprecated
- *
- * @see #Intersects(Geometry)
- */
-public class Geometry:public boolean Intersect(Geometry other)
-
-/**
- * Do these features intersect?
  * <p>
  * Determines whether two geometries intersect.  If GEOS is enabled, then
  * this is done in rigerous fashion otherwise true is returned if the
- * envelopes (bounding boxes) of the two features overlap.
+ * envelopes (bounding boxes) of the two features overlap. 
  * <p>
  * The geom argument may be safely null, but in this case the method
  * will always return true.   That is, a null geometry is treated as being
- * everywhere.
+ * everywhere. 
  *
- * @param other the other geometry to test against.
+ * @param other the other geometry to test against.  
  *
  * @return true if the geometries intersect, otherwise false.
- *
- * @since OGR 1.8.0
  */
-public class Geometry:public boolean Intersects(Geometry other)
+public class Geometry:public boolean Intersect(Geometry other)
 
 /**
  * Compute intersection.
  * <p>
  * Generates a new geometry which is the region of intersection of the
- * two geometries operated on.  The Intersects() method can be used to test if
+ * two geometries operated on.  The Intersect() method can be used to test if
  * two geometries intersect. 
  * <p>
  * This method is built on the GEOS library, check it for the definition
@@ -9000,8 +8517,6 @@ public class Geometry:public boolean Intersects(Geometry other)
  *
  * @return a new geometry representing the intersection or null if there is
  * no intersection or an error occurs.
- *
- * @see #Intersects(Geometry)
  */
 public class Geometry:public Geometry Intersection(Geometry other)
 
@@ -11770,38 +11285,13 @@ public class CoordinateTransformation
 /**
  * Create transformation object.
  * <p>
- * Caution: the coordinate transformation object returned can be in a non
- * working state if no coordinate transformation can be established between
- * src and dst, and calling other methods on it can result in the process
- * termination. If using GDAL 1.10 or above, it is recommanded to use the
- * <a href="#CreateCoordinateTransformation(org.gdal.osr.SpatialReference,%20org.gdal.osr.SpatialReference)">
- * CreateCoordinateTransformation(org.gdal.osr.SpatialReference, org.gdal.osr.SpatialReference)</a> method instead.
- * <p>
- * For GDAL 1.9.X or below, you might use the following snippet :
- * <pre>
- * gdal.PushErrorHandler( "CPLQuietErrorHandler" );
- * hTransform = new CoordinateTransformation(src, dst);
- * gdal.PopErrorHandler();
- * if (gdal.GetLastErrorMsg().indexOf("Unable to load PROJ.4 library") != -1)
- *    hTransform = null;
- * </pre>
+ * Input spatial reference system objects are assigned 
+ * by copy (calling clone() method) and no ownership transfer occurs.
  *
  * @param src source spatial reference system. 
- * @param dst target spatial reference system.
- * @deprecated 
- * @see #CreateCoordinateTransformation(org.gdal.osr.SpatialReference, org.gdal.osr.SpatialReference)
+ * @param dst target spatial reference system. 
  */
 public class CoordinateTransformation:public CoordinateTransformation(SpatialReference src, SpatialReference dst) 
-
-/**
- * Create transformation object.
- *
- * @param src source spatial reference system. 
- * @param dst target spatial reference system.
- * @return a new CoordinateTransformation object, or null in case of failure
- * @since GDAL 1.10
- */
-public class CoordinateTransformation:public static CoordinateTransformation CreateCoordinateTransformation(SpatialReference src, SpatialReference dst)
 
 /**
  * Transform point from source to destination space.
@@ -11921,18 +11411,6 @@ public class osr:public static String GetUserInputAsWKT(String definition)
  * @return WKT definition
  */
 public class osr:public static String GetWellKnownGeogCSAsWKT(String definition)
-
-/**
- * Create transformation object.
- *
- * @param src source spatial reference system. 
- * @param dst target spatial reference system.
- * @return a new CoordinateTransformation object, or null in case of failure
- * @since GDAL 1.10
- * @see <a href="CoordinateTransformation.html#CreateCoordinateTransformation(org.gdal.osr.SpatialReference,%20org.gdal.osr.SpatialReference)">
- * CoordinateTransformation.CreateCoordinateTransformation(org.gdal.osr.SpatialReference, org.gdal.osr.SpatialReference</a>
- */
-public class osr:public static CoordinateTransformation CreateCoordinateTransformation(SpatialReference src, SpatialReference dst)
 
 /**
  * @deprecated This is a typo. Use wkb25DBit instead.

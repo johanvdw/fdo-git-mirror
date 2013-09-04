@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgftresultlayer.cpp 24343 2012-04-29 11:31:01Z rouault $
+ * $Id: ogrgftresultlayer.cpp 22115 2011-04-03 22:27:42Z rouault $
  *
  * Project:  GFT Translator
  * Purpose:  Implements OGRGFTResultLayer class.
@@ -29,7 +29,7 @@
 
 #include "ogr_gft.h"
 
-CPL_CVSID("$Id: ogrgftresultlayer.cpp 24343 2012-04-29 11:31:01Z rouault $");
+CPL_CVSID("$Id: ogrgftresultlayer.cpp 22115 2011-04-03 22:27:42Z rouault $");
 
 /************************************************************************/
 /*                        OGRGFTResultLayer()                           */
@@ -79,14 +79,17 @@ void OGRGFTResultLayer::ResetReading()
 
 int OGRGFTResultLayer::FetchNextRows()
 {
-    if (!EQUALN(osSQL.c_str(), "SELECT", 6))
+    if (!((EQUALN(osSQL.c_str(), "SELECT", 6) ||
+           EQUALN(osSQL.c_str(), "select", 6))))
         return FALSE;
 
     aosRows.resize(0);
 
     CPLString osChangedSQL(osSQL);
-    if (osSQL.ifind(" OFFSET ") == std::string::npos &&
-        osSQL.ifind(" LIMIT ") == std::string::npos)
+    if (strstr(osSQL.c_str(), " OFFSET ") == NULL &&
+        strstr(osSQL.c_str(), " offset ") == NULL &&
+        strstr(osSQL.c_str(), " LIMIT ") == NULL &&
+        strstr(osSQL.c_str(), " limit ") == NULL )
     {
         osChangedSQL += CPLSPrintf(" OFFSET %d LIMIT %d",
                                    nOffset, GetFeaturesToFetch());
@@ -180,15 +183,18 @@ int OGRGFTResultLayer::RunSQL()
     CPLString osTableId;
     if (EQUALN(osSQL.c_str(), "SELECT", 6))
     {
-        size_t nPosFROM = osSQL.ifind(" FROM ");
-        if (nPosFROM == std::string::npos)
+        const char* pszFROM = strstr(osSQL.c_str(), " FROM ");
+        if (pszFROM == NULL)
+            pszFROM = strstr(osSQL.c_str(), " from ");
+        if (pszFROM == NULL)
         {
             CPLError(CE_Failure, CPLE_AppDefined, "RunSQL() failed. Missing FROM in SELECT");
             return FALSE;
         }
         CPLString osReminder;
-        nPosFROM += 6;
-        osTableId = OGRGFTExtractTableID(osSQL.c_str() + nPosFROM, osReminder);
+        int nPosFROM = pszFROM - osSQL.c_str() + 6;
+        osTableId = OGRGFTExtractTableID(pszFROM + 6, osReminder);
+        pszFROM = NULL;
 
         poTableLayer = (OGRGFTTableLayer*) poDS->GetLayerByName(osTableId);
         if (poTableLayer != NULL)
@@ -208,8 +214,10 @@ int OGRGFTResultLayer::RunSQL()
         }
 
         int nFeaturesToFetch = GetFeaturesToFetch();
-        if (osSQL.ifind(" OFFSET ") == std::string::npos &&
-            osSQL.ifind(" LIMIT ") == std::string::npos &&
+        if (strstr(osSQL.c_str(), " OFFSET ") == NULL &&
+            strstr(osSQL.c_str(), " offset ") == NULL &&
+            strstr(osSQL.c_str(), " LIMIT ") == NULL &&
+            strstr(osSQL.c_str(), " limit ") == NULL &&
             nFeaturesToFetch > 0)
         {
             osChangedSQL += CPLSPrintf(" LIMIT %d", nFeaturesToFetch);

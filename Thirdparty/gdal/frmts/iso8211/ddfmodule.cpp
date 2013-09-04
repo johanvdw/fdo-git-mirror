@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ddfmodule.cpp 25841 2013-04-02 21:30:03Z rouault $
+ * $Id: ddfmodule.cpp 23595 2011-12-18 22:58:47Z rouault $
  *
  * Project:  ISO 8211 Access
  * Purpose:  Implements the DDFModule class.
@@ -30,7 +30,7 @@
 #include "iso8211.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ddfmodule.cpp 25841 2013-04-02 21:30:03Z rouault $");
+CPL_CVSID("$Id: ddfmodule.cpp 23595 2011-12-18 22:58:47Z rouault $");
 
 /************************************************************************/
 /*                             DDFModule()                              */
@@ -275,7 +275,7 @@ int DDFModule::Open( const char * pszFilename, int bFailQuietly )
     pachRecord = (char *) CPLMalloc(_recLength);
     memcpy( pachRecord, achLeader, nLeaderSize );
 
-    if( (int)VSIFReadL( pachRecord+nLeaderSize, 1, _recLength-nLeaderSize, fpDDF )
+    if( VSIFReadL( pachRecord+nLeaderSize, 1, _recLength-nLeaderSize, fpDDF )
         != _recLength - nLeaderSize )
     {
         if( !bFailQuietly )
@@ -448,24 +448,18 @@ int DDFModule::Create( const char *pszFilename )
     int nOffset = 0;
     for( iField=0; iField < nFieldDefnCount; iField++ )
     {
-        char achDirEntry[255];
-        char szFormat[32];
+        char achDirEntry[12];
         int nLength;
-
-        CPLAssert(_sizeFieldLength + _sizeFieldPos + _sizeFieldTag < (int)sizeof(achDirEntry));
 
         papoFieldDefns[iField]->GenerateDDREntry( NULL, &nLength );
 
-        CPLAssert( (int)strlen(papoFieldDefns[iField]->GetName()) == _sizeFieldTag );
         strcpy( achDirEntry, papoFieldDefns[iField]->GetName() );
-        sprintf(szFormat, "%%0%dd", (int)_sizeFieldLength);
-        sprintf( achDirEntry + _sizeFieldTag, szFormat, nLength );
-        sprintf(szFormat, "%%0%dd", (int)_sizeFieldTag);
+        sprintf( achDirEntry + _sizeFieldTag, "%03d", nLength );
         sprintf( achDirEntry + _sizeFieldTag + _sizeFieldLength, 
-                 szFormat, nOffset );
+                 "%04d", nOffset );
         nOffset += nLength;
 
-        VSIFWriteL( achDirEntry, _sizeFieldLength + _sizeFieldPos + _sizeFieldTag, 1, fpDDF );
+        VSIFWriteL( achDirEntry, 11, 1, fpDDF );
     }
 
     char chUT = DDF_FIELD_TERMINATOR;

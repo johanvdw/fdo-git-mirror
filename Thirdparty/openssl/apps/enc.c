@@ -101,6 +101,9 @@ int MAIN(int, char **);
 
 int MAIN(int argc, char **argv)
 	{
+#ifndef OPENSSL_NO_ENGINE
+	ENGINE *e = NULL;
+#endif
 	static const char magic[]="Salted__";
 	char mbuf[sizeof magic-1];
 	char *strbuf=NULL;
@@ -129,7 +132,6 @@ int MAIN(int argc, char **argv)
 	char *engine = NULL;
 #endif
 	const EVP_MD *dgst=NULL;
-	int non_fips_allow = 0;
 
 	apps_startup();
 
@@ -282,8 +284,6 @@ int MAIN(int argc, char **argv)
 			if (--argc < 1) goto bad;
 			md= *(++argv);
 			}
-		else if (strcmp(*argv,"-non-fips-allow") == 0)
-			non_fips_allow = 1;
 		else if	((argv[0][0] == '-') &&
 			((c=EVP_get_cipherbyname(&(argv[0][1]))) != NULL))
 			{
@@ -328,7 +328,7 @@ bad:
 		}
 
 #ifndef OPENSSL_NO_ENGINE
-        setup_engine(bio_err, engine, 0);
+        e = setup_engine(bio_err, engine, 0);
 #endif
 
 	if (md && (dgst=EVP_get_digestbyname(md)) == NULL)
@@ -396,10 +396,8 @@ bad:
 
 	if (inf == NULL)
 	        {
-#ifndef OPENSSL_NO_SETVBUF_IONBF
 		if (bufsize != NULL)
 			setvbuf(stdin, (char *)NULL, _IONBF, 0);
-#endif /* ndef OPENSSL_NO_SETVBUF_IONBF */
 		BIO_set_fp(in,stdin,BIO_NOCLOSE);
 	        }
 	else
@@ -452,10 +450,8 @@ bad:
 	if (outf == NULL)
 		{
 		BIO_set_fp(out,stdout,BIO_NOCLOSE);
-#ifndef OPENSSL_NO_SETVBUF_IONBF
 		if (bufsize != NULL)
 			setvbuf(stdout, (char *)NULL, _IONBF, 0);
-#endif /* ndef OPENSSL_NO_SETVBUF_IONBF */
 #ifdef OPENSSL_SYS_VMS
 		{
 		BIO *tmpbio = BIO_new(BIO_f_linebuffer());
@@ -592,11 +588,6 @@ bad:
 		 */
 
 		BIO_get_cipher_ctx(benc, &ctx);
-
-		if (non_fips_allow)
-			EVP_CIPHER_CTX_set_flags(ctx,
-				EVP_CIPH_FLAG_NON_FIPS_ALLOW);
-
 		if (!EVP_CipherInit_ex(ctx, cipher, NULL, NULL, NULL, enc))
 			{
 			BIO_printf(bio_err, "Error setting cipher %s\n",

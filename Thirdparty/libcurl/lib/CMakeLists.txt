@@ -57,7 +57,7 @@ if(HAVE_FEATURES_H)
     nonblock.c
     hash.c
     http.c
-    if2ip.c
+    if2ip.c 
     mprintf.c
     multi.c
     sendf.c
@@ -122,5 +122,3 @@ if(WIN32)
     set_target_properties(${LIB_NAME} PROPERTIES IMPORT_SUFFIX "_imp.lib")
   endif()
 endif()
-
-install(TARGETS ${LIB_NAME} DESTINATION lib)

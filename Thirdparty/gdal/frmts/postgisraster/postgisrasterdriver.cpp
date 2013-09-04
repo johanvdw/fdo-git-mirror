@@ -79,14 +79,12 @@ PGconn* PostGISRasterDriver::GetConnection(const char* pszConnectionString,
         const char * pszPasswordIn) {
     int i = 0;
     PGconn * poConn = NULL;
+    char ** papszParams = NULL;
 
     /**
      * Look for an existing connection in the list
      **/
     for (i = 0; i < nRefCount; i++) {
-        CPLDebug("PostGIS_Raster", "PostGISRasterDriver::GetConnection(): "
-            "User: %s\nPassword: %s\nHost: %s\nPort: %s", pszUserIn,
-            pszPasswordIn, pszHostIn, pszPortIn);
         if (EQUAL(pszUserIn, PQuser(papoConnection[i])) &&
                 EQUAL(pszPasswordIn, PQpass(papoConnection[i])) &&
                 EQUAL(pszHostIn, PQhost(papoConnection[i])) &&
@@ -120,7 +118,7 @@ PGconn* PostGISRasterDriver::GetConnection(const char* pszConnectionString,
     }
     else {
         CPLError(CE_Failure, CPLE_AppDefined, "Reallocation for new connection\
-                        failed.\n");
+						failed.\n");
         PQfinish(poConn);
         return NULL;
     }

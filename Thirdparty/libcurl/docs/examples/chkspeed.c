@@ -1,25 +1,13 @@
-/***************************************************************************
+/*****************************************************************************
  *                                  _   _ ____  _
  *  Project                     ___| | | |  _ \| |
  *                             / __| | | | |_) | |
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2011, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * $Id: chkspeed.c,v 1.3 2009-09-10 18:36:06 gknauf Exp $
  *
- * This software is licensed as described in the file COPYING, which
- * you should have received as part of this distribution. The terms
- * are also available at http://curl.haxx.se/docs/copyright.html.
- *
- * You may opt to use, copy, modify, merge, publish, distribute and/or sell
- * copies of the Software, and permit persons to whom the Software is
- * furnished to do so, under the terms of the COPYING file.
- *
- * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
- * KIND, either express or implied.
- *
- ***************************************************************************/
-/* Example source code to show how the callback function can be used to
+ * Example source code to show how the callback function can be used to
  * download data into a chunk of memory instead of storing it in a file.
  * After successful download we use curl_easy_getinfo() calls to get the
  * amount of downloaded bytes, the time used for the whole download, and
@@ -35,6 +23,8 @@
 #include <time.h>
 
 #include <curl/curl.h>
+#include <curl/types.h>
+#include <curl/easy.h>
 
 #define URL_BASE "http://speedtest.your.domain/"
 #define URL_1M   URL_BASE "file_1M.bin"
@@ -50,9 +40,7 @@
 static size_t WriteCallback(void *ptr, size_t size, size_t nmemb, void *data)
 {
   /* we are not interested in the downloaded bytes itself,
-     so we only return the size we would have saved ... */
-  (void)ptr;  /* unused */
-  (void)data; /* unused */
+     so we only return the size we would have saved ... */  
   return (size_t)(size * nmemb);
 }
 
@@ -60,8 +48,8 @@ int main(int argc, char *argv[])
 {
   CURL *curl_handle;
   CURLcode res;
-  int prtall = 0, prtsep = 0, prttime = 0;
-  const char *url = URL_1M;
+  int prtsep = 0, prttime = 0;
+  char *url = URL_1M;
   char *appname = argv[0];
 
   if (argc > 1) {
@@ -69,7 +57,7 @@ int main(int argc, char *argv[])
     for (argc--, argv++; *argv; argc--, argv++) {
       if (strncasecmp(*argv, "-", 1) == 0) {
         if (strncasecmp(*argv, "-H", 2) == 0) {
-          fprintf(stderr,
+          fprintf(stderr, 
                   "\rUsage: %s [-m=1|2|5|10|20|50|100] [-t] [-x] [url]\n",
                   appname);
           exit(1);
@@ -77,14 +65,12 @@ int main(int argc, char *argv[])
           fprintf(stderr, "\r%s %s - %s\n",
                   appname, CHKSPEED_VERSION, curl_version());
           exit(1);
-        } else if (strncasecmp(*argv, "-A", 2) == 0) {
-          prtall = 1;
         } else if (strncasecmp(*argv, "-X", 2) == 0) {
           prtsep = 1;
         } else if (strncasecmp(*argv, "-T", 2) == 0) {
           prttime = 1;
         } else if (strncasecmp(*argv, "-M=", 3) == 0) {
-          long m = strtol((*argv)+3, NULL, 10);
+          int m = atoi(*argv + 3);
           switch(m) {
             case   1: url = URL_1M;
                       break;
@@ -150,30 +136,18 @@ int main(int argc, char *argv[])
 
     /* check for bytes downloaded */
     res = curl_easy_getinfo(curl_handle, CURLINFO_SIZE_DOWNLOAD, &val);
-    if((CURLE_OK == res) && (val>0))
+    if((CURLE_OK == res) && val)
       printf("Data downloaded: %0.0f bytes.\n", val);
 
     /* check for total download time */
     res = curl_easy_getinfo(curl_handle, CURLINFO_TOTAL_TIME, &val);
-    if((CURLE_OK == res) && (val>0))
+    if((CURLE_OK == res) && val)
       printf("Total download time: %0.3f sec.\n", val);
 
     /* check for average download speed */
     res = curl_easy_getinfo(curl_handle, CURLINFO_SPEED_DOWNLOAD, &val);
-    if((CURLE_OK == res) && (val>0))
+    if((CURLE_OK == res) && val)
       printf("Average download speed: %0.3f kbyte/sec.\n", val / 1024);
-
-    if (prtall) {
-      /* check for name resolution time */
-      res = curl_easy_getinfo(curl_handle, CURLINFO_NAMELOOKUP_TIME, &val);
-      if((CURLE_OK == res) && (val>0))
-        printf("Name lookup time: %0.3f sec.\n", val);
-
-      /* check for connect time */
-      res = curl_easy_getinfo(curl_handle, CURLINFO_CONNECT_TIME, &val);
-      if((CURLE_OK == res) && (val>0))
-        printf("Connect time: %0.3f sec.\n", val);
-    }
 
   } else {
     fprintf(stderr, "Error while fetching '%s' : %s\n",

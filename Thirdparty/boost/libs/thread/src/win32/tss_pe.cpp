@@ -1,4 +1,4 @@
-// $Id: tss_pe.cpp 84717 2013-06-09 17:18:15Z viboes $
+// $Id: tss_pe.cpp 49324 2008-10-13 20:30:13Z anthonyw $
 // (C) Copyright Aaron W. LaFramboise, Roland Schwarz, Michael Glassford 2004.
 // (C) Copyright 2007 Roland Schwarz
 // (C) Copyright 2007 Anthony Williams
@@ -11,7 +11,7 @@
 
 #if defined(BOOST_HAS_WINTHREADS) && defined(BOOST_THREAD_BUILD_LIB) 
 
-#if (defined(__MINGW32__) && !defined(_WIN64)) || defined(__MINGW64__) || (__MINGW64_VERSION_MAJOR)
+#if defined(__MINGW32__) && !defined(_WIN64)
 
 #include <boost/thread/detail/tss_hooks.hpp>
 
@@ -19,37 +19,42 @@
 
 #include <cstdlib>
 
-namespace boost
-{
-    void tss_cleanup_implemented() {}
-}
+extern "C" void tss_cleanup_implemented(void) {}
 
 namespace {
-    void NTAPI on_tls_callback(void* , DWORD dwReason, PVOID )
+    void NTAPI on_tls_callback(void* h, DWORD dwReason, PVOID pv)
     {
         switch (dwReason)
         {
         case DLL_THREAD_DETACH:
         {
-            boost::on_thread_exit();
+            on_thread_exit();
             break;
         }
         }
     }
+
+    void on_after_ctors(void)
+    {
+        on_process_enter();
+    }
+    
+    void on_before_dtors(void)
+    {
+        on_thread_exit();
+    }
+    
+    void on_after_dtors(void)
+    {
+        on_process_exit();        
+    }
 }
 
-#if defined(__MINGW64__) || (__MINGW64_VERSION_MAJOR) || (__MINGW32_MAJOR_VERSION >3) ||             \
-    ((__MINGW32_MAJOR_VERSION==3) && (__MINGW32_MINOR_VERSION>=18))
-extern "C"
-{
-    PIMAGE_TLS_CALLBACK __crt_xl_tls_callback__ __attribute__ ((section(".CRT$XLB"))) = on_tls_callback;
-}
-#else
 extern "C" {
 
-    void (* after_ctors )() __attribute__((section(".ctors")))     = boost::on_process_enter;
-    void (* before_dtors)() __attribute__((section(".dtors")))     = boost::on_thread_exit;
-    void (* after_dtors )() __attribute__((section(".dtors.zzz"))) = boost::on_process_exit;
+    void (* after_ctors )(void) __attribute__((section(".ctors")))     = on_after_ctors;
+    void (* before_dtors)(void) __attribute__((section(".dtors")))     = on_before_dtors;
+    void (* after_dtors )(void) __attribute__((section(".dtors.zzz"))) = on_after_dtors;
 
     ULONG __tls_index__ = 0;
     char __tls_end__ __attribute__((section(".tls$zzz"))) = 0;
@@ -57,8 +62,10 @@ extern "C" {
 
 
     PIMAGE_TLS_CALLBACK __crt_xl_start__ __attribute__ ((section(".CRT$XLA"))) = 0;
+    PIMAGE_TLS_CALLBACK __crt_xl_tls_callback__ __attribute__ ((section(".CRT$XLB"))) = on_tls_callback;
     PIMAGE_TLS_CALLBACK __crt_xl_end__ __attribute__ ((section(".CRT$XLZ"))) = 0;
 }
+
 extern "C" const IMAGE_TLS_DIRECTORY32 _tls_used __attribute__ ((section(".rdata$T"))) =
 {
         (DWORD) &__tls_start__,
@@ -68,7 +75,6 @@ extern "C" const IMAGE_TLS_DIRECTORY32 _tls_used __attribute__ ((section(".rdata
         (DWORD) 0,
         (DWORD) 0
 };
-#endif
 
 
 #elif  defined(_MSC_VER) && !defined(UNDER_CE)
@@ -80,46 +86,16 @@ extern "C" const IMAGE_TLS_DIRECTORY32 _tls_used __attribute__ ((section(".rdata
     #define WIN32_LEAN_AND_MEAN
     #include <windows.h>
 
-
-// _pRawDllMainOrig can be defined by including boost/thread/win32/mfc_thread_init.hpp
-// into your dll; it ensures that MFC-Dll-initialization will be done properly
-// The following code is adapted from the MFC-Dll-init code
-/*
- * _pRawDllMainOrig MUST be an extern const variable, which will be aliased to
- * _pDefaultRawDllMainOrig if no real user definition is present, thanks to the
- * alternatename directive.
- */
-
-// work at least with _MSC_VER 1500 (MSVC++ 9.0, VS 2008)
-#if (_MSC_VER >= 1500)
-
-extern "C" {
-extern BOOL (WINAPI * const _pRawDllMainOrig)(HANDLE, DWORD, LPVOID);
-extern BOOL (WINAPI * const _pDefaultRawDllMainOrig)(HANDLE, DWORD, LPVOID) = NULL;
-#if defined (_M_IX86)
-#pragma comment(linker, "/alternatename:__pRawDllMainOrig=__pDefaultRawDllMainOrig")
-#elif defined (_M_X64) || defined (_M_ARM)
-#pragma comment(linker, "/alternatename:_pRawDllMainOrig=_pDefaultRawDllMainOrig")
-#else  /* defined (_M_X64) || defined (_M_ARM) */
-#error Unsupported platform
-#endif  /* defined (_M_X64) || defined (_M_ARM) */
-}
-
-#endif
-
-
-
-
     //Definitions required by implementation
 
     #if (_MSC_VER < 1300) // 1300 == VC++ 7.0
-        typedef void (__cdecl *_PVFV)();
+        typedef void (__cdecl *_PVFV)(void);
         #define INIRETSUCCESS
-        #define PVAPI void __cdecl
+        #define PVAPI void
     #else
-        typedef int (__cdecl *_PVFV)();
+        typedef int (__cdecl *_PVFV)(void);
         #define INIRETSUCCESS 0
-        #define PVAPI int __cdecl
+        #define PVAPI int
     #endif
 
     typedef void (NTAPI* _TLSCB)(HINSTANCE, DWORD, PVOID);
@@ -136,9 +112,9 @@ extern BOOL (WINAPI * const _pDefaultRawDllMainOrig)(HANDLE, DWORD, LPVOID) = NU
     {
         //Forward declarations
 
-        static PVAPI on_tls_prepare();
-        static PVAPI on_process_init();
-        static PVAPI on_process_term();
+        static PVAPI on_tls_prepare(void);
+        static PVAPI on_process_init(void);
+        static PVAPI on_process_term(void);
         static void NTAPI on_tls_callback(HINSTANCE, DWORD, PVOID);
 
         //The .CRT$Xxx information is taken from Codeguru:
@@ -193,7 +169,7 @@ extern BOOL (WINAPI * const _pDefaultRawDllMainOrig)(HANDLE, DWORD, LPVOID) = NU
 #pragma warning(disable:4189)
 #endif
 
-        PVAPI on_tls_prepare()
+        PVAPI on_tls_prepare(void)
         {
             //The following line has an important side effect:
             //if the TLS directory is not already there, it will
@@ -234,7 +210,7 @@ extern BOOL (WINAPI * const _pDefaultRawDllMainOrig)(HANDLE, DWORD, LPVOID) = NU
 #pragma warning(pop)
 #endif
 
-        PVAPI on_process_init()
+        PVAPI on_process_init(void)
         {
             //Schedule on_thread_exit() to be called for the main
             //thread before destructors of global objects have been
@@ -245,18 +221,18 @@ extern BOOL (WINAPI * const _pDefaultRawDllMainOrig)(HANDLE, DWORD, LPVOID) = NU
             //for destructors of global objects, so that
             //shouldn't be a problem.
 
-            atexit(boost::on_thread_exit);
+            atexit(on_thread_exit);
 
             //Call Boost process entry callback here
 
-            boost::on_process_enter();
+            on_process_enter();
 
             return INIRETSUCCESS;
         }
 
-        PVAPI on_process_term()
+        PVAPI on_process_term(void)
         {
-            boost::on_process_exit();
+            on_process_exit();
             return INIRETSUCCESS;
         }
 
@@ -265,33 +241,22 @@ extern BOOL (WINAPI * const _pDefaultRawDllMainOrig)(HANDLE, DWORD, LPVOID) = NU
             switch (dwReason)
             {
             case DLL_THREAD_DETACH:
-                boost::on_thread_exit();
+                on_thread_exit();
                 break;
             }
         }
 
-#if (_MSC_VER >= 1500)
-        BOOL WINAPI dll_callback(HANDLE hInstance, DWORD dwReason, LPVOID lpReserved)
-#else
         BOOL WINAPI dll_callback(HANDLE, DWORD dwReason, LPVOID)
-#endif
         {
             switch (dwReason)
             {
             case DLL_THREAD_DETACH:
-                boost::on_thread_exit();
+                on_thread_exit();
                 break;
             case DLL_PROCESS_DETACH:
-                boost::on_process_exit();
+                on_process_exit();
                 break;
             }
-
-#if (_MSC_VER >= 1500)
-			if( _pRawDllMainOrig )
-			{
-				return _pRawDllMainOrig(hInstance, dwReason, lpReserved);
-			}
-#endif
             return true;
         }
     } //namespace
@@ -300,9 +265,8 @@ extern "C"
 {
     extern BOOL (WINAPI * const _pRawDllMain)(HANDLE, DWORD, LPVOID)=&dll_callback;
 }
-namespace boost
-{
-    void tss_cleanup_implemented()
+
+    extern "C" void tss_cleanup_implemented(void)
     {
         /*
         This function's sole purpose is to cause a link error in cases where
@@ -318,8 +282,6 @@ namespace boost
         longer needed and can be removed.
         */
     }
-}
-
 #endif //defined(_MSC_VER) && !defined(UNDER_CE)
 
 #endif //defined(BOOST_HAS_WINTHREADS) && defined(BOOST_THREAD_BUILD_LIB)

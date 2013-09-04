@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: kmlnode.cpp 25309 2012-12-15 12:14:44Z rouault $
+ * $Id: kmlnode.cpp 23589 2011-12-17 14:21:01Z rouault $
  *
  * Project:  KML Driver
  * Purpose:  Class for building up the node structure of the kml file.
@@ -62,7 +62,6 @@ std::string Nodetype2String(Nodetype const& type)
         return "Unknown";
 }
 
-static
 bool isNumberDigit(const char cIn)
 {
     return ( cIn == '-' || cIn == '+' || 
@@ -70,37 +69,38 @@ bool isNumberDigit(const char cIn)
              cIn == '.' || cIn == 'e' || cIn == 'E' );
 }
 
-static
 Coordinate* ParseCoordinate(std::string const& text)
 {
-    int pos = 0;
-    const char* pszStr = text.c_str();
+    std::string::size_type pos = 0;
     Coordinate *psTmp = new Coordinate();
 
     // X coordinate
-    psTmp->dfLongitude = CPLAtof(pszStr);
-    while(isNumberDigit(pszStr[pos++]));
+    while(isNumberDigit(text[pos++]));
+    psTmp->dfLongitude = CPLAtof(text.substr(0, (pos - 1)).c_str());
 
     // Y coordinate
-    if(pszStr[pos - 1] != ',')
+    if(text[pos - 1] != ',')
     {
         delete psTmp;
         return NULL;
     }
-
-    psTmp->dfLatitude = CPLAtof(pszStr + pos);
-    while(isNumberDigit(pszStr[pos++]));
-
+    std::string tmp(text.substr(pos, text.length() - pos));
+    pos = 0;
+    while(isNumberDigit(tmp[pos++]));
+    psTmp->dfLatitude = CPLAtof(tmp.substr(0, (pos - 1)).c_str());
+    
     // Z coordinate
-    if(pszStr[pos - 1] != ',')
+    if(tmp[pos - 1] != ',')
     {
         psTmp->bHasZ = FALSE;
         psTmp->dfAltitude = 0;
         return psTmp;
     }
-
+    tmp = tmp.substr(pos, tmp.length() - pos);
+    pos = 0;
+    while(isNumberDigit(tmp[pos++]));
     psTmp->bHasZ = TRUE;
-    psTmp->dfAltitude = CPLAtof(pszStr + pos);
+    psTmp->dfAltitude = CPLAtof(tmp.substr(0, (pos - 1)).c_str());
 
     return psTmp;
 }
@@ -211,7 +211,7 @@ int KMLNode::classify(KML* poKML, int nRecLevel)
         CPLError( CE_Failure, CPLE_AppDefined,
                     "Too many recursiong level (%d) while parsing KML geometry.",
                     nRecLevel );
-        return FALSE;
+        return NULL;
     }
 
     //CPLDebug("KML", "%s<%s>", genSpaces(), sName_.c_str());
@@ -314,24 +314,6 @@ void KMLNode::eliminateEmpty(KML* poKML)
             (*pvpoChildren_)[z]->eliminateEmpty(poKML);
         }
     }
-}
-
-bool KMLNode::hasOnlyEmpty() const
-{
-    for(kml_nodes_t::size_type z = 0; z < pvpoChildren_->size(); z++)
-    {
-        if((*pvpoChildren_)[z]->eType_ != Empty)
-        {
-            return false;
-        }
-        else
-        {
-            if (!(*pvpoChildren_)[z]->hasOnlyEmpty())
-                return false;
-        }
-    }
-
-    return true;
 }
 
 void KMLNode::setType(Nodetype oNotet)

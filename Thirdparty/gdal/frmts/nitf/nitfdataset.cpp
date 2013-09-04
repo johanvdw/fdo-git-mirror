@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: nitfdataset.cpp 25666 2013-02-22 17:59:01Z rouault $
+ * $Id: nitfdataset.cpp 23491 2011-12-07 20:48:18Z rouault $
  *
  * Project:  NITF Read/Write Translator
  * Purpose:  NITFDataset and driver related implementations.
@@ -34,7 +34,7 @@
 #include "cpl_string.h"
 #include "cpl_csv.h"
 
-CPL_CVSID("$Id: nitfdataset.cpp 25666 2013-02-22 17:59:01Z rouault $");
+CPL_CVSID("$Id: nitfdataset.cpp 23491 2011-12-07 20:48:18Z rouault $");
 
 static void NITFPatchImageLength( const char *pszFilename,
                                   GUIntBig nImageOffset, 
@@ -94,7 +94,6 @@ NITFDataset::NITFDataset()
     papszCgmMDToWrite = NULL;
     
     bInLoadXML = FALSE;
-    bExposeUnderlyingJPEGDatasetOverviews = FALSE;
 }
 
 /************************************************************************/
@@ -718,19 +717,16 @@ GDALDataset *NITFDataset::OpenInternal( GDALOpenInfo * poOpenInfo,
             delete poDS;
             return NULL;
         }
-
-        /* In some circumstances, the JPEG image can be larger than the NITF */
-        /* (NCOLS, NROWS) dimensions (#5001), so accept it as a valid case */
-        /* But reject when it is smaller than the NITF dimensions. */
-        if( poDS->GetRasterXSize() > poDS->poJPEGDataset->GetRasterXSize()
-            || poDS->GetRasterYSize() > poDS->poJPEGDataset->GetRasterYSize())
+        
+        if( poDS->GetRasterXSize() != poDS->poJPEGDataset->GetRasterXSize()
+            || poDS->GetRasterYSize() != poDS->poJPEGDataset->GetRasterYSize())
         {
             CPLError( CE_Failure, CPLE_AppDefined,
-                    "JPEG data stream has smaller dimensions than the NITF file.");
+                      "JPEG data stream has not the same dimensions as the NITF file.");
             delete poDS;
             return NULL;
         }
-
+        
         poDS->poJPEGDataset->SetPamFlags( 
             poDS->poJPEGDataset->GetPamFlags() | GPF_NOSAVE );
 
@@ -1601,13 +1597,6 @@ GDALDataset *NITFDataset::OpenInternal( GDALOpenInfo * poOpenInfo,
     else
         poDS->oOvManager.Initialize( poDS, pszFilename );
 
-    /* If there are PAM overviews, don't expose the underlying JPEG dataset */
-    /* overviews (in case of monoblock C3) */
-    if( poDS->GetRasterCount() > 0 && poDS->GetRasterBand(1) != NULL )
-        poDS->bExposeUnderlyingJPEGDatasetOverviews =
-            ((GDALPamRasterBand*)poDS->GetRasterBand(1))->
-                            GDALPamRasterBand::GetOverviewCount() == 0;
-
     return( poDS );
 }
 
@@ -2009,93 +1998,6 @@ CPLErr NITFDataset::SetGeoTransform( double *padfGeoTransform )
         return CE_None;
     else
         return GDALPamDataset::SetGeoTransform( padfGeoTransform );
-}
-
-/************************************************************************/
-/*                               SetGCPs()                              */
-/************************************************************************/
-
-CPLErr NITFDataset::SetGCPs( int nGCPCountIn, const GDAL_GCP *pasGCPListIn,
-                              const char *pszGCPProjectionIn )
-{
-    if( nGCPCountIn != 4 )
-    {
-        CPLError(CE_Failure, CPLE_NotSupported,
-                 "NITF only supports writing 4 GCPs.");
-        return CE_Failure;
-    }
-    
-    /* Free previous GCPs */
-    GDALDeinitGCPs( nGCPCount, pasGCPList );
-    CPLFree( pasGCPList );
-    
-    /* Duplicate in GCPs */
-    nGCPCount = nGCPCountIn;
-    pasGCPList = GDALDuplicateGCPs(nGCPCount, pasGCPListIn);
-    
-    CPLFree(pszGCPProjection);
-    pszGCPProjection = CPLStrdup(pszGCPProjectionIn);
-
-    int iUL = -1, iUR = -1, iLR = -1, iLL = -1;
-
-#define EPS_GCP 1e-5
-    for(int i = 0; i < 4; i++ )
-    {
-        if (fabs(pasGCPList[i].dfGCPPixel - 0.5) < EPS_GCP &&
-            fabs(pasGCPList[i].dfGCPLine - 0.5) < EPS_GCP)
-            iUL = i;
-
-        else if (fabs(pasGCPList[i].dfGCPPixel - (nRasterXSize - 0.5)) < EPS_GCP &&
-                 fabs(pasGCPList[i].dfGCPLine - 0.5) < EPS_GCP)
-            iUR = i;
-
-        else if (fabs(pasGCPList[i].dfGCPPixel - (nRasterXSize - 0.5)) < EPS_GCP &&
-                 fabs(pasGCPList[i].dfGCPLine - (nRasterYSize - 0.5)) < EPS_GCP )
-            iLR = i;
-
-        else if (fabs(pasGCPList[i].dfGCPPixel - 0.5) < EPS_GCP &&
-                 fabs(pasGCPList[i].dfGCPLine - (nRasterYSize - 0.5)) < EPS_GCP)
-            iLL = i;
-    }
-
-    if (iUL < 0 || iUR < 0 || iLR < 0 || iLL < 0)
-    {
-        CPLError(CE_Failure, CPLE_NotSupported,
-                 "The 4 GCPs image coordinates must be exactly "
-                 "at the *center* of the 4 corners of the image "
-                 "( (%.1f, %.1f), (%.1f %.1f), (%.1f %.1f), (%.1f %.1f) ).",
-                 0.5, 0.5,
-                 nRasterYSize - 0.5, 0.5,
-                 nRasterXSize - 0.5, nRasterYSize - 0.5,
-                 nRasterXSize - 0.5, 0.5);
-        return CE_Failure;
-    }
-
-    double dfIGEOLOULX = pasGCPList[iUL].dfGCPX;
-    double dfIGEOLOULY = pasGCPList[iUL].dfGCPY;
-    double dfIGEOLOURX = pasGCPList[iUR].dfGCPX;
-    double dfIGEOLOURY = pasGCPList[iUR].dfGCPY;
-    double dfIGEOLOLRX = pasGCPList[iLR].dfGCPX;
-    double dfIGEOLOLRY = pasGCPList[iLR].dfGCPY;
-    double dfIGEOLOLLX = pasGCPList[iLL].dfGCPX;
-    double dfIGEOLOLLY = pasGCPList[iLL].dfGCPY;
-
-    /* To recompute the zone */
-    char* pszProjectionBack = pszProjection ? CPLStrdup(pszProjection) : NULL;
-    CPLErr eErr = SetProjection(pszGCPProjection);
-    CPLFree(pszProjection);
-    pszProjection = pszProjectionBack;
-    
-    if (eErr != CE_None)
-        return eErr;
-    
-    if( NITFWriteIGEOLO( psImage, psImage->chICORDS, 
-                         psImage->nZone, 
-                         dfIGEOLOULX, dfIGEOLOULY, dfIGEOLOURX, dfIGEOLOURY, 
-                         dfIGEOLOLRX, dfIGEOLOLRY, dfIGEOLOLLX, dfIGEOLOLLY ) )
-        return CE_None;
-    else
-        return CE_Failure;
 }
 
 /************************************************************************/
@@ -3224,8 +3126,6 @@ CPLErr NITFDataset::IBuildOverviews( const char *pszResampling,
         osRSetVRT = "";
     }
 
-    bExposeUnderlyingJPEGDatasetOverviews = FALSE;
-
 /* -------------------------------------------------------------------- */
 /*      If we have an underlying JPEG2000 dataset (hopefully via        */
 /*      JP2KAK) we will try and build zero overviews as a way of        */
@@ -4049,8 +3949,7 @@ NITFDataset::NITFCreateCopy(
             char *pszName = NULL;
             const char *pszValue = CPLParseNameValue( papszSrcMD[iMD], 
                                                       &pszName );
-            if( pszName != NULL &&
-                CSLFetchNameValue( papszFullOptions, pszName+5 ) == NULL )
+            if( CSLFetchNameValue( papszFullOptions, pszName+5 ) == NULL )
                 papszFullOptions = 
                     CSLSetNameValue( papszFullOptions, pszName+5, pszValue );
             CPLFree(pszName);
@@ -4123,12 +4022,9 @@ NITFDataset::NITFCreateCopy(
 /* -------------------------------------------------------------------- */
     double adfGeoTransform[6];
     int    bWriteGeoTransform = FALSE;
-    int    bWriteGCPs = FALSE;
     int    bNorth, nZone = 0;
     OGRSpatialReference oSRS, oSRS_WGS84;
     char *pszWKT = (char *) poSrcDS->GetProjectionRef();
-    if( pszWKT == NULL || pszWKT[0] == '\0' )
-        pszWKT = (char *) poSrcDS->GetGCPProjection();
 
     if( pszWKT != NULL && pszWKT[0] != '\0' )
     {
@@ -4253,10 +4149,8 @@ NITFDataset::NITFCreateCopy(
             }
         }
 
-        bWriteGeoTransform = ( poSrcDS->GetGeoTransform( adfGeoTransform ) == CE_None );
-        bWriteGCPs = ( !bWriteGeoTransform && poSrcDS->GetGCPCount() == 4 );
-
-        if( oSRS.IsGeographic() && oSRS.GetPrimeMeridian() == 0.0 )
+        if( oSRS.IsGeographic() && oSRS.GetPrimeMeridian() == 0.0 
+            && poSrcDS->GetGeoTransform( adfGeoTransform ) == CE_None )
         {
             if (pszICORDS == NULL)
             {
@@ -4280,9 +4174,11 @@ NITFDataset::NITFCreateCopy(
                 papszFullOptions = 
                     CSLSetNameValue( papszFullOptions, "ICORDS", "G" );
             }
+            bWriteGeoTransform = TRUE;
         }
 
-        else if( oSRS.GetUTMZone( &bNorth ) > 0 )
+        else if( oSRS.GetUTMZone( &bNorth ) > 0 
+            && poSrcDS->GetGeoTransform( adfGeoTransform ) == CE_None )
         {
             if( bNorth )
                 papszFullOptions = 
@@ -4292,6 +4188,7 @@ NITFDataset::NITFCreateCopy(
                     CSLSetNameValue( papszFullOptions, "ICORDS", "S" );
 
             nZone = oSRS.GetUTMZone( NULL );
+            bWriteGeoTransform = TRUE;
         }
         else
         {
@@ -4547,13 +4444,6 @@ NITFDataset::NITFCreateCopy(
     {
         poDstDS->psImage->nZone = nZone;
         poDstDS->SetGeoTransform( adfGeoTransform );
-    }
-    else if( bWriteGCPs )
-    {
-        poDstDS->psImage->nZone = nZone;
-        poDstDS->SetGCPs( poSrcDS->GetGCPCount(),
-                          poSrcDS->GetGCPs(),
-                          poSrcDS->GetGCPProjection() );
     }
 
     poDstDS->CloneInfo( poSrcDS, GCIF_PAM_DEFAULT );
@@ -5026,10 +4916,6 @@ static void NITFWriteTextSegments( const char *pszFilename,
 
         const char *pszHeaderBuffer = NULL;
 
-        pszTextToWrite = CPLParseNameValue( papszList[iOpt], NULL );
-        if( pszTextToWrite == NULL )
-            continue;
-
 /* -------------------------------------------------------------------- */
 /*      Locate corresponding header data in the buffer                  */
 /* -------------------------------------------------------------------- */
@@ -5038,15 +4924,9 @@ static void NITFWriteTextSegments( const char *pszFilename,
             if( !EQUALN(papszList[iOpt2],"HEADER_",7) )
                 continue;
 
-            char *pszHeaderKey = NULL, *pszDataKey = NULL;
+            char *pszHeaderKey, *pszDataKey;
             CPLParseNameValue( papszList[iOpt2], &pszHeaderKey );
             CPLParseNameValue( papszList[iOpt], &pszDataKey );
-            if( pszHeaderKey == NULL || pszDataKey == NULL )
-            {
-                CPLFree(pszHeaderKey);
-                CPLFree(pszDataKey);
-                continue;
-            }
 
             char *pszHeaderId, *pszDataId; //point to header and data number
             pszHeaderId = pszHeaderKey + 7;
@@ -5136,7 +5016,8 @@ static void NITFWriteTextSegments( const char *pszFilename,
 /* -------------------------------------------------------------------- */
 /*      Prepare and write text segment data.                            */
 /* -------------------------------------------------------------------- */
-
+        pszTextToWrite = CPLParseNameValue( papszList[iOpt], NULL );
+        
         int nTextLength = (int) strlen(pszTextToWrite);
         if (nTextLength > 99998)
         {
@@ -5652,7 +5533,6 @@ void GDALRegister_NITF()
 
         poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, "frmt_nitf.html" );
         poDriver->SetMetadataItem( GDAL_DMD_EXTENSION, "ntf" );
-        poDriver->SetMetadataItem( GDAL_DMD_SUBDATASETS, "YES" );
         poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES, 
                                    "Byte UInt16 Int16 UInt32 Int32 Float32" );
 

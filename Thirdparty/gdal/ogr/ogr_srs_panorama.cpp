@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_srs_panorama.cpp 25019 2012-09-30 13:25:39Z rouault $
+ * $Id: ogr_srs_panorama.cpp 19799 2010-06-04 10:48:04Z dron $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  OGRSpatialReference translation to/from "Panorama" GIS
@@ -33,7 +33,7 @@
 #include "cpl_conv.h"
 #include "cpl_csv.h"
 
-CPL_CVSID("$Id: ogr_srs_panorama.cpp 25019 2012-09-30 13:25:39Z rouault $");
+CPL_CVSID("$Id: ogr_srs_panorama.cpp 19799 2010-06-04 10:48:04Z dron $");
 
 #define TO_DEGREES 57.2957795130823208766
 #define TO_RADIANS 0.017453292519943295769
@@ -140,8 +140,6 @@ OGRErr OSRImportFromPanorama( OGRSpatialReferenceH hSRS,
                               double *padfPrjParams )
 
 {
-    VALIDATE_POINTER1( hSRS, "OSRImportFromPanorama", CE_Failure );
-
     return ((OGRSpatialReference *) hSRS)->importFromPanorama( iProjSys,
                                                                iDatum,iEllips,
                                                                padfPrjParams );
@@ -478,12 +476,6 @@ OGRErr OSRExportToPanorama( OGRSpatialReferenceH hSRS,
                             long *piZone, double *padfPrjParams )
 
 {
-    VALIDATE_POINTER1( hSRS, "OSRExportToPanorama", CE_Failure );
-    VALIDATE_POINTER1( piProjSys, "OSRExportToPanorama", CE_Failure );
-    VALIDATE_POINTER1( piDatum, "OSRExportToPanorama", CE_Failure );
-    VALIDATE_POINTER1( piEllips, "OSRExportToPanorama", CE_Failure );
-    VALIDATE_POINTER1( padfPrjParams, "OSRExportToPanorama", CE_Failure );
-
     return ((OGRSpatialReference *) hSRS)->exportToPanorama( piProjSys,
                                                              piDatum, piEllips,
                                                              piZone,

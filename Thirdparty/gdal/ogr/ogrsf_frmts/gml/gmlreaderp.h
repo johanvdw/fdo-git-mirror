@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gmlreaderp.h 25183 2012-10-27 18:09:53Z rouault $
+ * $Id: gmlreaderp.h 23638 2011-12-22 21:02:56Z rouault $
  *
  * Project:  GML Reader
  * Purpose:  Private Declarations for OGR free GML Reader code.
@@ -107,7 +107,6 @@ class GMLHandler
     int        m_nGeomAlloc;
     int        m_nGeomLen;
     int        m_nGeometryDepth;
-    int        m_bAlreadyFoundGeometry;
 
     int        m_nDepth;
     int        m_nDepthFeature;
@@ -443,7 +442,6 @@ public:
         { m_bClassListLocked = bFlag; }
 
     void             SetSourceFile( const char *pszFilename );
-    void             SetFP( VSILFILE* fp );
     const char*      GetSourceFileName();
 
     int              GetClassCount() const { return m_nClassCount; }

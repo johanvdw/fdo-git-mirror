@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: usgsdemdataset.cpp 25675 2013-02-23 15:33:45Z rouault $
+ * $Id: usgsdemdataset.cpp 21830 2011-02-24 17:46:07Z warmerdam $
  *
  * Project:  USGS DEM Driver
  * Purpose:  All reader for USGS DEM Reader
@@ -33,7 +33,7 @@
 #include "gdal_pam.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: usgsdemdataset.cpp 25675 2013-02-23 15:33:45Z rouault $");
+CPL_CVSID("$Id: usgsdemdataset.cpp 21830 2011-02-24 17:46:07Z warmerdam $");
 
 CPL_C_START
 void	GDALRegister_USGSDEM(void);
@@ -131,7 +131,7 @@ static void USGSDEMRefillBuffer( Buffer* psBuffer )
 /*               USGSDEMReadIntFromBuffer()                             */
 /************************************************************************/
 
-static int USGSDEMReadIntFromBuffer( Buffer* psBuffer, int* pbSuccess = NULL )
+static int USGSDEMReadIntFromBuffer( Buffer* psBuffer )
 {
     int nVal = 0;
     char c;
@@ -143,7 +143,6 @@ static int USGSDEMReadIntFromBuffer( Buffer* psBuffer, int* pbSuccess = NULL )
             USGSDEMRefillBuffer(psBuffer);
             if (psBuffer->cur_index >= psBuffer->buffer_size)
             {
-                if( pbSuccess ) *pbSuccess = FALSE;
                 return 0;
             }
         }
@@ -163,7 +162,6 @@ static int USGSDEMReadIntFromBuffer( Buffer* psBuffer, int* pbSuccess = NULL )
         nVal = c - '0';
     else
     {
-        if( pbSuccess ) *pbSuccess = FALSE;
         return 0;
     }
 
@@ -174,7 +172,6 @@ static int USGSDEMReadIntFromBuffer( Buffer* psBuffer, int* pbSuccess = NULL )
             USGSDEMRefillBuffer(psBuffer);
             if (psBuffer->cur_index >= psBuffer->buffer_size)
             {
-                if( pbSuccess ) *pbSuccess = TRUE;
                 return nSign * nVal;
             }
         }
@@ -186,10 +183,7 @@ static int USGSDEMReadIntFromBuffer( Buffer* psBuffer, int* pbSuccess = NULL )
             nVal = nVal * 10 + (c - '0');
         }
         else
-        {
-            if( pbSuccess ) *pbSuccess = TRUE;
             return nSign * nVal;
-        }
     }
 }
 
@@ -382,21 +376,15 @@ CPLErr USGSDEMRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
 
         if( EQUALN(poGDS->pszProjection,"GEOGCS",6) )
             dyStart = dyStart / 3600.0;
-        
+
         lygap = (int)((dfYMin - dyStart)/poGDS->adfGeoTransform[5]+ 0.5);
 
         for (int j=lygap; j < (nCPoints+(int)lygap); j++)
         {
             int		iY = GetYSize() - j - 1;
             int         nElev;
-            int     bSuccess;
 
-            nElev = USGSDEMReadIntFromBuffer(&sBuffer, &bSuccess);
-            if( !bSuccess )
-            {
-                CPLFree(sBuffer.buffer);
-                return CE_Failure;
-            }
+            nElev = USGSDEMReadIntFromBuffer(&sBuffer);
             
             if (iY < 0 || iY >= GetYSize() )
                 bad = TRUE;

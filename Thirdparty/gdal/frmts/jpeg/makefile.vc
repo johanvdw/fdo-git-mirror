@@ -6,9 +6,9 @@ OBJ	=    jpgdataset.obj jpgdataset_12.obj vsidataio.obj
 
 
 !IFDEF JPEG_EXTERNAL_LIB
-EXTRAFLAGS      = -I$(JPEGDIR)
+EXTRAFLAGS      = -I..\zlib -I$(JPEGDIR)
 !ELSE
-EXTRAFLAGS = 	-Ilibjpeg $(JPEG12_FLAGS)
+EXTRAFLAGS = 	-I..\zlib -Ilibjpeg $(JPEG12_FLAGS)
 !ENDIF
 
 !IFDEF JPEG12_SUPPORTED

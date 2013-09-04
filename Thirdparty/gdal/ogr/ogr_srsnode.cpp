@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_srsnode.cpp 25340 2012-12-21 20:30:21Z rouault $
+ * $Id: ogr_srsnode.cpp 23521 2011-12-10 23:04:17Z etourigny $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGR_SRSNode class.
@@ -30,7 +30,7 @@
 #include "ogr_spatialref.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogr_srsnode.cpp 25340 2012-12-21 20:30:21Z rouault $");
+CPL_CVSID("$Id: ogr_srsnode.cpp 23521 2011-12-10 23:04:17Z etourigny $");
 
 /************************************************************************/
 /*                            OGR_SRSNode()                             */
@@ -829,6 +829,21 @@ void OGR_SRSNode::StripNodes( const char * pszName )
 /*                           FixupOrdering()                            */
 /************************************************************************/
 
+/**
+ * Correct parameter ordering to match CT Specification.
+ *
+ * Some mechanisms to create WKT using OGRSpatialReference, and some
+ * imported WKT fail to maintain the order of parameters required according
+ * to the BNF definitions in the OpenGIS SF-SQL and CT Specifications.  This
+ * method attempts to massage things back into the required order.
+ *
+ * This method will reorder the children of the node it is invoked on and
+ * then recurse to all children to fix up their children.
+ *
+ * @return OGRERR_NONE on success or an error code if something goes 
+ * wrong.  
+ */
+
 /* EXTENSION ... being a OSR extension... is arbitrary placed before the AUTHORITY */
 static const char * const apszPROJCSRule[] = 
 { "PROJCS", "GEOGCS", "PROJECTION", "PARAMETER", "UNIT", "AXIS", "EXTENSION", "AUTHORITY", 
@@ -845,21 +860,6 @@ static const char * const apszGEOCCSRule[] =
 
 static const char * const *apszOrderingRules[] = {
     apszPROJCSRule, apszGEOGCSRule, apszDATUMRule, apszGEOCCSRule, NULL };
-
-/**
- * Correct parameter ordering to match CT Specification.
- *
- * Some mechanisms to create WKT using OGRSpatialReference, and some
- * imported WKT fail to maintain the order of parameters required according
- * to the BNF definitions in the OpenGIS SF-SQL and CT Specifications.  This
- * method attempts to massage things back into the required order.
- *
- * This method will reorder the children of the node it is invoked on and
- * then recurse to all children to fix up their children.
- *
- * @return OGRERR_NONE on success or an error code if something goes 
- * wrong.  
- */
 
 OGRErr OGR_SRSNode::FixupOrdering()
 

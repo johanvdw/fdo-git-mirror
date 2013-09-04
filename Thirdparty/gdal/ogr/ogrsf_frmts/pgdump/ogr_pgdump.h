@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_pgdump.h 25366 2012-12-27 18:38:53Z rouault $
+ * $Id: ogr_pgdump.h 22821 2011-07-28 17:54:47Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions for OGR/PostgreSQL dump driver.
@@ -59,19 +59,16 @@ class OGRPGDumpLayer : public OGRLayer
     int                 bUseCopy;
     int                 bWriteAsHex;
     int                 bCopyActive;
-    int                 bFIDColumnInCopyFields;
     int                 bCreateTable;
-
-    char              **papszOverrideColumnTypes;
-
+    
     void                AppendFieldValue(CPLString& osCommand,
                                        OGRFeature* poFeature, int i);
     char*               GByteArrayToBYTEA( const GByte* pabyData, int nLen);
     char*               GeometryToHex( OGRGeometry * poGeometry, int nSRSId );
     
-    OGRErr              StartCopy(int bSetFID);
-    CPLString           BuildCopyFields(int bSetFID);
-
+    OGRErr              StartCopy();
+    CPLString           BuildCopyFields();
+    
   public:
                         OGRPGDumpLayer(OGRPGDumpDataSource* poDS,
                                        const char* pszSchemaName,
@@ -103,8 +100,6 @@ class OGRPGDumpLayer : public OGRLayer
                                 { bLaunderColumnNames = bFlag; }
     void                SetPrecisionFlag( int bFlag )
                                 { bPreservePrecision = bFlag; }
-
-    void                SetOverrideColumnTypes( const char* pszOverrideColumnTypes );
 
     OGRErr              EndCopy();
 };

@@ -12,7 +12,7 @@
 This write-only driver implements support for generating a SQL dump file that
 can later be injected into a live PostgreSQL instance. It supports
 PostgreSQL extended with the 
-<a href="http://postgis.net/">PostGIS</a> geometries.<p>
+<a href="http://www.postgis.org/">PostGIS</a> geometries.<p>
 
 This driver is very similar to the PostGIS shp2pgsql utility.<p>
 
@@ -71,11 +71,6 @@ a regular table is created and not recorded in the PostGIS geometry_columns tabl
 <li> <b>FID</b>: (From GDAL 1.9.0) Name of the FID column to create. Defaults to 'ogc_fid'.<p>
 <li> <b>EXTRACT_SCHEMA_FROM_LAYER_NAME</b>: (From GDAL 1.9.0) Can be set to NO to avoid considering the dot character
 as the separator between the schema and the table name. Defaults to YES.<p>
-<li> <b>COLUMN_TYPES</b>: (From GDAL 1.10) A list of strings of format field_name=pg_field_type (separated by comma)
-that should be use when CreateField() is invoked on them. This will override the default choice that OGR would have made.
-This can for example be used to create a column of type <a href="http://www.postgresql.org/docs/9.0/static/hstore.html">HSTORE</a>.<p>
-<li> <b>POSTGIS_VERSION</b>: (From GDAL 1.9.0) Can be set to 2.0 for PostGIS 2.0 compatibility. For now, it is not
-critical to set it. Its effect is just to avoid a few warnings.<p>
 </ul>
 
 <h3>Environment variables</h3>
@@ -120,7 +115,7 @@ Pipe the output of the PGDump driver into the psql utility.
 <ul>
 <li> <a href="drv_pg.html">OGR PostgreSQL driver Page</a><p>
 <li> <a href="http://www.postgresql.org/">PostgreSQL Home Page</a><p>
-<li> <a href="http://postgis.net/">PostGIS</a><p>
+<li> <a href="http://www.postgis.org/">PostGIS</a><p>
 <li> <a href="http://trac.osgeo.org/postgis/wiki/UsersWikiOGR">PostGIS / OGR Wiki Examples Page</a><p>
 </ul>
 

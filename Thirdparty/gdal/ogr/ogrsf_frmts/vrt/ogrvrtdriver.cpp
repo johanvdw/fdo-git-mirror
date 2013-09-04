@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrvrtdriver.cpp 24154 2012-03-23 21:47:11Z warmerdam $
+ * $Id: ogrvrtdriver.cpp 23575 2011-12-14 20:24:08Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRVRTDriver class.
@@ -30,7 +30,7 @@
 #include "ogr_vrt.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrvrtdriver.cpp 24154 2012-03-23 21:47:11Z warmerdam $");
+CPL_CVSID("$Id: ogrvrtdriver.cpp 23575 2011-12-14 20:24:08Z rouault $");
 
 /************************************************************************/
 /*                            ~OGRVRTDriver()                            */
@@ -81,17 +81,20 @@ OGRDataSource *OGRVRTDriver::Open( const char * pszFilename,
     else
     {
         VSILFILE *fp;
-        char achHeader[512];
+        char achHeader[18];
 
         fp = VSIFOpenL( pszFilename, "rb" );
 
         if( fp == NULL )
             return NULL;
 
-        memset( achHeader, 0, sizeof(achHeader) );
-        VSIFReadL( achHeader, 1, sizeof(achHeader)-1, fp );
+        if( VSIFReadL( achHeader, sizeof(achHeader), 1, fp ) != 1 )
+        {
+            VSIFCloseL( fp );
+            return NULL;
+        }
 
-        if( strstr(achHeader,"<OGRVRTDataSource") == NULL )
+        if( !EQUALN(achHeader,"<OGRVRTDataSource>",18) )
         {
             VSIFCloseL( fp );
             return NULL;
@@ -101,7 +104,6 @@ OGRDataSource *OGRVRTDriver::Open( const char * pszFilename,
         if ( VSIStatL( pszFilename, &sStatBuf ) != 0 ||
              sStatBuf.st_size > 1024 * 1024 )
         {
-            CPLDebug( "VRT", "Unreasonable long file, not likely really VRT" );
             VSIFCloseL( fp );
             return NULL;
         }
@@ -173,3 +175,4 @@ void RegisterOGRVRT()
 {
     OGRSFDriverRegistrar::GetRegistrar()->RegisterDriver( new OGRVRTDriver );
 }
+

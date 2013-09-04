@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrcouchdbdatasource.cpp 25698 2013-03-02 18:53:07Z rouault $
+ * $Id: ogrcouchdbdatasource.cpp 22871 2011-08-06 20:29:35Z rouault $
  *
  * Project:  CouchDB Translator
  * Purpose:  Implements OGRCouchDBDataSource class
@@ -30,7 +30,7 @@
 #include "ogr_couchdb.h"
 #include "swq.h"
 
-CPL_CVSID("$Id: ogrcouchdbdatasource.cpp 25698 2013-03-02 18:53:07Z rouault $");
+CPL_CVSID("$Id: ogrcouchdbdatasource.cpp 22871 2011-08-06 20:29:35Z rouault $");
 
 /************************************************************************/
 /*                        OGRCouchDBDataSource()                        */
@@ -363,12 +363,12 @@ OGRLayer   *OGRCouchDBDataSource::CreateLayer( const char *pszName,
     json_object* poAnswerObj = PUT(osURI, NULL);
 
     if (poAnswerObj == NULL)
-        return NULL;
+        return FALSE;
 
     if (!IsOK(poAnswerObj, "Layer creation failed"))
     {
         json_object_put(poAnswerObj);
-        return NULL;
+        return FALSE;
     }
 
     json_object_put(poAnswerObj);
@@ -693,10 +693,10 @@ OGRLayer * OGRCouchDBDataSource::ExecuteSQL( const char *pszSQLCommand,
 
 class PointerAutoFree
 {
-        void * m_p;
+        void ** m_pp;
     public:
-        PointerAutoFree(void* p) { m_p = p; }
-        ~PointerAutoFree() { CPLFree(m_p); }
+        PointerAutoFree(void** pp) { m_pp = pp; }
+        ~PointerAutoFree() { CPLFree(*m_pp); *m_pp = NULL; }
 };
 
 class OGRCouchDBOneLineLayer : public OGRLayer
@@ -771,10 +771,10 @@ OGRLayer * OGRCouchDBDataSource::ExecuteSQLStats( const char *pszSQLCommand )
     sFieldList.ids = (int *)
         CPLMalloc( sizeof(int) * nFieldCount );
 
-    PointerAutoFree oHolderNames(sFieldList.names);
-    PointerAutoFree oHolderTypes(sFieldList.types);
-    PointerAutoFree oHolderTableIds(sFieldList.table_ids);
-    PointerAutoFree oHolderIds(sFieldList.ids);
+    PointerAutoFree oHolderNames((void**)&(sFieldList.names));
+    PointerAutoFree oHolderTypes((void**)&(sFieldList.types));
+    PointerAutoFree oHolderTableIds((void**)&(sFieldList.table_ids));
+    PointerAutoFree oHolderIds((void**)&(sFieldList.ids));
 
     int iField;
     for( iField = 0;

@@ -244,8 +244,6 @@
 #define put4bitbwtile gdal_put4bitbwtile
 #define put4bitcmaptile gdal_put4bitcmaptile
 #define put8bitcmaptile gdal_put8bitcmaptile
-#define putagreytile gdal_putagreytile
-#define putCMYKseparate8bittile gdal_putCMYKseparate8bittile
 #define putcontig8bitCIELab gdal_putcontig8bitCIELab
 #define putcontig8bitYCbCr11tile gdal_putcontig8bitYCbCr11tile
 #define putcontig8bitYCbCr12tile gdal_putcontig8bitYCbCr12tile
@@ -303,9 +301,7 @@
 #define TIFFComputeStrip gdal_TIFFComputeStrip
 #define TIFFComputeTile gdal_TIFFComputeTile
 #define _TIFFCreateAnonField gdal__TIFFCreateAnonField
-#define TIFFCreateCustomDirectory gdal_TIFFCreateCustomDirectory
 #define TIFFCreateDirectory gdal_TIFFCreateDirectory
-#define TIFFCreateEXIFDirectory gdal_TIFFCreateEXIFDirectory
 #define TIFFCurrentDirectory gdal_TIFFCurrentDirectory
 #define TIFFCurrentDirOffset gdal_TIFFCurrentDirOffset
 #define TIFFCurrentRow gdal_TIFFCurrentRow
@@ -330,14 +326,8 @@
 #define TIFFFetchNormalTag gdal_TIFFFetchNormalTag
 #define TIFFFetchStripThing gdal_TIFFFetchStripThing
 #define TIFFFetchSubjectDistance gdal_TIFFFetchSubjectDistance
-#define TIFFFieldDataType gdal_TIFFFieldDataType
-#define TIFFFieldName gdal_TIFFFieldName
-#define TIFFFieldPassCount gdal_TIFFFieldPassCount
-#define TIFFFieldReadCount gdal_TIFFFieldReadCount
-#define TIFFFieldTag gdal_TIFFFieldTag
 #define TIFFFieldWithName gdal_TIFFFieldWithName
 #define TIFFFieldWithTag gdal_TIFFFieldWithTag
-#define TIFFFieldWriteCount gdal_TIFFFieldWriteCount
 #define TIFFFileName gdal_TIFFFileName
 #define TIFFFileno gdal_TIFFFileno
 #define _TIFFFillStriles gdal__TIFFFillStriles
@@ -347,6 +337,8 @@
 #define TIFFFindCODEC gdal_TIFFFindCODEC
 #define TIFFFindField gdal_TIFFFindField
 #define _TIFFFindFieldByName gdal__TIFFFindFieldByName
+#define TIFFFindFieldInfo gdal_TIFFFindFieldInfo
+#define TIFFFindFieldInfoByName gdal_TIFFFindFieldInfoByName
 #define _TIFFFindOrRegisterField gdal__TIFFFindOrRegisterField
 #define TIFFFlush gdal_TIFFFlush
 #define TIFFFlushData gdal_TIFFFlushData
@@ -410,7 +402,6 @@
 #define TIFFPredictorInit gdal_TIFFPredictorInit
 #define _TIFFPrettyPrintField gdal__TIFFPrettyPrintField
 #define _TIFFprintAscii gdal__TIFFprintAscii
-#define _TIFFprintAsciiBounded gdal__TIFFprintAsciiBounded
 #define _TIFFprintAsciiTag gdal__TIFFprintAsciiTag
 #define TIFFPrintDirectory gdal_TIFFPrintDirectory
 #define _TIFFPrintField gdal__TIFFPrintField

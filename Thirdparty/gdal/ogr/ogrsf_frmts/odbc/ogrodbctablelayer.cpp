@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrodbctablelayer.cpp 24961 2012-09-23 18:06:49Z rouault $
+ * $Id: ogrodbctablelayer.cpp 20579 2010-09-12 11:43:35Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRODBCTableLayer class, access to an existing table.
@@ -30,7 +30,7 @@
 #include "cpl_conv.h"
 #include "ogr_odbc.h"
 
-CPL_CVSID("$Id: ogrodbctablelayer.cpp 24961 2012-09-23 18:06:49Z rouault $");
+CPL_CVSID("$Id: ogrodbctablelayer.cpp 20579 2010-09-12 11:43:35Z rouault $");
 /************************************************************************/
 /*                          OGRODBCTableLayer()                         */
 /************************************************************************/
@@ -143,7 +143,7 @@ CPLErr OGRODBCTableLayer::Initialize( const char *pszLayerName,
 
     if( poFeatureDefn->GetFieldCount() == 0 )
     {
-        CPLError( CE_Warning, CPLE_AppDefined, 
+        CPLError( CE_Failure, CPLE_AppDefined, 
                   "No column definitions found for table '%s', layer not usable.", 
                   pszLayerName );
         return CE_Failure;
@@ -312,7 +312,7 @@ OGRErr OGRODBCTableLayer::SetAttributeFilter( const char *pszQuery )
         return OGRERR_NONE;
 
     CPLFree( this->pszQuery );
-    this->pszQuery = (pszQuery != NULL ) ? CPLStrdup( pszQuery ) : NULL;
+    this->pszQuery = CPLStrdup( pszQuery );
 
     ClearStatement();
 
@@ -346,25 +346,7 @@ int OGRODBCTableLayer::TestCapability( const char * pszCap )
 int OGRODBCTableLayer::GetFeatureCount( int bForce )
 
 {
-    if( m_poFilterGeom != NULL )
-        return OGRODBCLayer::GetFeatureCount( bForce );
-
-    CPLODBCStatement oStmt( poDS->GetSession() );
-    oStmt.Append( "SELECT COUNT(*) FROM " );
-    oStmt.Append( poFeatureDefn->GetName() );
-
-    if( pszQuery != NULL )
-        oStmt.Appendf( " WHERE %s", pszQuery );
-
-    if( !oStmt.ExecuteSQL() || !oStmt.Fetch() )
-    {
-        CPLError( CE_Failure, CPLE_AppDefined, 
-                  "GetFeatureCount() failed on query %s.\n%s",
-                  oStmt.GetCommand(), poDS->GetSession()->GetLastError() );
-        return OGRODBCLayer::GetFeatureCount(bForce);
-    }
-
-    return atoi(oStmt.GetColData(0));
+    return OGRODBCLayer::GetFeatureCount( bForce );
 }
 
 /************************************************************************/

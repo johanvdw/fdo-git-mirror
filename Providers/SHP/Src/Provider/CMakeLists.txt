@@ -51,31 +51,33 @@ set( SHPProvider_SRCS
    ShpImpExtendedSelect.cpp
 )
 
-add_library( SHPProvider-${FDO_VERSION} SHARED ${SHPProvider_SRCS} )
+add_library( SHPProvider SHARED ${SHPProvider_SRCS} )
 
-target_link_libraries( SHPProvider-${FDO_VERSION}
-	SHPOverrides-${FDO_VERSION}
-	FDO-${FDO_VERSION}
+target_link_libraries( SHPProvider
+	SHPOverrides
+	FDO
 	ProvidersCommon
-	ExpressionEngine-${FDO_VERSION}
+	ExpressionEngine
  )
 
 if( CMAKE_COMPILER_IS_GNUCXX )
-	target_link_libraries( SHPProvider-${FDO_VERSION}
+	target_link_libraries( SHPProvider
 		-Wl,-whole-archive
 		SHPRead
 		SHPSpatialIndex
 		-Wl,-no-whole-archive
 		)
 else( CMAKE_COMPILER_IS_GNUCXX )
-	target_link_libraries( SHPProvider-${FDO_VERSION}
+	target_link_libraries( SHPProvider
 		SHPRead
 		SHPSpatialIndex
 		)
 endif( CMAKE_COMPILER_IS_GNUCXX )
 
 	
-add_dependencies( SHPProvider-${FDO_VERSION} SHPMessage )
+add_dependencies( SHPProvider SHPMessage )
 
-install( TARGETS SHPProvider-${FDO_VERSION} DESTINATION ${LIB_INSTALL_DIR} )
+set_target_properties( SHPProvider PROPERTIES VERSION ${FDO_VERSION} SOVERSION ${FDO_VERSION_MAJOR} )
+
+install( TARGETS SHPProvider DESTINATION ${LIB_INSTALL_DIR} )
 

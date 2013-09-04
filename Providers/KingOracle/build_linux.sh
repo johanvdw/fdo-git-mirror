@@ -1,7 +1,7 @@
 #!/bin/sh
 
 ##
-## Copyright (C) 2013  Autodesk, Inc.
+## Copyright (C) 2004-2006  Autodesk, Inc.
 ## 
 ## This library is free software; you can redistribute it and/or
 ## modify it under the terms of version 2.1 of the GNU Lesser
@@ -19,10 +19,9 @@
 
 TYPEACTION=buildinstall
 TYPEBUILD=release
-TYPEARCHITECTURE=32
 TYPECONFIGURE=configure
 BUILDDOCS=no
-PREFIXVAL=/usr/local/fdo-3.8.1
+PREFIXVAL=/usr/local/fdo-3.8.0
 
 ### study parameters ###
 while test $# -gt 0
@@ -33,15 +32,6 @@ do
   -h | --h | --help)
     SHOWHELP=yes
     break
-    ;;
-  -b | --b | --build)
-    if test "$1" == ""; then
-        echo "$arg Invalid parameter $1"
-        exit 1
-    else
-        TYPEARCHITECTURE="$1"
-    fi
-    shift
     ;;
   -a | --a | --action)
     if test "$1" == buildinstall; then
@@ -126,131 +116,44 @@ if test "$SHOWHELP" == yes; then
    echo "               [--a Action]" 
    echo "               [--m ConfigMakefiles]"
    echo "               [--p Prefix]"
-   echo "               [--b BuildArchicture]"
    echo " "
-   echo "Help:                  --h[elp]"
-   echo "BuildType:             --c[onfig] release(default), debug"
-   echo "Action:                --a[ction] buildinstall(default), build, install, uninstall, clean"
-   echo "BuildDocs:             --d[ocs] skip(default), build"
-   echo "ConfigMakefiles:       --m[akefile] configure(default), noconfigure"
-   echo "BuildArchitecture:     --b[uild] 32(default), 64"
-   echo "Prefix:                --p[refix] <fdo install location>"
+   echo "Help:            --h[elp]"
+   echo "BuildType:       --c[onfig] release(default), debug"
+   echo "Action:          --a[ction] buildinstall(default), build, install, uninstall, clean"
+   echo "ConfigMakefiles: --m[akefile] configure(default), noconfigure"
+   echo "Prefix:          --p[refix] <fdo install location>"
    echo "************************************************************************************************************"
    exit 0
 fi
 
-if [[ "$CFLAGS" != *"-m$TYPEARCHITECTURE"* ]]; then
-CFLAGS="$CFLAGS -m$TYPEARCHITECTURE"
-echo "Exporting CFLAGS: "$CFLAGS""
-export CFLAGS
-fi
-
-if [[ "$CPPFLAGS" != *"-m$TYPEARCHITECTURE"* ]]; then
-CPPFLAGS="$CPPFLAGS -m$TYPEARCHITECTURE"
-echo "Exporting CPPFLAGS: "$CPPFLAGS""
-export CPPFLAGS
-fi
-
-if [[ "$LDFLAGS" != *"-m$TYPEARCHITECTURE"* ]]; then
-LDFLAGS="$LDFLAGS -m$TYPEARCHITECTURE"
-echo "Exporting LDFLAGS: "$LDFLAGS""
-export LDFLAGS
-fi
-
-if test "$TYPEARCHITECTURE" == "32" ; then
-if test "$HOSTTYPE" == "i686" ; then
-if [[ "$CPPFLAGS" != *"-march=i686"* ]]; then
-CPPFLAGS="$CPPFLAGS -march=i686"
-echo "Exporting CPPFLAGS: "$CPPFLAGS""
-export CPPFLAGS
-fi
-fi
-fi
-
-if [[ "$CPPFLAGS" != *"-Wno-write-strings"* ]]; then
-CPPFLAGS="$CPPFLAGS -Wno-write-strings"
-echo "Exporting CPPFLAGS: "$CPPFLAGS""
-export CPPFLAGS
-fi
-
-if [[ "$CPPFLAGS" != *"-Wno-deprecated"* ]]; then
-CPPFLAGS="$CPPFLAGS -Wno-deprecated"
-echo "Exporting CPPFLAGS: "$CPPFLAGS""
-export CPPFLAGS
-fi
-
-if test "$TYPEARCHITECTURE" == "64" ; then
-LIB64=64
-export LIB64
-fi
-
 ### start build ###
 if test "$TYPECONFIGURE" == configure ; then
-   if test -e "m4"; then
-      echo "m4 directory exists"
-   else
-      mkdir m4
-   fi
-   
    aclocal
-   if [ "$?" -ne 0 ] ; then
-     exit 1
-   fi
-
    libtoolize --force
-   if [ "$?" -ne 0 ] ; then
-     exit 1
-   fi
-
    automake --add-missing --copy
-   if [ "$?" -ne 0 ] ; then
-     exit 1
-   fi
-
    autoconf
-   if [ "$?" -ne 0 ] ; then
-     exit 1
-   fi
 
    if test "$TYPEBUILD" == release; then
       ./configure --prefix="$PREFIXVAL"
-      if [ "$?" -ne 0 ] ; then
-        exit 1
-      fi
    else
       ./configure --enable-debug=yes --prefix="$PREFIXVAL"
-      if [ "$?" -ne 0 ] ; then
-        exit 1
-      fi
    fi
 fi
    
 if test "$TYPEACTION" == clean ; then
-   make clean
-   if [ "$?" -ne 0 ] ; then
-     exit 1
-   fi
+  sudo -E make clean
 fi
 
 if test "$TYPEACTION" == buildinstall || test "$TYPEACTION" == build ; then
-   make
-   if [ "$?" -ne 0 ] ; then
-     exit 1
-   fi
+   sudo -E make
 fi
 
 if test "$TYPEACTION" == buildinstall || test "$TYPEACTION" == install ; then
-   sudo make install
-   if [ "$?" -ne 0 ] ; then
-     exit 1
-   fi
+   sudo -E make install
 fi
 
 if test "$TYPEACTION" == uninstall ; then
-   sudo make uninstall
-   if [ "$?" -ne 0 ] ; then
-     exit 1
-   fi
+   sudo -E make uninstall
 fi
 
 exit 0

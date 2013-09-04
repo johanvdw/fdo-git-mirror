@@ -1,49 +1,29 @@
 # Copyright 2002, 2003, 2004, 2006 Vladimir Prus
-# Copyright 2008, 2012 Jurko Gospodnetic
+# Copyright 2008 Jurko Gospodnetic
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE_1_0.txt or http://www.boost.org/LICENSE_1_0.txt)
 
+import errors ;
 import numbers ;
-
-
-.major = "2011" ;
-.minor = "12" ;
 
 
 rule boost-build ( )
 {
-    return "$(.major).$(.minor)-svn" ;
+    return "V2 (Milestone 12)" ;
+}
+
+
+rule jam ( )
+{
+    local v = [ modules.peek : JAM_VERSION ] ;
+    return $(v:J=.) ;
 }
 
 
 rule print ( )
 {
-    if [ verify-engine-version ]
-    {        
-        ECHO "Boost.Build" [ boost-build ] ;
-    }    
-}
-
-
-rule verify-engine-version ( )
-{
-    local v = [ modules.peek : JAM_VERSION ] ;
-    
-    if $(v[1]) != $(.major) || $(v[2]) != $(.minor)
-    {
-        local argv = [ modules.peek : ARGV ] ;
-        local e = $(argv[1]) ;
-        local l = [ modules.binding version ] ;
-        l = $(l:D) ;
-        l = $(l:D) ;
-        ECHO "warning: mismatched versions of Boost.Build engine and core" ;
-        ECHO "warning: Boost.Build engine ($(e)) is $(v:J=.)" ;
-        ECHO "warning: Boost.Build core (at $(l)) is" [ boost-build ] ;
-    }
-    else
-    {
-        return true ;
-    }    
+    ECHO "Boost.Build" [ boost-build ] ;
+    ECHO "Boost.Jam" [ jam ] ;
 }
 
 
@@ -107,16 +87,14 @@ rule check-jam-version ( version + )
     local version-tag = $(version:J=.) ;
     if ! $(version-tag)
     {
-        import errors ;
         errors.error Invalid version specifier: : $(version:E="(undefined)") ;
     }
 
-    if ! $(.jam-version-check.$(version-tag))-is-defined
+    if ! $(.jam-version-check.$(version-tag))-is-not-empty
     {
         local jam-version = [ modules.peek : JAM_VERSION ] ;
         if ! $(jam-version)
         {
-            import errors ;
             errors.error "Unable to deduce Boost Jam version. Your Boost Jam"
                 "installation is most likely terribly outdated." ;
         }

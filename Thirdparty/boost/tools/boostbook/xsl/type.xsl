@@ -134,9 +134,7 @@ Unknown type element "<xsl:value-of select="local-name(.)"/>" in type.display.na
       <xsl:text> </xsl:text>
       <xsl:value-of select="@name"/>
       <xsl:apply-templates select="specialization"/>
-      <xsl:call-template name="highlight-text">
-        <xsl:with-param name="text" select="';'"/>
-      </xsl:call-template>
+      <xsl:text>;</xsl:text>
     </xsl:variable>
 
     <xsl:choose>
@@ -162,9 +160,7 @@ Unknown type element "<xsl:value-of select="local-name(.)"/>" in type.display.na
           </xsl:with-param>
         </xsl:call-template>
         <xsl:apply-templates select="specialization"/>
-        <xsl:call-template name="highlight-special">
-          <xsl:with-param name="text" select="';'"/>
-        </xsl:call-template>
+        <xsl:text>;</xsl:text>
       </xsl:when>
 
       <xsl:otherwise>
@@ -199,9 +195,7 @@ Unknown type element "<xsl:value-of select="local-name(.)"/>" in type.display.na
           <xsl:with-param name="text" select="string(@name)"/>
         </xsl:call-template>
         <xsl:apply-templates select="specialization"/>
-        <xsl:call-template name="highlight-special">
-          <xsl:with-param name="text" select="';'"/>
-        </xsl:call-template>
+        <xsl:text>;</xsl:text>
       </xsl:otherwise>
     </xsl:choose>
 
@@ -333,10 +327,8 @@ Unknown type element "<xsl:value-of select="local-name(.)"/>" in type.display.na
               <xsl:with-param name="link-type" select="$link-type"/>
               <xsl:with-param name="highlight" select="true()"/>
             </xsl:call-template>
-            <xsl:call-template name="highlight-text">
-              <xsl:with-param name="text" select="substring(concat(';', $name-padding),
-                1, $max-name-length - string-length($truncated-typedef-name))"/>
-            </xsl:call-template>
+            <xsl:value-of select="substring(concat(';', $name-padding),
+              1, $max-name-length - string-length($truncated-typedef-name))"/>
           </xsl:when>
           <xsl:otherwise>
             <xsl:text> </xsl:text>
@@ -346,9 +338,7 @@ Unknown type element "<xsl:value-of select="local-name(.)"/>" in type.display.na
               <xsl:with-param name="link-type" select="$link-type"/>
               <xsl:with-param name="highlight" select="true()"/>
             </xsl:call-template>
-            <xsl:call-template name="highlight-special">
-              <xsl:with-param name="text" select="';'"/>
-            </xsl:call-template>
+            <xsl:text>;</xsl:text>
           </xsl:otherwise>
         </xsl:choose>
 
@@ -395,8 +385,6 @@ Unknown type element "<xsl:value-of select="local-name(.)"/>" in type.display.na
           <xsl:with-param name="compact" select="$compact"/>
           <xsl:with-param name="indentation" select="$indentation"/>
           <xsl:with-param name="is-reference" select="false()"/>
-          <xsl:with-param name="max-type-length" select="$max-type-length"/>
-          <xsl:with-param name="max-name-length" select="$max-name-length"/>
         </xsl:call-template>
       </xsl:otherwise>
     </xsl:choose>
@@ -473,9 +461,7 @@ Unknown type element "<xsl:value-of select="local-name(.)"/>" in type.display.na
 
     <xsl:if test="not(@name = '')">
       <xsl:text> </xsl:text>
-      <xsl:call-template name="source-highlight">
-        <xsl:with-param name="text" select="@name"/>
-      </xsl:call-template>
+      <xsl:value-of select="@name"/>
     </xsl:if>
 
     <xsl:text> = </xsl:text>
@@ -485,9 +471,7 @@ Unknown type element "<xsl:value-of select="local-name(.)"/>" in type.display.na
         <xsl:apply-templates select="default/*|default/text()"/>
       </xsl:with-param>
     </xsl:call-template>
-    <xsl:call-template name="highlight-special">
-      <xsl:with-param name="text" select="';'"/>
-    </xsl:call-template>
+    <xsl:text>;</xsl:text>
 
     <xsl:if test="purpose">
       <xsl:text>  </xsl:text>
@@ -539,9 +523,7 @@ Unknown type element "<xsl:value-of select="local-name(.)"/>" in type.display.na
       <!-- Output the type -->
       <xsl:choose>
         <xsl:when test="type">
-          <xsl:apply-templates select="type/*|type/text()" mode="annotation">
-            <xsl:with-param name="highlight" select="true()"/>
-          </xsl:apply-templates>
+          <xsl:apply-templates select="type/*|type/text()" mode="annotation"/>
         </xsl:when>
         <xsl:otherwise>
           <xsl:message>
@@ -599,20 +581,14 @@ Unknown type element "<xsl:value-of select="local-name(.)"/>" in type.display.na
       <xsl:when test="$single-line-candidate and
                       (string-length($single-line) + $indentation + 3
                         &lt; $max-columns)">
-        <xsl:call-template name="highlight-text">
-          <xsl:with-param name="text" select="' : '"/>
-        </xsl:call-template>
+        <xsl:text> : </xsl:text>
         <xsl:call-template name="print.base.classes.single"/>
-        <xsl:call-template name="highlight-text">
-          <xsl:with-param name="text" select="' {'"/>
-        </xsl:call-template>
+        <xsl:text> {</xsl:text>
       </xsl:when>
       <xsl:when test="$single-line-candidate and
                       (string-length($single-line) + $base-indentation + 2
                         &lt; $max-columns)">
-        <xsl:call-template name="highlight-text">
-          <xsl:with-param name="text" select="' :&#10;'"/>
-        </xsl:call-template>
+        <xsl:text> :&#10;</xsl:text>
         <xsl:call-template name="indent">
           <xsl:with-param name="indentation" select="$base-indentation + 2"/>
         </xsl:call-template>
@@ -621,14 +597,10 @@ Unknown type element "<xsl:value-of select="local-name(.)"/>" in type.display.na
         <xsl:call-template name="indent">
           <xsl:with-param name="indentation" select="$base-indentation"/>
         </xsl:call-template>
-        <xsl:call-template name="highlight-special">
-          <xsl:with-param name="text" select="'{'"/>
-        </xsl:call-template>
+        <xsl:text>{</xsl:text>
       </xsl:when>
       <xsl:otherwise>
-        <xsl:call-template name="highlight-text">
-          <xsl:with-param name="text" select="' : '"/>
-        </xsl:call-template>
+        <xsl:text> : </xsl:text>
         <xsl:call-template name="print.base.classes.multi">
           <xsl:with-param name="indentation" select="$indentation + 3"/>
         </xsl:call-template>
@@ -636,9 +608,7 @@ Unknown type element "<xsl:value-of select="local-name(.)"/>" in type.display.na
         <xsl:call-template name="indent">
           <xsl:with-param name="indentation" select="$base-indentation"/>
         </xsl:call-template>
-        <xsl:call-template name="highlight-text">
-          <xsl:with-param name="text" select="'{'"/>
-        </xsl:call-template>
+        <xsl:text>{</xsl:text>
       </xsl:otherwise>
     </xsl:choose>
   </xsl:template>
@@ -766,28 +736,26 @@ Unknown type element "<xsl:value-of select="local-name(.)"/>" in type.display.na
       <xsl:call-template name="indent">
         <xsl:with-param name="indentation" select="$indentation + 2"/>
       </xsl:call-template>
-      <xsl:call-template name="highlight-comment">
-        <xsl:with-param name="text">
-          <xsl:text>// </xsl:text>
-          <!-- True if there are any non-compacted typedefs -->
-          <xsl:variable name="have-typedef-references"
-            select="typedef and ((typedef/para|typedef/description) or ($boost.compact.typedef='0'))"/>
-          <xsl:choose>
-            <xsl:when test="$have-typedef-references">
-              <xsl:call-template name="internal-link">
-                <xsl:with-param name="to">
-                  <xsl:call-template name="generate.id"/>
-                  <xsl:text>types</xsl:text>
-                </xsl:with-param>
-                <xsl:with-param name="text" select="'types'"/>
-              </xsl:call-template>
-            </xsl:when>
-            <xsl:otherwise>
-              <xsl:text>types</xsl:text>
-            </xsl:otherwise>
-          </xsl:choose>
-        </xsl:with-param>
-      </xsl:call-template>
+      <emphasis>
+        <xsl:text>// </xsl:text>
+        <!-- True if there are any non-compacted typedefs -->
+        <xsl:variable name="have-typedef-references"
+          select="typedef and ((typedef/para|typedef/description) or ($boost.compact.typedef='0'))"/>
+        <xsl:choose>
+          <xsl:when test="$have-typedef-references">
+            <xsl:call-template name="internal-link">
+              <xsl:with-param name="to">
+                <xsl:call-template name="generate.id"/>
+                <xsl:text>types</xsl:text>
+              </xsl:with-param>
+              <xsl:with-param name="text" select="'types'"/>
+            </xsl:call-template>
+          </xsl:when>
+          <xsl:otherwise>
+            <xsl:text>types</xsl:text>
+          </xsl:otherwise>
+        </xsl:choose>
+      </emphasis>
 
       <xsl:variable name="max-type-length">
         <xsl:call-template name="find-max-type-length"/>
@@ -862,34 +830,9 @@ Unknown type element "<xsl:value-of select="local-name(.)"/>" in type.display.na
     </xsl:apply-templates>
 
     <!-- Data members -->
-    <xsl:if test="data-member">
-      <xsl:text>&#10;&#10;</xsl:text>
-      <xsl:call-template name="indent">
-        <xsl:with-param name="indentation" select="$indentation + 2"/>
-      </xsl:call-template>
-      <xsl:call-template name="highlight-comment">
-        <xsl:with-param name="text">
-          <xsl:text>// </xsl:text>
-          <xsl:choose>
-            <xsl:when test="data-member/description">
-              <xsl:call-template name="internal-link">
-                <xsl:with-param name="to">
-                  <xsl:call-template name="generate.id"/>
-                  <xsl:text>public-data-members</xsl:text>
-                </xsl:with-param>
-                <xsl:with-param name="text" select="'public data members'"/>
-              </xsl:call-template>
-            </xsl:when>
-            <xsl:otherwise>
-              <xsl:text>public data members</xsl:text>
-            </xsl:otherwise>
-          </xsl:choose>
-        </xsl:with-param>
-      </xsl:call-template>
-      <xsl:apply-templates select="data-member" mode="synopsis">
-        <xsl:with-param name="indentation" select="$indentation + 2"/>
-      </xsl:apply-templates>
-    </xsl:if>
+    <xsl:apply-templates select="data-member" mode="synopsis">
+      <xsl:with-param name="indentation" select="$indentation + 2"/>
+    </xsl:apply-templates>
   </xsl:template>
 
   <xsl:template name="print-access-specification">
@@ -903,9 +846,7 @@ Unknown type element "<xsl:value-of select="local-name(.)"/>" in type.display.na
     <xsl:call-template name="highlight-keyword">
       <xsl:with-param name="keyword" select="$specification"/>
     </xsl:call-template>
-    <xsl:call-template name="highlight-special">
-      <xsl:with-param name="text" select="':'"/>
-    </xsl:call-template>
+    <xsl:text>:</xsl:text>
   </xsl:template>
 
   <xsl:template match="access" mode="synopsis">
@@ -941,22 +882,15 @@ Unknown type element "<xsl:value-of select="local-name(.)"/>" in type.display.na
            comment. -->
       <xsl:if test="purpose">
         <xsl:text>&#10;</xsl:text>
-        <xsl:variable name="spaces">
-          <xsl:call-template name="indent">
-            <xsl:with-param name="indentation" select="$indentation"/>
-          </xsl:call-template>
-        </xsl:variable>
-        <xsl:copy-of select="$spaces"/>
+        <xsl:call-template name="indent">
+          <xsl:with-param name="indentation" select="$indentation"/>
+        </xsl:call-template>
         <xsl:call-template name="highlight-comment">
           <xsl:with-param name="text">
             <xsl:text>// </xsl:text>
-            <xsl:apply-templates select="purpose" mode="comment">
-              <xsl:with-param name="wrap" select="true()"/>
-              <xsl:with-param name="prefix" select="concat($spaces, '// ')"/>
-            </xsl:apply-templates>
+            <xsl:apply-templates select="purpose" mode="comment"/>
           </xsl:with-param>
         </xsl:call-template>
-        <xsl:text>&#10;</xsl:text>
       </xsl:if>
     </xsl:if>
 
@@ -1006,9 +940,7 @@ Unknown type element "<xsl:value-of select="local-name(.)"/>" in type.display.na
       </xsl:when>
       <xsl:otherwise>
         <!-- Opening brace -->
-        <xsl:call-template name="highlight-text">
-          <xsl:with-param name="text" select="' {'"/>
-        </xsl:call-template>
+        <xsl:text> {</xsl:text>
       </xsl:otherwise>
     </xsl:choose>
 
@@ -1041,9 +973,7 @@ Unknown type element "<xsl:value-of select="local-name(.)"/>" in type.display.na
     <xsl:call-template name="indent">
       <xsl:with-param name="indentation" select="$indentation"/>
     </xsl:call-template>
-    <xsl:call-template name="highlight-text">
-      <xsl:with-param name="text" select="'};'"/>
-    </xsl:call-template>
+    <xsl:text>};</xsl:text>
   </xsl:template>
 
   <!-- Emit nested class reference documentation -->
@@ -1055,43 +985,6 @@ Unknown type element "<xsl:value-of select="local-name(.)"/>" in type.display.na
     <xsl:call-template name="class-type-synopsis">
       <xsl:with-param name="indentation" select="$indentation"/>
     </xsl:call-template>
-  </xsl:template>
-
-  <!-- Document template parameters -->
-  <xsl:template name="class-templates-reference">
-    <xsl:if test="(template/template-type-parameter/purpose|
-                  template/template-nontype-parameter/purpose)
-                  and not($template.param.brief)">
-      <refsect2>
-        <title>Template Parameters</title>
-        <orderedlist>
-          <xsl:for-each select="template/template-type-parameter|
-                template/template-nontype-parameter">
-            <listitem>
-              <para>
-                <xsl:variable name="link-to">
-                  <xsl:call-template name="generate.id"/>
-                </xsl:variable>
-
-                <xsl:call-template name="preformatted">
-                  <xsl:with-param name="text">
-                    <xsl:call-template name="template.parameter">
-                      <xsl:with-param name="parameter" select="."/>
-                      <xsl:with-param name="highlight" select="true()"/>
-                    </xsl:call-template>
-                  </xsl:with-param>
-                </xsl:call-template>
-              </para>
-              <xsl:if test="purpose">
-                <para>
-                  <xsl:apply-templates select="purpose/*"/>
-                </para>
-              </xsl:if>
-            </listitem>
-          </xsl:for-each>
-        </orderedlist>
-      </refsect2>
-    </xsl:if>
   </xsl:template>
 
   <xsl:template name="member-typedefs-reference">
@@ -1126,35 +1019,6 @@ Unknown type element "<xsl:value-of select="local-name(.)"/>" in type.display.na
     </xsl:if>
  </xsl:template>
 
-  <xsl:template name="data-member-reference">
-    <xsl:if test="data-member/description">
-      <xsl:call-template name="member-documentation">
-        <xsl:with-param name="name">
-          <xsl:call-template name="anchor">
-            <xsl:with-param name="to">
-              <xsl:call-template name="generate.id"/>
-              <xsl:text>public-data-members</xsl:text>
-            </xsl:with-param>
-            <xsl:with-param name="text" select="''"/>
-          </xsl:call-template>
-          <xsl:call-template name="monospaced">
-            <xsl:with-param name="text">
-              <xsl:call-template name="object-name"/>
-            </xsl:with-param>
-          </xsl:call-template>
-          <xsl:text> </xsl:text>
-          <xsl:call-template name="access-name"/>
-          <xsl:text> public data members</xsl:text>
-        </xsl:with-param>
-        <xsl:with-param name="text">
-          <orderedlist>
-            <xsl:apply-templates select="data-member" mode="reference"/>
-          </orderedlist>
-        </xsl:with-param>
-      </xsl:call-template>
-    </xsl:if>
-  </xsl:template>
-
   <xsl:template name="class-members-reference">
 
     <xsl:call-template name="member-typedefs-reference"/>
@@ -1164,8 +1028,6 @@ Unknown type element "<xsl:value-of select="local-name(.)"/>" in type.display.na
     <xsl:apply-templates
       select="method-group|method|overloaded-method"
       mode="reference"/>
-    
-    <xsl:call-template name="data-member-reference"/>
 
     <!-- Emit reference docs for nested classes -->
     <xsl:apply-templates
@@ -1229,7 +1091,7 @@ Unknown type element "<xsl:value-of select="local-name(.)"/>" in type.display.na
           <xsl:apply-templates select="para" mode="annotation"/>
         </xsl:if>
         <xsl:apply-templates select="description"/>
-        <xsl:call-template name="class-templates-reference"/>
+
         <xsl:call-template name="class-members-reference"/>
         <xsl:apply-templates select="access" mode="namespace-reference"/>
 
@@ -1306,27 +1168,8 @@ Unknown type element "<xsl:value-of select="local-name(.)"/>" in type.display.na
 
         <xsl:apply-templates select="type" mode="highlight"/>
         <xsl:text> </xsl:text>
-        <xsl:choose>
-          <xsl:when test="description">
-            <xsl:variable name="link-to">
-              <xsl:call-template name="generate.id"/>
-            </xsl:variable>
-            <xsl:call-template name="link-or-anchor">
-              <xsl:with-param name="to" select="$link-to"/>
-              <xsl:with-param name="text" select="@name"/>
-              <xsl:with-param name="link-type" select="'link'"/>
-              <xsl:with-param name="highlight" select="true()"/>
-            </xsl:call-template>
-          </xsl:when>
-          <xsl:otherwise>
-            <xsl:call-template name="highlight-identifier">
-              <xsl:with-param name="identifier" select="@name"/>
-            </xsl:call-template>
-          </xsl:otherwise>
-        </xsl:choose>
-        <xsl:call-template name="highlight-text">
-          <xsl:with-param name="text" select="';'"/>
-        </xsl:call-template>
+        <xsl:value-of select="@name"/>
+        <xsl:text>;</xsl:text>
 
       </xsl:when>
       <xsl:otherwise>
@@ -1358,41 +1201,7 @@ Unknown type element "<xsl:value-of select="local-name(.)"/>" in type.display.na
     <xsl:choose>
       <xsl:when test="ancestor::class|ancestor::class-specialization|
                       ancestor::struct|ancestor::struct-specialization|
-                      ancestor::union|ancestor::union-specialization">
-        <xsl:if test="description">
-          <listitem>
-            <para>
-              <xsl:variable name="link-to">
-                <xsl:call-template name="generate.id"/>
-              </xsl:variable>
-            
-              <xsl:call-template name="preformatted">
-                <xsl:with-param name="text">
-                  <xsl:if test="@specifiers">
-                    <xsl:call-template name="highlight-keyword">
-                      <xsl:with-param name="keyword" select="@specifiers"/>
-                    </xsl:call-template>
-                    <xsl:text> </xsl:text>
-                  </xsl:if>
-
-                  <xsl:apply-templates select="type" mode="highlight"/>
-                  <xsl:text> </xsl:text>
-                  <xsl:call-template name="link-or-anchor">
-                    <xsl:with-param name="to" select="$link-to"/>
-                    <xsl:with-param name="text" select="@name"/>
-                    <xsl:with-param name="link-type" select="'anchor'"/>
-                    <xsl:with-param name="highlight" select="true()"/>
-                  </xsl:call-template>
-                  <xsl:call-template name="highlight-special">
-                    <xsl:with-param name="text" select="';'"/>
-                  </xsl:call-template>
-                </xsl:with-param>
-              </xsl:call-template>
-            </para>
-            <xsl:apply-templates select="description"/>
-          </listitem>
-        </xsl:if>
-      </xsl:when>
+                      ancestor::union|ancestor::union-specialization"/>
       <xsl:otherwise>
         <xsl:call-template name="global-reference"/>
       </xsl:otherwise>
@@ -1474,22 +1283,16 @@ Unknown type element "<xsl:value-of select="local-name(.)"/>" in type.display.na
           <xsl:with-param name="higlhight" select="false()"/>
         </xsl:call-template>
 
-        <xsl:call-template name="highlight-text">
-          <xsl:with-param name="text" select="' { '"/>
-        </xsl:call-template>
+        <xsl:text> { </xsl:text>
         <xsl:call-template name="type.enum.list.compact">
           <xsl:with-param name="indentation"
             select="$indentation + string-length(@name) + 8"/>
           <xsl:with-param name="compact" select="true()"/>
         </xsl:call-template>
-        <xsl:call-template name="highlight-text">
-          <xsl:with-param name="text" select="' }'"/>
-        </xsl:call-template>
+        <xsl:text> }</xsl:text>
       </xsl:otherwise>
     </xsl:choose>
-    <xsl:call-template name="highlight-text">
-      <xsl:with-param name="text" select="';'"/>
-    </xsl:call-template>
+    <xsl:text>;</xsl:text>
   </xsl:template>
 
   <!-- Enumeration reference at namespace level -->
@@ -1551,18 +1354,14 @@ Unknown type element "<xsl:value-of select="local-name(.)"/>" in type.display.na
 
     <!-- Header -->
     <xsl:variable name="header" select="concat(' ', @name, ' { ')"/>
-    <xsl:call-template name="highlight-text">
-      <xsl:with-param name="text" select="$header"/>
-    </xsl:call-template>
+    <xsl:value-of select="$header"/>
 
     <!-- Print the enumeration values -->
     <xsl:call-template name="type.enum.list.compact">
       <xsl:with-param name="indentation" select="4 + string-length($header)"/>
     </xsl:call-template>
 
-    <xsl:call-template name="highlight-text">
-      <xsl:with-param name="text" select="' };'"/>
-    </xsl:call-template>
+    <xsl:text> };</xsl:text>
   </xsl:template>
 
   <!-- List enumeration values in a compact form e.g.,

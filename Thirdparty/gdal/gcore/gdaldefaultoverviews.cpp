@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdaldefaultoverviews.cpp 25358 2012-12-27 13:19:58Z rouault $
+ * $Id: gdaldefaultoverviews.cpp 22381 2011-05-16 21:14:22Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Helper code to implement overview and mask support for many 
@@ -31,7 +31,7 @@
 #include "gdal_priv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: gdaldefaultoverviews.cpp 25358 2012-12-27 13:19:58Z rouault $");
+CPL_CVSID("$Id: gdaldefaultoverviews.cpp 22381 2011-05-16 21:14:22Z rouault $");
 
 /************************************************************************/
 /*                        GDALDefaultOverviews()                        */
@@ -282,9 +282,7 @@ void GDALDefaultOverviews::OverviewScan()
             else
                 osOvrFilename = pszProxyOvrFilename;
 
-            CPLPushErrorHandler(CPLQuietErrorHandler);
             poODS = (GDALDataset *) GDALOpen(osOvrFilename,poDS->GetAccess());
-            CPLPopErrorHandler();
         }
     }
 
@@ -616,15 +614,7 @@ GDALDefaultOverviews::BuildOverviews(
 
     if( bOvrIsAux )
     {
-        if( nNewOverviews == 0 )
-        {
-            /* if we call HFAAuxBuildOverviews() with nNewOverviews == 0 */
-            /* because that there's no new, this will wipe existing */
-            /* overviews (#4831) */
-            eErr = CE_None;
-        }
-        else
-            eErr = HFAAuxBuildOverviews( osOvrFilename, poDS, &poODS,
+        eErr = HFAAuxBuildOverviews( osOvrFilename, poDS, &poODS,
                                      nBands, panBandList,
                                      nNewOverviews, panNewOverviewList, 
                                      pszResampling, 
@@ -747,24 +737,8 @@ GDALDefaultOverviews::BuildOverviews(
 /* -------------------------------------------------------------------- */
     if( HaveMaskFile() && poMaskDS )
     {
-        /* Some config option are not compatible with mask overviews */
-        /* so unset them, and define more sensible values */
-        int bJPEG = EQUAL(CPLGetConfigOption("COMPRESS_OVERVIEW", ""), "JPEG");
-        int bPHOTOMETRIC_YCBCR = EQUAL(CPLGetConfigOption("PHOTOMETRIC_OVERVIEW", ""), "YCBCR");
-        if( bJPEG )
-            CPLSetThreadLocalConfigOption("COMPRESS_OVERVIEW", "DEFLATE");
-        if( bPHOTOMETRIC_YCBCR )
-            CPLSetThreadLocalConfigOption("PHOTOMETRIC_OVERVIEW", "");
-
         poMaskDS->BuildOverviews( pszResampling, nOverviews, panOverviewList,
                                   0, NULL, pfnProgress, pProgressData );
-
-        /* Restore config option */
-        if( bJPEG )
-            CPLSetThreadLocalConfigOption("COMPRESS_OVERVIEW", "JPEG");
-        if( bPHOTOMETRIC_YCBCR )
-            CPLSetThreadLocalConfigOption("PHOTOMETRIC_OVERVIEW", "YCBCR");
-
         if( bOwnMaskDS )
             GDALClose( poMaskDS );
 

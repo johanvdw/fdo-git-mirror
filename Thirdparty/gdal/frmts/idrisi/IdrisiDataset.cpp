@@ -1,5 +1,5 @@
 /*****************************************************************************
-* $Id: IdrisiDataset.cpp 25214 2012-11-06 18:54:12Z rouault $
+* $Id: IdrisiDataset.cpp 23431 2011-11-27 15:02:24Z rouault $
 *
 * Project:  Idrisi Raster Image File Driver
 * Purpose:  Read/write Idrisi Raster Image Format RST
@@ -37,7 +37,7 @@
 #include "gdal_rat.h"
 #include "idrisi.h"
 
-CPL_CVSID( "$Id: IdrisiDataset.cpp 25214 2012-11-06 18:54:12Z rouault $" );
+CPL_CVSID( "$Id: IdrisiDataset.cpp 23431 2011-11-27 15:02:24Z rouault $" );
 
 CPL_C_START
 void GDALRegister_IDRISI( void);
@@ -341,14 +341,13 @@ public:
     virtual CPLErr SetNoDataValue( double dfNoDataValue );
     virtual CPLErr SetColorTable( GDALColorTable *poColorTable ); 
     virtual CPLErr SetUnitType( const char *pszUnitType );
-    virtual CPLErr SetStatistics( double dfMin, double dfMax,
-                                  double dfMean, double dfStdDev ); 
-    CPLErr SetMinMax( double dfMin, double dfMax );
+    virtual CPLErr SetStatistics( double dfMin, double dfMax, 
+        double dfMean, double dfStdDev );
     virtual const GDALRasterAttributeTable *GetDefaultRAT();
     virtual CPLErr SetDefaultRAT( const GDALRasterAttributeTable * );
 
-    float  fMaximum;
-    float  fMinimum;
+    float  dfMaximum;
+    float  dfMinimum;
     bool   bFirstVal;
 };
 
@@ -396,7 +395,7 @@ IdrisiDataset::~IdrisiDataset()
             for( i = 0; i < nBands; i++ )
             {
                 IdrisiRasterBand *poBand = (IdrisiRasterBand*) GetRasterBand( i + 1 );
-                poBand->SetMinMax( poBand->fMinimum, poBand->fMaximum );
+                poBand->SetStatistics( poBand->dfMinimum, poBand->dfMaximum, 0.0, 0.0 );
             }
 
             CSLSetNameValueSeparator( papszRDC, ": " );
@@ -1003,28 +1002,28 @@ GDALDataset *IdrisiDataset::CreateCopy( const char *pszFilename,
     for( i = 1; i <= poDS->nBands; i++ )
     {
         poSrcBand = poSrcDS->GetRasterBand( i );
-        IdrisiRasterBand* poDstBand = (IdrisiRasterBand*) poDS->GetRasterBand( i );
+        poBand = poDS->GetRasterBand( i );
 
         if( poDS->nBands == 1 )
         {
-            poDstBand->SetUnitType( poSrcBand->GetUnitType() );
-            poDstBand->SetColorTable( poSrcBand->GetColorTable() );
-            poDstBand->SetCategoryNames( poSrcBand->GetCategoryNames() );
+            poBand->SetUnitType( poSrcBand->GetUnitType() );
+            poBand->SetColorTable( poSrcBand->GetColorTable() );
+            poBand->SetCategoryNames( poSrcBand->GetCategoryNames() );
 
             const GDALRasterAttributeTable *poRAT = poSrcBand->GetDefaultRAT();
 
             if( poRAT != NULL )
             {
-                poDstBand->SetDefaultRAT( poRAT );
+                poBand->SetDefaultRAT( poRAT );
             }
         }
 
         dfMin = poSrcBand->GetMinimum( NULL );
         dfMax = poSrcBand->GetMaximum( NULL );
-        poDstBand->SetMinMax( dfMin, dfMax );
+        poBand->SetStatistics( dfMin, dfMax, 0.0, 0.0 );
         dfNoDataValue = poSrcBand->GetNoDataValue( &bHasNoDataValue );
         if( bHasNoDataValue )
-            poDstBand->SetNoDataValue( dfNoDataValue );
+            poBand->SetNoDataValue( dfNoDataValue );
     }
 
     // --------------------------------------------------------------------
@@ -1249,8 +1248,8 @@ IdrisiRasterBand::IdrisiRasterBand( IdrisiDataset *poDS,
     this->nBand = nBand;
     this->eDataType = eDataType;
     this->poDefaultRAT = NULL;
-    this->fMinimum = 0.0;
-    this->fMaximum = 0.0;
+    this->dfMinimum = 0.0;
+    this->dfMaximum = 0.0;
     this->bFirstVal = true;
 
     // -------------------------------------------------------------------- 
@@ -1391,8 +1390,26 @@ CPLErr IdrisiRasterBand::IWriteBlock( int nBlockXOff,
         return CE_Failure;
     }
 
-    int bHasNoDataValue = FALSE;
-    float fNoDataValue = (float) GetNoDataValue(&bHasNoDataValue);
+    // -------------------------------------------------------------------- 
+    //      Store the first value as mimunm and maximum
+    // -------------------------------------------------------------------- 
+
+    if( bFirstVal )
+    {
+        switch( eDataType )
+        {
+            case GDT_Float32:
+                dfMinimum = dfMaximum = (float) ((float*) pabyScanLine)[0];
+                break;
+            case GDT_Int16:
+                dfMinimum = dfMaximum = (float) ((GInt16*) pabyScanLine)[0];
+                break;
+            default:
+                dfMinimum = dfMaximum = (float) ((GByte*) pabyScanLine)[ 
+                    poGDS->nBands == 1 ? 0 : 3 - this->nBand ];
+        }
+        bFirstVal = false;
+    }
 
     // -------------------------------------------------------------------- 
     //      Search for the minimum and maximum values
@@ -1404,80 +1421,32 @@ CPLErr IdrisiRasterBand::IWriteBlock( int nBlockXOff,
     {
         for( i = 0; i < nBlockXSize; i++ )
         {
-            float fVal = ((float*) pabyScanLine)[i];
-            if( !bHasNoDataValue || fVal != fNoDataValue )
-            {
-                if( bFirstVal )
-                {
-                    fMinimum = fMaximum = fVal;
-                    bFirstVal = false;
-                }
-                else
-                {
-                    if( fVal < fMinimum) fMinimum = fVal;
-                    if( fVal > fMaximum) fMaximum = fVal;
-                }
-            }
+            dfMinimum = MIN( dfMinimum, ((float*) pabyScanLine)[i] );
+            dfMaximum = MAX( dfMaximum, ((float*) pabyScanLine)[i] );
         }
     }
     else if( eDataType == GDT_Int16 )
     {
         for( i = 0; i < nBlockXSize; i++ )
         {
-            float fVal = (float) ((GInt16*) pabyScanLine)[i];
-            if( !bHasNoDataValue || fVal != fNoDataValue )
-            {
-                if( bFirstVal )
-                {
-                    fMinimum = fMaximum = fVal;
-                    bFirstVal = false;
-                }
-                else
-                {
-                    if( fVal < fMinimum) fMinimum = fVal;
-                    if( fVal > fMaximum) fMaximum = fVal;
-                }
-            }
+            dfMinimum = MIN( dfMinimum, ((GInt16*) pabyScanLine)[i] );
+            dfMaximum = MAX( dfMaximum, ((GInt16*) pabyScanLine)[i] );
         }
     }
     else if( poGDS->nBands == 1 )
     {
         for( i = 0; i < nBlockXSize; i++ )
         {
-            float fVal = (float) ((GByte*) pabyScanLine)[i];
-            if( !bHasNoDataValue || fVal != fNoDataValue )
-            {
-                if( bFirstVal )
-                {
-                    fMinimum = fMaximum = fVal;
-                    bFirstVal = false;
-                }
-                else
-                {
-                    if( fVal < fMinimum) fMinimum = fVal;
-                    if( fVal > fMaximum) fMaximum = fVal;
-                }
-            }
+            dfMinimum = MIN( dfMinimum, ((GByte*) pabyScanLine)[i] );
+            dfMaximum = MAX( dfMaximum, ((GByte*) pabyScanLine)[i] );
         }
     }
     else
     {
         for( i = 0, j = ( 3 - nBand ); i < nBlockXSize; i++, j += 3 )
         {
-            float fVal = (float) ((GByte*) pabyScanLine)[j];
-            if( !bHasNoDataValue || fVal != fNoDataValue )
-            {
-                if( bFirstVal )
-                {
-                    fMinimum = fMaximum = fVal;
-                    bFirstVal = false;
-                }
-                else
-                {
-                    if( fVal < fMinimum) fMinimum = fVal;
-                    if( fVal > fMaximum) fMaximum = fVal;
-                }
-            }
+            dfMinimum = MIN( dfMinimum, ((GByte*) pabyScanLine)[j] );
+            dfMaximum = MAX( dfMaximum, ((GByte*) pabyScanLine)[j] );
         }
     }
 
@@ -1790,15 +1759,12 @@ CPLErr IdrisiRasterBand::SetUnitType( const char *pszUnitType )
 }
 
 /************************************************************************/
-/*                             SetMinMax()                              */
+/*                           SetStatistics()                            */
 /************************************************************************/
 
-CPLErr IdrisiRasterBand::SetMinMax( double dfMin, double dfMax )
+CPLErr IdrisiRasterBand::SetStatistics( double dfMin, double dfMax, double dfMean, double dfStdDev )
 {      
     IdrisiDataset *poGDS = (IdrisiDataset *) poDS;
-    
-    fMinimum = (float)dfMin;
-    fMaximum = (float)dfMax;
 
     double adfMin[3] = {0.0, 0.0, 0.0};
     double adfMax[3] = {0.0, 0.0, 0.0};
@@ -1834,18 +1800,7 @@ CPLErr IdrisiRasterBand::SetMinMax( double dfMin, double dfMax )
             CSLSetNameValue( poGDS->papszRDC, rdcDISPLAY_MAX, CPLSPrintf( "%.8g", adfMax[0] ) );
     }
 
-    return CE_None;
-}
-
-/************************************************************************/
-/*                           SetStatistics()                            */
-/************************************************************************/
-
-CPLErr IdrisiRasterBand::SetStatistics( double dfMin, double dfMax, double dfMean, double dfStdDev )
-{
-    SetMinMax(dfMin, dfMax);
-
-    return GDALPamRasterBand::SetStatistics(dfMin, dfMax, dfMean, dfStdDev);
+    return GDALRasterBand::SetStatistics( dfMin, dfMax, dfMean, dfStdDev );
 }
 
 /************************************************************************/

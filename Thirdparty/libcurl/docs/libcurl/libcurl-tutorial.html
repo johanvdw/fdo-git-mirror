@@ -1,8 +1,6 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
- "http://www.w3.org/TR/html4/loose.dtd">
 <html><head>
 <title>libcurl-tutorial man page</title>
-<meta name="generator" content="roffit">
+<meta name="generator" content="roffit 0.7">
 <STYLE type="text/css">
 P.level0 {
  padding-left: 2em;
@@ -118,7 +116,7 @@ p.roffit {
 <p class="level0">If you then want to transfer another file, the handle is ready to be used again. Mind you, it is even preferred that you re-use an existing handle if you intend to make another transfer. libcurl will then attempt to re-use the previous connection. 
 <p class="level0">For some protocols, downloading a file can involve a complicated process of logging in, setting the transfer mode, changing the current directory and finally transferring the file data. libcurl takes care of all that complication for you. Given simply the URL to a file, libcurl will take care of all the details needed to get the file moved from one machine to another. 
 <p class="level0"><a name="Multi-threading"></a><h2 class="nroffsh">Multi-threading Issues</h2>
-<p class="level0">The first basic rule is that you must <span Class="bold">never</span> simultaneously share a libcurl handle (be it easy or multi or whatever) between multiple threads. Only use one handle in one thread at any time. You can pass the handles around among threads, but you must never use a single handle from more than one thread at any given time. 
+<p class="level0">The first basic rule is that you must <span Class="bold">never</span> share a libcurl handle (be it easy or multi or whatever) between multiple threads. Only use one handle in one thread at a time. 
 <p class="level0">libcurl is completely thread safe, except for two issues: signals and SSL/TLS handlers. Signals are used for timing out name resolves (during DNS lookup) - when built without c-ares support and not on Windows. 
 <p class="level0">If you are accessing HTTPS or FTPS URLs in a multi-threaded manner, you are then of course using the underlying SSL library multi-threaded and those libs might have their own requirements on this issue. Basically, you need to provide one or two functions to allow it to function properly. For all details, see this: 
 <p class="level0">OpenSSL 
@@ -127,14 +125,8 @@ p.roffit {
 <p class="level0">&nbsp;<a href="http://www.gnu.org/software/gnutls/manual/html_node/">http://www.gnu.org/software/gnutls/manual/html_node/</a>Multi_002dthreaded-applications.html 
 <p class="level0">NSS 
 <p class="level0">&nbsp;is claimed to be thread-safe already without anything required. 
-<p class="level0">PolarSSL 
-<p class="level0">&nbsp;Required actions unknown. 
 <p class="level0">yassl 
 <p class="level0">&nbsp;Required actions unknown. 
-<p class="level0">axTLS 
-<p class="level0">&nbsp;Required actions unknown. 
-<p class="level0">Secure Transport 
-<p class="level0">&nbsp;The engine is fully thread-safe, and no additional steps are required. 
 <p class="level0">When using multiple threads you should set the CURLOPT_NOSIGNAL option to 1 for all handles. Everything will or might work fine except that timeouts are not honored during the DNS lookup - which you can work around by building libcurl with c-ares support. c-ares is a library that provides asynchronous name resolves. On some platforms, libcurl simply will not function properly multi-threaded unless this option is set. 
 <p class="level0">Also, note that CURLOPT_DNS_USE_GLOBAL_CACHE is not thread-safe. 
 <p class="level0"><a name="When"></a><h2 class="nroffsh">When It Doesn't Work</h2>
@@ -220,7 +212,7 @@ p.roffit {
  </pre>
 
 <p class="level0">
-<p class="level0">While the simple examples above cover the majority of all cases where HTTP POST operations are required, they don't do multi-part formposts. Multi-part formposts were introduced as a better way to post (possibly large) binary data and were first documented in the <a href="http://www.ietf.org/rfc/rfc1867.txt">RFC 1867</a> (updated in RFC2388). They're called multi-part because they're built by a chain of parts, each part being a single unit of data. Each part has its own name and contents. You can in fact create and post a multi-part formpost with the regular libcurl POST support described above, but that would require that you build a formpost yourself and provide to libcurl. To make that easier, libcurl provides <a class="emphasis" href="./curl_formadd.html">curl_formadd(3)</a>. Using this function, you add parts to the form. When you're done adding parts, you post the whole form. 
+<p class="level0">While the simple examples above cover the majority of all cases where HTTP POST operations are required, they don't do multi-part formposts. Multi-part formposts were introduced as a better way to post (possibly large) binary data and were first documented in the RFC1867 (updated in RFC2388). They're called multi-part because they're built by a chain of parts, each part being a single unit of data. Each part has its own name and contents. You can in fact create and post a multi-part formpost with the regular libcurl POST support described above, but that would require that you build a formpost yourself and provide to libcurl. To make that easier, libcurl provides <a class="emphasis" href="./curl_formadd.html">curl_formadd(3)</a>. Using this function, you add parts to the form. When you're done adding parts, you post the whole form. 
 <p class="level0">The following example sets two simple text parts with plain textual contents, and then a file with binary contents and uploads the whole thing. 
 <p class="level0"><pre>
 <p class="level0">&nbsp;struct curl_httppost *post=NULL;
@@ -355,6 +347,9 @@ p.roffit {
 <p class="level0"><a name="Host"></a><span class="nroffip">Host</span> 
 <p class="level1">This header is required by HTTP 1.1 and even many 1.0 servers and should be the name of the server we want to talk to. This includes the port number if anything but default. 
 <p class="level1">
+<p class="level0"><a name="Pragma"></a><span class="nroffip">Pragma</span> 
+<p class="level1">"no-cache". Tells a possible proxy to not grab a copy from the cache but to fetch a fresh one. 
+<p class="level1">
 <p class="level0"><a name="Accept"></a><span class="nroffip">Accept</span> 
 <p class="level1">"*/*". 
 <p class="level1">
@@ -408,7 +403,7 @@ p.roffit {
 <p class="level0"><a name="FTP"></a><span class="nroffip">FTP Custom Commands</span> 
 <p class="level1">
 <p class="level1">Not all protocols are HTTP-like, and thus the above may not help you when you want to make, for example, your FTP transfers to behave differently. 
-<p class="level1">Sending custom commands to a FTP server means that you need to send the commands exactly as the FTP server expects them (<a href="http://www.ietf.org/rfc/rfc959.txt">RFC 959</a> is a good guide here), and you can only use commands that work on the control-connection alone. All kinds of commands that require data interchange and thus need a data-connection must be left to libcurl's own judgement. Also be aware that libcurl will do its very best to change directory to the target directory before doing any transfer, so if you change directory (with CWD or similar) you might confuse libcurl and then it might not attempt to transfer the file in the correct remote directory. 
+<p class="level1">Sending custom commands to a FTP server means that you need to send the commands exactly as the FTP server expects them (RFC959 is a good guide here), and you can only use commands that work on the control-connection alone. All kinds of commands that require data interchange and thus need a data-connection must be left to libcurl's own judgement. Also be aware that libcurl will do its very best to change directory to the target directory before doing any transfer, so if you change directory (with CWD or similar) you might confuse libcurl and then it might not attempt to transfer the file in the correct remote directory. 
 <p class="level1">A little example that deletes a given file before an operation: 
 <p class="level1"><pre>
 <p class="level1">&nbsp;headers = curl_slist_append(headers, "DELE file-to-remove");
@@ -480,12 +475,9 @@ p.roffit {
 <p class="level1">Apps can mitigate against this by disabling CURLOPT_FOLLOWLOCATION and handling redirects itself, sanitizing URLs as necessary. Alternately, an app could leave CURLOPT_FOLLOWLOCATION enabled but set CURLOPT_REDIR_PROTOCOLS and install a CURLOPT_OPENSOCKETFUNCTION callback function in which addresses are sanitized before use. 
 <p class="level1">
 <p class="level0"><a name="Private"></a><span class="nroffip">Private Resources</span> 
-<p class="level1">A user who can control the DNS server of a domain being passed in within a URL can change the address of the host to a local, private address which a server-side libcurl-using application could then use. e.g. the innocuous URL <a href="http://fuzzybunnies.example.com/">http://fuzzybunnies.example.com/</a> could actually resolve to the IP address of a server behind a firewall, such as 127.0.0.1 or 10.1.2.3.  Apps can mitigate against this by setting a CURLOPT_OPENSOCKETFUNCTION and checking the address before a connection. 
+<p class="level1">A user who can control the DNS server of a domain being passed in within a URL can change the address of the host to a local, private address which the libcurl application will then use. e.g. The innocuous URL <a href="http://fuzzybunnies.example.com/">http://fuzzybunnies.example.com/</a> could actually resolve to the IP address of a server behind a firewall, such as 127.0.0.1 or 10.1.2.3 Apps can mitigate against this by setting a CURLOPT_OPENSOCKETFUNCTION and checking the address before a connection. 
 <p class="level1">All the malicious scenarios regarding redirected URLs apply just as well to non-redirected URLs, if the user is allowed to specify an arbitrary URL that could point to a private resource. For example, a web app providing a translation service might happily translate file://localhost/etc/passwd and display the result.  Apps can mitigate against this with the CURLOPT_PROTOCOLS option as well as by similar mitigation techniques for redirections. 
 <p class="level1">A malicious FTP server could in response to the PASV command return an IP address and port number for a server local to the app running libcurl but behind a firewall.  Apps can mitigate against this by using the CURLOPT_FTP_SKIP_PASV_IP option or CURLOPT_FTPPORT. 
-<p class="level1">
-<p class="level0"><a name="IPv6"></a><span class="nroffip">IPv6 Addresses</span> 
-<p class="level1">libcurl will normally handle IPv6 addresses transparently and just as easily as IPv4 addresses. That means that a sanitizing function that filters out addressses like 127.0.0.1 isn't sufficient--the equivalent IPv6 addresses ::1, ::, 0:00::0:1, ::127.0.0.1 and ::ffff:7f00:1 supplied somehow by an attacker would all bypass a naive filter and could allow access to undesired local resources.  IPv6 also has special address blocks like link-local and site-local that generally shouldn't be accessed by a server-side libcurl-using application.  A poorly-configured firewall installed in a data center, organization or server may also be configured to limit IPv4 connections but leave IPv6 connections wide open.  In some cases, the CURL_IPRESOLVE_V4 option can be used to limit resolved addresses to IPv4 only and bypass these issues. 
 <p class="level1">
 <p class="level0"><a name="Uploads"></a><span class="nroffip">Uploads</span> 
 <p class="level1">When uploading, a redirect can cause a local (or remote) file to be overwritten.  Apps must not allow any unsanitized URL to be passed in for uploads.  Also, CURLOPT_FOLLOWLOCATION should not be used on uploads. Instead, the app should handle redirects itself, sanitizing each URL first. 
@@ -499,26 +491,22 @@ p.roffit {
 <p class="level1">If cookies are enabled and cached, then a user could craft a URL which performs some malicious action to a site whose authentication is already stored in a cookie. e.g. <a href="http://mail.example.com/delete-stuff.cgi">http://mail.example.com/delete-stuff.cgi</a>?delete=all Apps can mitigate against this by disabling cookies or clearing them between requests. 
 <p class="level1">
 <p class="level0"><a name="Dangerous"></a><span class="nroffip">Dangerous URLs</span> 
-<p class="level1">SCP URLs can contain raw commands within the scp: URL, which is a side effect of how the SCP protocol is designed. e.g. scp://user:pass@host/a;date &gt;/tmp/test; Apps must not allow unsanitized SCP: URLs to be passed in for downloads. 
+<p class="level1">SCP URLs can contain raw commands within the scp: URL, which is a side effect of how the SCP protocol is designed. e.g.  scp://user:pass@host/a;date &gt;/tmp/test; Apps must not allow unsanitized SCP: URLs to be passed in for downloads. 
 <p class="level1">
 <p class="level0"><a name="Denial"></a><span class="nroffip">Denial of Service</span> 
 <p class="level1">A malicious server could cause libcurl to effectively hang by sending a trickle of data through, or even no data at all but just keeping the TCP connection open.  This could result in a denial-of-service attack. The CURLOPT_TIMEOUT and/or CURLOPT_LOW_SPEED_LIMIT options can be used to mitigate against this. 
 <p class="level1">A malicious server could cause libcurl to effectively hang by starting to send data, then severing the connection without cleanly closing the TCP connection.  The app could install a CURLOPT_SOCKOPTFUNCTION callback function and set the TCP SO_KEEPALIVE option to mitigate against this. Setting one of the timeout options would also work against this attack. 
 <p class="level1">A malicious server could cause libcurl to download an infinite amount of data, potentially causing all of memory or disk to be filled. Setting the CURLOPT_MAXFILESIZE_LARGE option is not sufficient to guard against this. Instead, the app should monitor the amount of data received within the write or progress callback and abort once the limit is reached. 
-<p class="level1">A malicious HTTP server could cause an infinite redirection loop, causing a denial-of-service. This can be mitigated by using the CURLOPT_MAXREDIRS option. 
+<p class="level1">A malicious HTTP server could cause an infinite redirection loop, causing a  denial-of-service. This can be mitigated by using the CURLOPT_MAXREDIRS option. 
 <p class="level1">
 <p class="level0"><a name="Arbitrary"></a><span class="nroffip">Arbitrary Headers</span> 
 <p class="level1">User-supplied data must be sanitized when used in options like CURLOPT_USERAGENT, CURLOPT_HTTPHEADER, CURLOPT_POSTFIELDS and others that are used to generate structured data. Characters like embedded carriage returns or ampersands could allow the user to create additional headers or fields that could cause malicious transactions. 
-<p class="level1">
-<p class="level0"><a name="Server-supplied"></a><span class="nroffip">Server-supplied Names</span> 
-<p class="level1">A server can supply data which the application may, in some cases, use as a file name. The curl command-line tool does this with --remote-header-name, using the Content-disposition: header to generate a file name.  An application could also use CURLINFO_EFFECTIVE_URL to generate a file name from a server-supplied redirect URL. Special care must be taken to sanitize such names to avoid the possibility of a malicious server supplying one like "/etc/passwd", "\autoexec.bat", "prn:" or even ".bashrc". 
 <p class="level1">
 <p class="level0"><a name="Server"></a><span class="nroffip">Server Certificates</span> 
 <p class="level1">A secure application should never use the CURLOPT_SSL_VERIFYPEER option to disable certificate validation. There are numerous attacks that are enabled by apps that fail to properly validate server TLS/SSL certificates, thus enabling a malicious server to spoof a legitimate one. HTTPS without validated certificates is potentially as insecure as a plain HTTP connection. 
 <p class="level1">
 <p class="level0"><a name="Showing"></a><span class="nroffip">Showing What You Do</span> 
-<p class="level1">On a related issue, be aware that even in situations like when you have problems with libcurl and ask someone for help, everything you reveal in order to get best possible help might also impose certain security related risks. Host names, user names, paths, operating system specifics, etc. (not to mention passwords of course) may in fact be used by intruders to gain additional information of a potential target. 
-<p class="level1">Be sure to limit access to application logs if they could hold private or security-related data.  Besides the obvious candidates like user names and passwords, things like URLs, cookies or even file names could also hold sensitive data. 
+<p class="level1">On a related issue, be aware that even in situations like when you have problems with libcurl and ask someone for help, everything you reveal in order to get best possible help might also impose certain security related risks. Host names, user names, paths, operating system specifics, etc (not to mention passwords of course) may in fact be used by intruders to gain additional information of a potential target. 
 <p class="level1">To avoid this problem, you must of course use your common sense. Often, you can just edit out the sensitive data or just search/replace your true information with faked data. 
 <p class="level1"><a name="Multiple"></a><h2 class="nroffsh">Multiple Transfers Using the multi Interface</h2>
 <p class="level0">
@@ -527,7 +515,7 @@ p.roffit {
 <p class="level0">To use this interface, you are better off if you first understand the basics of how to use the easy interface. The multi interface is simply a way to make multiple transfers at the same time by adding up multiple easy handles into a "multi stack". 
 <p class="level0">You create the easy handles you want and you set all the options just like you have been told above, and then you create a multi handle with <a class="emphasis" href="./curl_multi_init.html">curl_multi_init(3)</a> and add all those easy handles to that multi handle with <a class="emphasis" href="./curl_multi_add_handle.html">curl_multi_add_handle(3)</a>. 
 <p class="level0">When you've added the handles you have for the moment (you can still add new ones at any time), you start the transfers by calling <a class="emphasis" href="./curl_multi_perform.html">curl_multi_perform(3)</a>. 
-<p class="level0"><a class="emphasis" href="./curl_multi_perform.html">curl_multi_perform(3)</a> is asynchronous. It will only execute as little as possible and then return back control to your program. It is designed to never block. 
+<p class="level0"><a class="emphasis" href="./curl_multi_perform.html">curl_multi_perform(3)</a> is asynchronous. It will only execute as little as possible and then return back control to your program. It is designed to never block. If it returns CURLM_CALL_MULTI_PERFORM you better call it again soon, as that is a signal that it still has local data to send or remote data to receive. 
 <p class="level0">The best usage of this interface is when you do a select() on all possible file descriptors or sockets to know when to call libcurl again. This also makes it easy for you to wait and respond to actions on your own application's sockets/handles. You figure out what to select() for by using <a class="emphasis" href="./curl_multi_fdset.html">curl_multi_fdset(3)</a>, that fills in a set of fd_set variables for you with the particular file descriptors libcurl uses for the moment. 
 <p class="level0">When you then call select(), it'll return when one of the file handles signal action and you then call <a class="emphasis" href="./curl_multi_perform.html">curl_multi_perform(3)</a> to allow libcurl to do what it wants to do. Take note that libcurl does also feature some time-out code so we advise you to never use very long timeouts on select() before you call <a class="emphasis" href="./curl_multi_perform.html">curl_multi_perform(3)</a>, which thus should be called unconditionally every now and then even if none of its file descriptors have signaled ready. Another precaution you should use: always call <a class="emphasis" href="./curl_multi_fdset.html">curl_multi_fdset(3)</a> immediately before the select() call since the current set of file descriptors may change when calling a curl function. 
 <p class="level0">If you want to stop the transfer of one of the easy handles in the stack, you can use <a class="emphasis" href="./curl_multi_remove_handle.html">curl_multi_remove_handle(3)</a> to remove individual easy handles. Remember that easy handles should be <a class="emphasis" href="./curl_easy_cleanup.html">curl_easy_cleanup(3)</a>ed. 
@@ -537,10 +525,9 @@ p.roffit {
 <p class="level0">
 <p class="level0">&nbsp;[ seeding, passwords, keys, certificates, ENGINE, ca certs ] 
 <p class="level0"><a name="Sharing"></a><h2 class="nroffsh">Sharing Data Between Easy Handles</h2>
-<p class="level0">You can share some data between easy handles when the easy interface is used, and some data is share automatically when you use the multi interface. 
-<p class="level0">When you add easy handles to a multi handle, these easy handles will automatically share a lot of the data that otherwise would be kept on a per-easy handle basis when the easy interface is used. 
-<p class="level0">The DNS cache is shared between handles within a multi handle, making subsequent name resolving faster, and the connection pool that is kept to better allow persistent connections and connection re-use is also shared. If you're using the easy interface, you can still share these between specific easy handles by using the share interface, see <span Class="emphasis">libcurl-share(3)</span>. 
-<p class="level0">Some things are never shared automatically, not within multi handles, like for example cookies so the only way to share that is with the share interface. <a name="Footnotes"></a><h2 class="nroffsh">Footnotes</h2>
+<p class="level0">
+<p class="level0">&nbsp;[ fill in ] 
+<p class="level0"><a name="Footnotes"></a><h2 class="nroffsh">Footnotes</h2>
 <p class="level0">
 <p class="level0">
 <p class="level0"><a name="1"></a><span class="nroffip">[1]</span> 

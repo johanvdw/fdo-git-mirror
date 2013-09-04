@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrshape.h 25900 2013-04-11 20:24:31Z rouault $
+ * $Id: ogrshape.h 23534 2011-12-11 22:35:51Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions within the Shapefile driver to implement
@@ -33,14 +33,6 @@
 
 #include "ogrsf_frmts.h"
 #include "shapefil.h"
-#include "ogrlayerpool.h"
-#include <vector>
-
-/* Was limited to 255 until OGR 1.10, but 254 seems to be a more */
-/* conventionnal limit (http://en.wikipedia.org/wiki/Shapefile, */
-/* http://www.clicketyclick.dk/databases/xbase/format/data_types.html, */
-/* #5052 ) */
-#define OGR_DBF_MAX_FIELD_WIDTH 254
 
 /* ==================================================================== */
 /*      Functions from Shape2ogr.cpp.                                   */
@@ -63,7 +55,7 @@ OGRErr SHPWriteOGRFeature( SHPHandle hSHP, DBFHandle hDBF,
 
 class OGRShapeDataSource;
 
-class OGRShapeLayer : public OGRAbstractProxiedLayer
+class OGRShapeLayer : public OGRLayer
 {
     OGRShapeDataSource  *poDS;
     OGRSpatialReference *poSRS; /* lazy loaded --> use GetSpatialRef() */
@@ -86,22 +78,13 @@ class OGRShapeLayer : public OGRAbstractProxiedLayer
 
     long               *panMatchingFIDs;
     int                 iMatchingFID;
-    void                ClearMatchingFIDs();
-
-    OGRGeometry        *m_poFilterGeomLastValid;
-    int                 nSpatialFIDCount;
-    int                *panSpatialFIDs;
-    void                ClearSpatialFIDs();
 
     int                 bHeaderDirty;
 
     int                 bCheckedForQIX;
     SHPTreeDiskHandle   hQIX;
-    int                 CheckForQIX();
 
-    int                 bCheckedForSBN;
-    SBNSearchHandle     hSBN;
-    int                 CheckForSBN();
+    int                 CheckForQIX();
 
     int                 bSbnSbxDeleted;
 
@@ -116,15 +99,6 @@ class OGRShapeLayer : public OGRAbstractProxiedLayer
     int                 TouchLayer();
     int                 ReopenFileDescriptors();
 
-    int                 bResizeAtClose;
-
-    void                TruncateDBF();
-
-
-  protected:
-
-    virtual void        CloseUnderlyingLayer();
-
 /* WARNING: each of the below public methods should start with a call to */
 /* TouchLayer() and test its return value, so as to make sure that */
 /* the layer is properly re-opened if necessary */
@@ -134,11 +108,15 @@ class OGRShapeLayer : public OGRAbstractProxiedLayer
     OGRErr              DropSpatialIndex();
     OGRErr              Repack();
     OGRErr              RecomputeExtent();
-    OGRErr              ResizeDBF();
-
-    void                SetResizeAtClose( int bFlag ) { bResizeAtClose = bFlag; }
 
     const char         *GetFullName() { return pszFullName; }
+
+    void                CloseFileDescriptors();
+
+    /* The 2 following members should not be used by OGRShapeLayer, except */
+    /* in its constructor */
+    OGRShapeLayer      *poPrevLayer; /* Chain to a layer that was used more recently */
+    OGRShapeLayer      *poNextLayer; /* Chain to a layer that was used less recently */
 
     OGRFeature *        FetchShape(int iShapeId);
     int                 GetFeatureCountWithSpatialFilterOnly();
@@ -175,9 +153,8 @@ class OGRShapeLayer : public OGRAbstractProxiedLayer
 
     virtual OGRSpatialReference *GetSpatialRef();
     
-    virtual int         TestCapability( const char * );
-    virtual void        SetSpatialFilter( OGRGeometry * );
-    virtual OGRErr      SetAttributeFilter( const char * );
+    int                 TestCapability( const char * );
+
 };
 
 /************************************************************************/
@@ -195,27 +172,23 @@ class OGRShapeDataSource : public OGRDataSource
 
     int                 bSingleFileDataSource;
 
-    OGRLayerPool*       poPool;
+    OGRShapeLayer      *poMRULayer; /* the most recently used layer */
+    OGRShapeLayer      *poLRULayer; /* the least recently used layer (still opened) */
+    int                 nMRUListSize; /* the size of the list */
 
     void                AddLayer(OGRShapeLayer* poLayer);
-
-    std::vector<CPLString> oVectorLayerName;
 
   public:
                         OGRShapeDataSource();
                         ~OGRShapeDataSource();
 
-    OGRLayerPool       *GetPool() { return poPool; }
-
     int                 Open( const char *, int bUpdate, int bTestOpen,
                               int bForceSingleFileDataSource = FALSE );
     int                 OpenFile( const char *, int bUpdate, int bTestOpen );
 
-    virtual const char  *GetName() { return pszName; }
-
-    virtual int          GetLayerCount();
-    virtual OGRLayer    *GetLayer( int );
-    virtual OGRLayer    *GetLayerByName(const char *);
+    const char          *GetName() { return pszName; }
+    int                 GetLayerCount() { return nLayers; }
+    OGRLayer            *GetLayer( int );
 
     virtual OGRLayer    *CreateLayer( const char *, 
                                       OGRSpatialReference * = NULL,

@@ -33,7 +33,6 @@
 
 #include "gdal.h"
 #include "gdal_priv.h"
-#include "gdal_alg.h"
 #include "gdal_rat.h"
 #include "ogr_spatialref.h"
 #include "cpl_minixml.h"
@@ -189,6 +188,7 @@ public:
                             void* pProgresoversData );
     virtual CPLErr      CreateMaskBand( int nFlags );
     void                AssignGeoRaster( GeoRasterWrapper* poGRW );
+
 };
 
 //  ---------------------------------------------------------------------------
@@ -384,8 +384,6 @@ public:
                                                 int nRowBlocks,
                                                 int nBandBlocks );
     void                SetWriteOnly( bool value ) { bWriteOnly = value; };
-    void                SetRPC();
-    void                GetRPC();
 
 public:
 
@@ -401,8 +399,6 @@ public:
     CPLString           sValueAttributeTab;
 
     int                 nSRID;
-    int                 nExtentSRID;
-    bool                bGenSpatialIndex;
     CPLXMLNode*         phMetadata;
     CPLString           sCellDepth;
     CPLString           sCompressionType;
@@ -443,8 +439,6 @@ public:
     
     int                 eModelCoordLocation;
     unsigned int        anULTCoordinate[3];
-
-    GDALRPCInfo*        phRPC;
 };
 
 #endif /* ifndef _GEORASTER_PRIV_H_INCLUDED */

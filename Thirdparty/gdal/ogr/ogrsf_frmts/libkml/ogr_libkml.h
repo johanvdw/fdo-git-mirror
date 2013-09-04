@@ -55,6 +55,9 @@ class OGRLIBKMLDataSource;
 
 class OGRLIBKMLLayer:public OGRLayer
 {
+    OGRFeatureDefn *poFeatureDefn;
+
+    FILE                      fp;
     int                       bUpdate;
     int                       bUpdated;
     int                       nFeatures;
@@ -73,9 +76,6 @@ class OGRLIBKMLLayer:public OGRLayer
     OGRFeatureDefn           *m_poOgrFeatureDefn;
     SchemaPtr                 m_poKmlSchema;
     OGRSpatialReference      *m_poOgrSRS;
-
-    int                       m_bReadGroundOverlay;
-
   public:
     OGRLIBKMLLayer            ( const char *pszLayerName,
                                 OGRSpatialReference * poSpatialRef,

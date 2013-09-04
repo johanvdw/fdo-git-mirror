@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrdxflayer.cpp 25030 2012-10-02 22:08:36Z rouault $
+ * $Id: ogrdxflayer.cpp 22527 2011-06-13 03:58:34Z warmerdam $
  *
  * Project:  DXF Translator
  * Purpose:  Implements OGRDXFLayer class.
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "ogrdxf_polyline_smooth.h"
 
-CPL_CVSID("$Id: ogrdxflayer.cpp 25030 2012-10-02 22:08:36Z rouault $");
+CPL_CVSID("$Id: ogrdxflayer.cpp 22527 2011-06-13 03:58:34Z warmerdam $");
 
 #ifndef PI
 #define PI  3.14159265358979323846
@@ -466,13 +466,10 @@ OGRFeature *OGRDXFLayer::TranslateMTEXT()
     if( nCode == 0 )
         poDS->UnreadValue();
 
-    OGRPoint* poGeom;
     if( bHaveZ )
-        poGeom = new OGRPoint( dfX, dfY, dfZ );
+        poFeature->SetGeometryDirectly( new OGRPoint( dfX, dfY, dfZ ) );
     else
-        poGeom = new OGRPoint( dfX, dfY );
-    ApplyOCSTransformer( poGeom );
-    poFeature->SetGeometryDirectly( poGeom );
+        poFeature->SetGeometryDirectly( new OGRPoint( dfX, dfY ) );
 
 /* -------------------------------------------------------------------- */
 /*      Apply text after stripping off any extra terminating newline.   */
@@ -627,13 +624,10 @@ OGRFeature *OGRDXFLayer::TranslateTEXT()
     if( nCode == 0 )
         poDS->UnreadValue();
 
-    OGRPoint* poGeom;
     if( bHaveZ )
-        poGeom = new OGRPoint( dfX, dfY, dfZ );
+        poFeature->SetGeometryDirectly( new OGRPoint( dfX, dfY, dfZ ) );
     else
-        poGeom = new OGRPoint( dfX, dfY );
-    ApplyOCSTransformer( poGeom );
-    poFeature->SetGeometryDirectly( poGeom );
+        poFeature->SetGeometryDirectly( new OGRPoint( dfX, dfY ) );
 
 /* -------------------------------------------------------------------- */
 /*      Translate text from Win-1252 to UTF8.  We approximate this      */
@@ -770,20 +764,14 @@ OGRFeature *OGRDXFLayer::TranslatePOINT()
         }
     }
 
-    OGRPoint* poGeom;
     if( bHaveZ )
-        poGeom = new OGRPoint( dfX, dfY, dfZ );
+        poFeature->SetGeometryDirectly( new OGRPoint( dfX, dfY, dfZ ) );
     else
-        poGeom = new OGRPoint( dfX, dfY );
-    ApplyOCSTransformer( poGeom );
-    poFeature->SetGeometryDirectly( poGeom );
+        poFeature->SetGeometryDirectly( new OGRPoint( dfX, dfY ) );
 
     if( nCode == 0 )
         poDS->UnreadValue();
-    
-    // Set style pen color
-    PrepareLineStyle( poFeature );
- 
+
     return poFeature;
 }
 
@@ -858,7 +846,6 @@ OGRFeature *OGRDXFLayer::TranslateLINE()
         poLS->addPoint( dfX2, dfY2 );
     }
 
-    ApplyOCSTransformer( poLS );
     poFeature->SetGeometryDirectly( poLS );
 
     PrepareLineStyle( poFeature );
@@ -958,8 +945,7 @@ OGRFeature *OGRDXFLayer::TranslateLWPOLYLINE()
         }
     }
 
-    if( nCode == 0 )
-        poDS->UnreadValue();
+    poDS->UnreadValue();
 
     if( bHaveX && bHaveY )
         smoothPolyline.AddPoint(dfX, dfY, dfZ, dfBulge);
@@ -1024,7 +1010,6 @@ OGRFeature *OGRDXFLayer::TranslatePOLYLINE()
     double              dfX = 0.0, dfY = 0.0, dfZ = 0.0;
     double              dfBulge = 0.0;
     DXFSmoothPolyline   smoothPolyline;
-    int                 nVertexFlag = 0;
 
     smoothPolyline.setCoordinateDimension(2);
 
@@ -1059,27 +1044,15 @@ OGRFeature *OGRDXFLayer::TranslatePOLYLINE()
                 dfBulge = CPLAtof(szLineBuf);
                 break;
 
-              case 70:
-                nVertexFlag = atoi(szLineBuf);
-                break;
-
               default:
                 break;
             }
         }
 
-        // Ignore Spline frame control points ( see #4683 )
-        if ((nVertexFlag & 16) == 0)
-            smoothPolyline.AddPoint( dfX, dfY, dfZ, dfBulge );
+        smoothPolyline.AddPoint( dfX, dfY, dfZ, dfBulge );
         dfBulge = 0.0;
     }
 
-    if(smoothPolyline.IsEmpty())
-    {
-        delete poFeature;
-        return NULL;
-    }
-    
 /* -------------------------------------------------------------------- */
 /*      Close polyline if necessary.                                    */
 /* -------------------------------------------------------------------- */
@@ -1153,7 +1126,6 @@ OGRFeature *OGRDXFLayer::TranslateCIRCLE()
     if( !bHaveZ )
         poCircle->flattenTo2D();
 
-    ApplyOCSTransformer( poCircle );
     poFeature->SetGeometryDirectly( poCircle );
     PrepareLineStyle( poFeature );
 
@@ -1262,7 +1234,6 @@ OGRFeature *OGRDXFLayer::TranslateELLIPSE()
     if( !bHaveZ )
         poEllipse->flattenTo2D();
 
-    ApplyOCSTransformer( poEllipse );
     poFeature->SetGeometryDirectly( poEllipse );
 
     PrepareLineStyle( poFeature );
@@ -1341,7 +1312,6 @@ OGRFeature *OGRDXFLayer::TranslateARC()
     if( !bHaveZ )
         poArc->flattenTo2D();
 
-    ApplyOCSTransformer( poArc );
     poFeature->SetGeometryDirectly( poArc );
 
     PrepareLineStyle( poFeature );
@@ -1445,7 +1415,6 @@ OGRFeature *OGRDXFLayer::TranslateSPLINE()
     for( i = 0; i < p1; i++ )
         poLS->setPoint( i, p[i*3+1], p[i*3+2] );
 
-    ApplyOCSTransformer( poLS );
     poFeature->SetGeometryDirectly( poLS );
 
     PrepareLineStyle( poFeature );
@@ -1580,7 +1549,6 @@ OGRFeature *OGRDXFLayer::TranslateINSERT()
 /* -------------------------------------------------------------------- */
     if( !poDS->InlineBlocks() )
     {
-        // ApplyOCSTransformer( poGeom ); ?
         poFeature->SetGeometryDirectly(
             new OGRPoint( oTransformer.dfXOffset, 
                           oTransformer.dfYOffset,
@@ -1660,8 +1628,6 @@ OGRFeature *OGRDXFLayer::TranslateINSERT()
     }
     else
     {
-        // Set style pen color
-        PrepareLineStyle( poFeature );
         return poFeature;
     }
 }

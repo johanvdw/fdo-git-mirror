@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdaladdo.cpp 25586 2013-01-30 20:26:44Z rouault $
+ * $Id: gdaladdo.cpp 18306 2009-12-15 18:57:11Z rouault $
  *
  * Project:  GDAL Utilities
  * Purpose:  Commandline application to build overviews. 
@@ -30,13 +30,13 @@
 #include "gdal_priv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: gdaladdo.cpp 25586 2013-01-30 20:26:44Z rouault $");
+CPL_CVSID("$Id: gdaladdo.cpp 18306 2009-12-15 18:57:11Z rouault $");
 
 /************************************************************************/
 /*                               Usage()                                */
 /************************************************************************/
 
-static void Usage(const char* pszErrorMsg = NULL)
+static void Usage()
 
 {
     printf( "Usage: gdaladdo [-r {nearest,average,gauss,cubic,average_mp,average_magphase,mode}]\n"
@@ -47,7 +47,6 @@ static void Usage(const char* pszErrorMsg = NULL)
             "        external overview (for GeoTIFF datasets especially)\n"
             "  -clean : remove all overviews\n"
             "  -q : turn off progress display\n" 
-            "  -b : band to create overview (if not set overviews will be created for all bands)\n"
             "  filename: The file to build overviews for (or whose overviews must be removed).\n"
             "  levels: A list of integral overview levels to build. Ignored with -clean option.\n"
             "\n"
@@ -64,20 +63,12 @@ static void Usage(const char* pszErrorMsg = NULL)
             " %% gdaladdo --config COMPRESS_OVERVIEW JPEG\n"
             "             --config PHOTOMETRIC_OVERVIEW YCBCR\n"
             "             --config INTERLEAVE_OVERVIEW PIXEL -ro abc.tif 2 4 8 16\n");
-
-    if( pszErrorMsg != NULL )
-        fprintf(stderr, "\nFAILURE: %s\n", pszErrorMsg);
-
     exit( 1 );
 }
 
 /************************************************************************/
 /*                                main()                                */
 /************************************************************************/
-
-#define CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(nExtraArg) \
-    do { if (iArg + nExtraArg >= nArgc) \
-        Usage(CPLSPrintf("%s option requires %d argument(s)", papszArgv[iArg], nExtraArg)); } while(0)
 
 int main( int nArgc, char ** papszArgv )
 
@@ -91,8 +82,6 @@ int main( int nArgc, char ** papszArgv )
     int              bReadOnly = FALSE;
     int              bClean = FALSE;
     GDALProgressFunc pfnProgress = GDALTermProgress; 
-    int             *panBandList = NULL;
-    int              nBandCount = 0;
 
     /* Check that we are running against at least GDAL 1.7 */
     /* Note to developers : if we use newer API, please change the requirement */
@@ -120,53 +109,24 @@ int main( int nArgc, char ** papszArgv )
                    papszArgv[0], GDAL_RELEASE_NAME, GDALVersionInfo("RELEASE_NAME"));
             return 0;
         }
-        else if( EQUAL(papszArgv[iArg],"--help") )
-            Usage();
-        else if( EQUAL(papszArgv[iArg],"-r") )
-        {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
+        else if( EQUAL(papszArgv[iArg],"-r") && iArg < nArgc-1 )
             pszResampling = papszArgv[++iArg];
-        }
         else if( EQUAL(papszArgv[iArg],"-ro"))
             bReadOnly = TRUE;
         else if( EQUAL(papszArgv[iArg],"-clean"))
             bClean = TRUE;
         else if( EQUAL(papszArgv[iArg],"-q") || EQUAL(papszArgv[iArg],"-quiet") ) 
             pfnProgress = GDALDummyProgress; 
-        else if( EQUAL(papszArgv[iArg],"-b"))
-        {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
-            const char* pszBand = papszArgv[iArg+1];
-            int nBand = atoi(pszBand);
-            if( nBand < 1 )
-            {
-                printf( "Unrecognizable band number (%s).\n", papszArgv[iArg+1] );
-                Usage();
-                GDALDestroyDriverManager();
-                exit( 2 );
-            }
-            iArg++;
-
-            nBandCount++;
-            panBandList = (int *) 
-                CPLRealloc(panBandList, sizeof(int) * nBandCount);
-            panBandList[nBandCount-1] = nBand;
-        }
-        else if( papszArgv[iArg][0] == '-' )
-            Usage(CPLSPrintf("Unkown option name '%s'", papszArgv[iArg]));
         else if( pszFilename == NULL )
             pszFilename = papszArgv[iArg];
         else if( atoi(papszArgv[iArg]) > 0 )
             anLevels[nLevelCount++] = atoi(papszArgv[iArg]);
         else
-            Usage("Too many command options.");
+            Usage();
     }
 
-    if( pszFilename == NULL )
-        Usage("No datasource specified.");
-
-    if( nLevelCount == 0 && !bClean )
-        Usage("No overview level specified.");
+    if( pszFilename == NULL || (nLevelCount == 0 && !bClean) )
+        Usage();
 
 /* -------------------------------------------------------------------- */
 /*      Open data file.                                                 */
@@ -200,14 +160,9 @@ int main( int nArgc, char ** papszArgv )
 /* -------------------------------------------------------------------- */
 /*      Generate overviews.                                             */
 /* -------------------------------------------------------------------- */
-
-    //Only HFA support selected layers
-    if(nBandCount > 0)
-        CPLSetConfigOption( "USE_RRD", "YES" );
-
     if (nLevelCount > 0 && nResultStatus == 0 &&
         GDALBuildOverviews( hDataset,pszResampling, nLevelCount, anLevels,
-                             nBandCount, panBandList, pfnProgress, NULL ) != CE_None )
+                             0, NULL, pfnProgress, NULL ) != CE_None )
     {
         printf( "Overview building failed.\n" );
         nResultStatus = 100;
@@ -219,7 +174,6 @@ int main( int nArgc, char ** papszArgv )
     GDALClose(hDataset);
 
     CSLDestroy( papszArgv );
-    CPLFree(panBandList);
     GDALDestroyDriverManager();
 
     return nResultStatus;

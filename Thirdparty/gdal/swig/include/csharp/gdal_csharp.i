@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_csharp.i 25791 2013-03-23 21:33:26Z tamas $
+ * $Id: gdal_csharp.i 17453 2009-07-25 19:23:06Z tamas $
  *
  * Name:     gdal_csharp.i
  * Project:  GDAL CSharp Interface
@@ -217,13 +217,4 @@ public CPLErr SetGCPs(GCP[] pGCPs, string pszGCPProjection) {
      }
      return ret;
    }
-   
- public static void FileFromMemBuffer(string utf8_path, byte[] bytes) {
-     GCHandle handle = GCHandle.Alloc(bytes, GCHandleType.Pinned);
-     try {
-          FileFromMemBuffer(utf8_path, bytes.Length, handle.AddrOfPinnedObject());
-     } finally {
-        handle.Free();
-     }
-  }
 %}

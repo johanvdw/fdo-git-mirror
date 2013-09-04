@@ -16,8 +16,6 @@ CPPFLAGS :=	-I.. -I../.. -I$(SDTSDIR) -I$(ISODIR) $(GDAL_INCLUDE) $(CPPFLAGS)
 
 default:	$(O_OBJ:.o=.$(OBJ_EXT))
 
-$(O_OBJ):       $(SDTSDIR)/sdts_al.h
-
 clean:
 	rm -f *.o *-marker $(O_OBJ)
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: tsxdataset.cpp 25311 2012-12-15 12:48:14Z rouault $
+ * $Id: tsxdataset.cpp 23569 2011-12-13 21:53:07Z rouault $
  *
  * Project:     TerraSAR-X XML Product Support
  * Purpose:     Support for TerraSAR-X XML Metadata files
@@ -35,7 +35,7 @@
 
 #define MAX_GCPS 5000    //this should be more than enough ground control points
 
-CPL_CVSID("$Id: tsxdataset.cpp 25311 2012-12-15 12:48:14Z rouault $");
+CPL_CVSID("$Id: tsxdataset.cpp 23569 2011-12-13 21:53:07Z rouault $");
 
 CPL_C_START
 void GDALRegister_TSX(void);
@@ -93,6 +93,8 @@ class TSXDataset : public GDALPamDataset {
     char *pszProjection;
     double adfGeoTransform[6];
     bool bHaveGeoTransform;
+
+    char *pszGeorefFile;
 
     eProductType nProduct;
 public:
@@ -270,9 +272,9 @@ int TSXDataset::Identify( GDALOpenInfo *poOpenInfo )
             VSIStatBufL sStat;
             if( VSIStatL( osFilename, &sStat ) == 0 )
                 return 1;
-        }
 
-        return 0;
+            return 0;
+        }
     }
 
     /* Check if the filename contains TSX1_SAR (TerraSAR-X) or TDX1_SAR (TanDEM-X) */

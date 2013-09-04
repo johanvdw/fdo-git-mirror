@@ -9,8 +9,7 @@ OBJ	=	gdalmediancut.o gdaldither.o gdal_crs.o gdaltransformer.o \
 		gdalrasterpolygonenumerator.o \
 		gdalsievefilter.o gdalwarpkernel_opencl.o polygonize.o \
 		gdalrasterfpolygonenumerator.o fpolygonize.o \
-		contour.o gdaltransformgeolocs.o \
-		gdal_octave.o gdal_simplesurf.o gdalmatching.o
+		contour.o
 
 ifeq ($(HAVE_GEOS),yes)
 CPPFLAGS 	:=	-DHAVE_GEOS=1 $(GEOS_CFLAGS) $(CPPFLAGS)

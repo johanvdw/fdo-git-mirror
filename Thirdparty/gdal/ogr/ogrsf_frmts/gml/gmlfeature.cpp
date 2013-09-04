@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: gmlfeature.cpp 25579 2013-01-29 18:53:52Z rouault $
+ * $Id: gmlfeature.cpp 22954 2011-08-19 21:47:19Z rouault $
  *
  * Project:  GML Reader
  * Purpose:  Implementation of GMLFeature.
@@ -111,7 +111,6 @@ void GMLFeature::SetFID( const char *pszFID )
 void GMLFeature::SetPropertyDirectly( int iIndex, char *pszValue )
 
 {
-    CPLAssert(pszValue);
     if( iIndex >= m_nPropertyCount )
     {
         int nClassPropertyCount = m_poClass->GetPropertyCount();

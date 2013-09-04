@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrocilayer.cpp 24521 2012-05-31 17:02:52Z ilucena $
+ * $Id: ogrocilayer.cpp 19871 2010-06-15 04:32:45Z ilucena $
  *
  * Project:  Oracle Spatial Driver
  * Purpose:  Implementation of the OGROCILayer class.  This is layer semantics
@@ -32,7 +32,7 @@
 #include "ogr_oci.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrocilayer.cpp 24521 2012-05-31 17:02:52Z ilucena $");
+CPL_CVSID("$Id: ogrocilayer.cpp 19871 2010-06-15 04:32:45Z ilucena $");
 
 /************************************************************************/
 /*                           OGROCILayer()                               */
@@ -416,7 +416,7 @@ OGRGeometry *OGROCILayer::TranslateGeometry()
             else if( nEType % 1000 == 3 )
             {
                 /* its one poly ring, create new poly or add to existing */
-                if( nEType == 1003 )
+                if( nEType > 999 && nEType < 2999 )
                 {
                     if( poPolygon != NULL 
                         && poPolygon->getExteriorRing() != NULL )

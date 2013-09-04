@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_strtod.cpp 24899 2012-09-03 11:42:58Z rouault $
+ * $Id: cpl_strtod.cpp 23556 2011-12-12 21:49:34Z rouault $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Functions to convert ASCII string to floating point number.
@@ -33,7 +33,7 @@
 
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: cpl_strtod.cpp 24899 2012-09-03 11:42:58Z rouault $");
+CPL_CVSID("$Id: cpl_strtod.cpp 23556 2011-12-12 21:49:34Z rouault $");
 
 // XXX: with GCC 2.95 strtof() function is only available when in c99 mode.
 // Fix it here not touching the compiler options.
@@ -58,15 +58,6 @@ static float CPLNaN(void)
 
 #    define NAN CPLNan()
 #  endif
-#endif
-
-#ifndef INFINITY
-    static CPL_INLINE double CPLInfinity(void)
-    {
-        static double ZERO = 0;
-        return 1.0 / ZERO; /* MSVC doesn't like 1.0 / 0.0 */
-    }
-    #define INFINITY CPLInfinity()
 #endif
 
 /************************************************************************/
@@ -245,30 +236,9 @@ static char* CPLReplacePointByLocalePoint(const char* pszNumber, char point)
  */
 double CPLStrtodDelim(const char *nptr, char **endptr, char point)
 {
-    while( *nptr == ' ' )
-        nptr ++;
-
-    if (nptr[0] == '-')
-    {
-        if (strcmp(nptr, "-1.#QNAN") == 0 ||
-            strcmp(nptr, "-1.#IND") == 0)
-            return NAN;
-
-        if (strcmp(nptr,"-inf") == 0 ||
-            strcmp(nptr,"-1.#INF") == 0)
-            return -INFINITY;
-    }
-    else if (nptr[0] == '1')
-    {
-        if (strcmp(nptr, "1.#QNAN") == 0)
-            return NAN;
-        if (strcmp (nptr,"1.#INF") == 0)
-            return INFINITY;
-    }
-    else if (nptr[0] == 'i' && strcmp(nptr,"inf") == 0)
-        return INFINITY;
-    else if (nptr[0] == 'n' && strcmp(nptr,"nan") == 0)
-        return NAN;
+   if (EQUAL(nptr,"nan") || EQUAL(nptr, "1.#QNAN") ||
+       EQUAL(nptr, "-1.#QNAN") || EQUAL(nptr, "-1.#IND"))
+       return NAN;
 
 /* -------------------------------------------------------------------- */
 /*  We are implementing a simple method here: copy the input string     */

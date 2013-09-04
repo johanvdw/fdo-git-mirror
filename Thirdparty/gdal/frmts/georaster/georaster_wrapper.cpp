@@ -75,9 +75,7 @@ GeoRasterWrapper::GeoRasterWrapper()
     bUpdate             = false;
     bInitializeIO       = false;
     bFlushMetadata      = false;
-    nSRID               = 0;
-    nExtentSRID         = 0;
-    bGenSpatialIndex    = false;
+    nSRID               = UNKNOWN_CRS;
     nPyramidMaxLevel    = 0;
     nBlockCount         = 0L;
     nGDALBlockBytes     = 0L;
@@ -94,7 +92,6 @@ GeoRasterWrapper::GeoRasterWrapper()
     bBlocking           = true;
     bAutoBlocking       = false;
     eModelCoordLocation = MCL_DEFAULT;
-    phRPC               = NULL;
 }
 
 //  ---------------------------------------------------------------------------
@@ -147,11 +144,6 @@ GeoRasterWrapper::~GeoRasterWrapper()
     if( poConnection )
     {
         delete poConnection;
-    }
-
-    if( phRPC )
-    {
-        CPLFree( phRPC );
     }
 }
 
@@ -578,13 +570,18 @@ GeoRasterWrapper* GeoRasterWrapper::Open( const char* pszStringId, bool bUpdate 
     {
       poGRW->dfXCoefficient[2] -= poGRW->dfXCoefficient[0] / 2;
       poGRW->dfYCoefficient[2] -= poGRW->dfYCoefficient[1] / 2;
-
       CPLDebug("GEOR","eModelCoordLocation = MCL_CENTER");
     }
-    else
-    {
-      CPLDebug("GEOR","eModelCoordLocation = MCL_UPPERLEFT");
-    }
+
+    CPLDebug("GEOR","Binds( %ld, %d, %f, %f, %f, %f, %f, %f )", 
+                  poGRW->nSRID,
+                  poGRW->eModelCoordLocation,
+                  poGRW->dfXCoefficient[0],
+                  poGRW->dfXCoefficient[1],
+                  poGRW->dfXCoefficient[2],
+                  poGRW->dfYCoefficient[0],
+                  poGRW->dfYCoefficient[1],
+                  poGRW->dfYCoefficient[2] );
 
     //  -------------------------------------------------------------------
     //  Apply ULTCoordinate
@@ -628,44 +625,15 @@ bool GeoRasterWrapper::Create( char* pszDescription,
         return false;
     }
 
-    //  -------------------------------------------------------------------
-    //  Parse RDT/RID from the current szValues
-    //  -------------------------------------------------------------------
-
-    char szRDT[OWNAME];
-    char szRID[OWCODE];
-
-    if( ! sDataTable.empty() )
-    {
-        strcpy( szRDT, CPLSPrintf( "'%s'", sDataTable.c_str() ) );
-    }
-    else
-    {
-        strcpy( szRDT, OWParseSDO_GEOR_INIT( sValues.c_str(), 1 ) );
-    }
-
-    if ( nRasterId > 0 )
-    {
-        strcpy( szRID, CPLSPrintf( "%d", nRasterId ) );
-    }
-    else
-    {
-        strcpy( szRID, OWParseSDO_GEOR_INIT( sValues.c_str(), 2 ) );
-
-        if ( EQUAL( szRID, "" ) )
-        {
-            strcpy( szRID, "NULL" );
-        }
-    }
-
-    //  -------------------------------------------------------------------
-    //  Description parameters
-    //  -------------------------------------------------------------------
-
     char szDescription[OWTEXT];
+    char szCreateBlank[OWTEXT];
+    char szInsert[OWTEXT];
 
     if( bUpdate == false )
     {
+        //  ---------------------------------------------------------------
+        //  Description parameters
+        //  ---------------------------------------------------------------
 
         if ( pszDescription  )
         {
@@ -692,8 +660,58 @@ bool GeoRasterWrapper::Create( char* pszDescription,
         }
         else
         {
-            sValues = CPLSPrintf( "VALUES (SDO_GEOR.INIT(%s,%s))", szRDT, szRID );
+            sValues = "VALUES (SDO_GEOR.INIT(NULL,NULL))";
         }
+    }
+
+    //  -------------------------------------------------------------------
+    //  Parse RDT/RID from the current szValues
+    //  -------------------------------------------------------------------
+
+    char szRDT[OWNAME];
+    char szRID[OWCODE];
+
+    if( ! sDataTable.empty() )
+    {
+        strcpy( szRDT, CPLSPrintf( "'%s'", sDataTable.c_str() ) );
+    }
+    else
+    {
+        strcpy( szRDT, OWParseSDO_GEOR_INIT( sValues.c_str(), 1 ) );
+    }
+
+    if ( nRasterId > 0 )
+    {
+        strcpy( szRID, CPLSPrintf( "%d", nRasterId ) );
+    }
+    else
+    {
+        strcpy( szRID, OWParseSDO_GEOR_INIT( sValues.c_str(), 2 ) );
+    }
+
+    //  -------------------------------------------------------------------
+    //  Prepare initialization parameters
+    //  -------------------------------------------------------------------
+
+    if( nRasterBands == 1 )
+    {
+        strcpy( szCreateBlank, CPLSPrintf( "SDO_GEOR.createBlank(20001, "
+            "SDO_NUMBER_ARRAY(0, 0), "
+            "SDO_NUMBER_ARRAY(%d, %d), 0, %s, %s)",
+            nRasterRows, nRasterColumns, szRDT, szRID) );
+    }
+    else
+    {
+        strcpy( szCreateBlank, CPLSPrintf( "SDO_GEOR.createBlank(21001, "
+            "SDO_NUMBER_ARRAY(0, 0, 0), "
+            "SDO_NUMBER_ARRAY(%d, %d, %d), 0, %s, %s)",
+            nRasterRows, nRasterColumns, nRasterBands, szRDT, szRID ) );
+    }
+
+    if( ! bUpdate )
+    {
+        strcpy( szInsert,
+            OWReplaceString( sValues.c_str(), "SDO_GEOR.INIT", ")", szCreateBlank ) );
     }
 
     //  -----------------------------------------------------------
@@ -796,32 +814,15 @@ bool GeoRasterWrapper::Create( char* pszDescription,
                 nRasterRows, nRasterColumns, nRasterBands );
         }
 
-        if( EQUALN( sCompressionType.c_str(), "JPEG", 4 ) )
-        {
-            sFormat.append( CPLSPrintf( 
-                    "%s "
-                    "cellDepth=%s "
-                    "interleaving=%s "
-                    "compression=%s "
-                    "quality=%d'",
-                    sBlocking.c_str(),
-                    sCellDepth.c_str(),
-                    sInterleaving.c_str(),
-                    sCompressionType.c_str(),
-                    nCompressQuality) );
-        }
-        else
-        {
-            sFormat.append( CPLSPrintf( 
-                    "%s "
-                    "cellDepth=%s "
-                    "interleaving=%s "
-                    "compression=%s'",
-                    sBlocking.c_str(),
-                    sCellDepth.c_str(),
-                    sInterleaving.c_str(),
-                    sCompressionType.c_str() ) );
-        }
+        sFormat.append( CPLSPrintf( 
+                "%s "
+                "cellDepth=%s "
+                "interleaving=%s "
+                "compression=%s'",
+                sBlocking.c_str(),
+                sCellDepth.c_str(),
+                sInterleaving.c_str(),
+                sCompressionType.c_str() ) );
     }
     else
     {
@@ -898,11 +899,13 @@ bool GeoRasterWrapper::Create( char* pszDescription,
     if( bUpdate )
     {
         sCommand = CPLSPrintf(
-            "SELECT %s INTO GR1 FROM %s%s T WHERE %s FOR UPDATE;",
-            sColumn.c_str(),
+            "UPDATE %s%s T SET %s = %s WHERE %s RETURNING %s INTO GR1;",
             sSchema.c_str(),
             sTable.c_str(),
-            sWhere.c_str() );
+            sColumn.c_str(),
+            szCreateBlank,
+            sWhere.c_str(),
+            sColumn.c_str() );
     }
     else
     {
@@ -910,7 +913,7 @@ bool GeoRasterWrapper::Create( char* pszDescription,
             "INSERT INTO %s%s %s RETURNING %s INTO GR1;",
             sSchema.c_str(),
             sTable.c_str(),
-            sValues.c_str(),
+            szInsert,
             sColumn.c_str() );
     }
 
@@ -935,20 +938,12 @@ bool GeoRasterWrapper::Create( char* pszDescription,
             "\n"
             "  %s\n"
             "\n"
-            "  GR1.spatialExtent := NULL;\n"
-            "\n"
             "  SELECT GR1.RASTERDATATABLE INTO :rdt FROM DUAL;\n"
             "  SELECT GR1.RASTERID        INTO :rid FROM DUAL;\n"
             "\n"
             "  EXECUTE IMMEDIATE 'SELECT COUNT(*) FROM ALL_OBJECT_TABLES\n"
             "    WHERE TABLE_NAME = :1 AND OWNER = UPPER(:2)'\n"
             "      INTO CNT USING :rdt, OWN;\n"
-            "\n"
-            "  IF CNT = 0 THEN\n"
-            "    EXECUTE IMMEDIATE 'SELECT COUNT(*) FROM ALL_TABLES\n"
-            "      WHERE TABLE_NAME = :1 AND OWNER = UPPER(:2)'\n"
-            "        INTO CNT USING :rdt, OWN;\n"
-            "  END IF;\n"
             "\n"
             "  IF CNT = 0 THEN\n"
             "    EXECUTE IMMEDIATE 'CREATE TABLE %s'||:rdt||' OF MDSYS.SDO_RASTER\n"
@@ -1020,23 +1015,6 @@ bool GeoRasterWrapper::Create( char* pszDescription,
     //  Procedure for Server version older than 11
     //  -----------------------------------------------------------
 
-    char szCreateBlank[OWTEXT];
-
-    if( nRasterBands == 1 )
-    {
-        strcpy( szCreateBlank, CPLSPrintf( "SDO_GEOR.createBlank(20001, "
-            "SDO_NUMBER_ARRAY(0, 0), "
-            "SDO_NUMBER_ARRAY(%d, %d), 0, :rdt, :rid)",
-            nRasterRows, nRasterColumns ) );
-    }
-    else
-    {
-        strcpy( szCreateBlank, CPLSPrintf( "SDO_GEOR.createBlank(21001, "
-            "SDO_NUMBER_ARRAY(0, 0, 0), "
-            "SDO_NUMBER_ARRAY(%d, %d, %d), 0, :rdt, :rid)",
-            nRasterRows, nRasterColumns, nRasterBands ) );
-    }
-
     poStmt = poConnection->CreateStatement( CPLSPrintf(
         "DECLARE\n"
         "  W    NUMBER          := :1;\n"
@@ -1061,12 +1039,13 @@ bool GeoRasterWrapper::Create( char* pszDescription,
         "  SELECT %s INTO GR2 FROM %s%s T WHERE"
         " T.%s.RasterDataTable = :rdt AND"
         " T.%s.RasterId = :rid FOR UPDATE;\n"
-        "\n"
-        "  GR1 := %s;\n"
+        "  SELECT %s INTO GR1 FROM %s%s T WHERE"
+        " T.%s.RasterDataTable = :rdt AND"
+        " T.%s.RasterId = :rid;\n"
         "\n"
         "  SDO_GEOR.changeFormatCopy(GR1, '%s', GR2);\n"
         "\n"
-        "  UPDATE %s%s T SET %s = GR2 WHERE"
+        "  UPDATE %s%s T SET %s = GR2     WHERE"
         " T.%s.RasterDataTable = :rdt AND"
         " T.%s.RasterId = :rid;\n"
         "\n"
@@ -1098,6 +1077,10 @@ bool GeoRasterWrapper::Create( char* pszDescription,
         "    END LOOP;\n"
         "  END LOOP;\n"
         "\n"
+        "  SELECT %s INTO GR1 FROM %s%s T WHERE"
+        " T.%s.RasterDataTable = :rdt AND"
+        " T.%s.RasterId = :rid FOR UPDATE;\n"
+        "\n"
         "  SDO_GEOR.georeference(GR1, %d, %d,"
         " SDO_NUMBER_ARRAY(1.0, 0.0, 0.0),"
         " SDO_NUMBER_ARRAY(0.0, 1.0, 0.0));\n"
@@ -1113,11 +1096,13 @@ bool GeoRasterWrapper::Create( char* pszDescription,
             sCommand.c_str(),
             sColumn.c_str(), sSchema.c_str(), sTable.c_str(),
             sColumn.c_str(), sColumn.c_str(),
-            szCreateBlank,
-            sFormat.c_str(), 
-            sSchema.c_str(), sTable.c_str(),
+            sColumn.c_str(), sSchema.c_str(), sTable.c_str(),
+            sColumn.c_str(), sColumn.c_str(), 
+            sFormat.c_str(), sSchema.c_str(), sTable.c_str(),
             sColumn.c_str(), sColumn.c_str(), sColumn.c_str(),
             sSchema.c_str(), sSchema.c_str(), sSchema.c_str(),
+            sColumn.c_str(), sSchema.c_str(), sTable.c_str(),
+            sColumn.c_str(), sColumn.c_str(),
             UNKNOWN_CRS, MCL_DEFAULT,
             sSchema.c_str(), sTable.c_str(),
             sColumn.c_str(), sColumn.c_str(), sColumn.c_str() ) );
@@ -1180,9 +1165,7 @@ void GeoRasterWrapper::PrepareToOverwrite( void )
     bUpdate             = false;
     bInitializeIO       = false;
     bFlushMetadata      = false;
-    nSRID               = 0;
-    nExtentSRID         = 0;
-    bGenSpatialIndex    = false;
+    nSRID               = UNKNOWN_CRS;
     nPyramidMaxLevel    = 0;
     nBlockCount         = 0L;
     sDInfo.global_state = 0;
@@ -1194,7 +1177,6 @@ void GeoRasterWrapper::PrepareToOverwrite( void )
     eModelCoordLocation = MCL_DEFAULT;
     bFlushBlock         = false;
     nFlushBlockSize     = 0L;
-    phRPC               = NULL;
 }
 
 //  ---------------------------------------------------------------------------
@@ -1228,6 +1210,11 @@ bool GeoRasterWrapper::Delete( void )
 
 void GeoRasterWrapper::SetGeoReference( int nSRIDIn )
 {
+    if( nSRIDIn == 0 )
+    {
+        nSRIDIn = UNKNOWN_CRS;
+    }
+
     nSRID = nSRIDIn;
 
     bIsReferenced = true;
@@ -1395,18 +1382,6 @@ void GeoRasterWrapper::GetRasterInfo( void )
     {
         nPyramidMaxLevel = atoi( CPLGetXMLValue( phMetadata,
                             "rasterInfo.pyramid.maxLevel", "0" ) );
-    }
-
-    //  -------------------------------------------------------------------
-    //  Check for RPCs
-    //  -------------------------------------------------------------------
-
-    const char* pszModelType = CPLGetXMLValue( phMetadata,
-                               "spatialReferenceInfo.modelType", "None" );
-
-    if( EQUAL( pszModelType, "FunctionalFitting" ) )
-    {
-        GetRPC();
     }
 
     //  -------------------------------------------------------------------
@@ -2304,357 +2279,6 @@ void GeoRasterWrapper::LoadNoDataValues( void )
 }
 
 //  ---------------------------------------------------------------------------
-//                                                                     GetRPC()
-//  ---------------------------------------------------------------------------
-
-/* This is the order for storing 20 coeffients in GeoRaster Metadata */
-
-static const int anOrder[] = { 
-    1, 2, 8, 12, 3, 5, 15, 9, 13, 16, 4, 6, 18, 7, 11, 19, 10, 14, 17, 20
-};
-
-void GeoRasterWrapper::GetRPC()
-{
-    phRPC = (GDALRPCInfo*) VSIMalloc( sizeof(GDALRPCInfo) );
-
-    int i;
-
-    CPLXMLNode* phSRSInfo = CPLGetXMLNode( phMetadata, 
-                                           "spatialReferenceInfo" );
-
-    if( phSRSInfo == NULL )
-    {
-        return;
-    }
-
-    const char* pszModelType = CPLGetXMLValue( phMetadata,
-                               "spatialReferenceInfo.modelType", "None" );
-
-    if( EQUAL( pszModelType, "FunctionalFitting" ) == false )
-    {
-        return;
-    }
-
-    CPLXMLNode* phPolyModel = CPLGetXMLNode( phSRSInfo, "polynomialModel" );
-
-    if ( phPolyModel == NULL )
-    {
-        return;
-    }
-
-    phRPC->dfLINE_OFF     = CPLAtof( CPLGetXMLValue( phPolyModel, "rowOff", "0" ) );
-    phRPC->dfSAMP_OFF     = CPLAtof( CPLGetXMLValue( phPolyModel, "columnOff", "0" ) );
-    phRPC->dfLONG_OFF     = CPLAtof( CPLGetXMLValue( phPolyModel, "xOff", "0" ) );
-    phRPC->dfLAT_OFF      = CPLAtof( CPLGetXMLValue( phPolyModel, "yOff", "0" ) );
-    phRPC->dfHEIGHT_OFF   = CPLAtof( CPLGetXMLValue( phPolyModel, "zOff", "0" ) );
-
-    phRPC->dfLINE_SCALE   = CPLAtof( CPLGetXMLValue( phPolyModel, "rowScale", "0" ) );
-    phRPC->dfSAMP_SCALE   = CPLAtof( CPLGetXMLValue( phPolyModel, "columnScale", "0" ) );
-    phRPC->dfLONG_SCALE   = CPLAtof( CPLGetXMLValue( phPolyModel, "xScale", "0" ) );
-    phRPC->dfLAT_SCALE    = CPLAtof( CPLGetXMLValue( phPolyModel, "yScale", "0" ) );
-    phRPC->dfHEIGHT_SCALE = CPLAtof( CPLGetXMLValue( phPolyModel, "zScale", "0" ) );
-
-    // pPolynomial refers to LINE_NUM
-
-    CPLXMLNode* phPolynomial = CPLGetXMLNode( phPolyModel, "pPolynomial" );
-
-    if ( phPolynomial == NULL )
-    {
-        return;
-    }
-
-    int nNumCoeff = atoi( CPLGetXMLValue( phPolynomial, "nCoefficients", "0" ) );
-
-    if ( nNumCoeff != 20 )
-    {
-        return;
-    }
-
-    const char* pszPolyCoeff = CPLGetXMLValue( phPolynomial, "polynomialCoefficients", "None" );
-
-    if ( EQUAL( pszPolyCoeff, "None" ) )
-    {
-        return;
-    }
-
-    char** papszCeoff = CSLTokenizeString2( pszPolyCoeff, " ", CSLT_STRIPLEADSPACES );
-
-    if( CSLCount( papszCeoff ) != 20 )
-    {
-        return;
-    }
-
-    for( i = 0; i < 20; i++ )
-    {
-        phRPC->adfLINE_NUM_COEFF[anOrder[i] - 1] = CPLAtof( papszCeoff[i] );
-    }
-
-    // qPolynomial refers to LINE_DEN
-
-    phPolynomial = CPLGetXMLNode( phPolyModel, "qPolynomial" );
-
-    if ( phPolynomial == NULL )
-    {
-        return;
-    }
-
-    pszPolyCoeff = CPLGetXMLValue( phPolynomial, "polynomialCoefficients", "None" );
-
-    if ( EQUAL( pszPolyCoeff, "None" ) )
-    {
-        return;
-    }
-
-    papszCeoff = CSLTokenizeString2( pszPolyCoeff, " ", CSLT_STRIPLEADSPACES );
-
-    if( CSLCount( papszCeoff ) != 20 )
-    {
-        return;
-    }
-
-    for( i = 0; i < 20; i++ )
-    {
-        phRPC->adfLINE_DEN_COEFF[anOrder[i] - 1] = CPLAtof( papszCeoff[i] );
-    }
-
-    // rPolynomial refers to SAMP_NUM
-
-    phPolynomial = CPLGetXMLNode( phPolyModel, "rPolynomial" );
-
-    if ( phPolynomial == NULL )
-    {
-        return;
-    }
-
-    pszPolyCoeff = CPLGetXMLValue( phPolynomial, "polynomialCoefficients", "None" );
-
-    if ( EQUAL( pszPolyCoeff, "None" ) )
-    {
-        return;
-    }
-
-    papszCeoff = CSLTokenizeString2( pszPolyCoeff, " ", CSLT_STRIPLEADSPACES );
-
-    if( CSLCount( papszCeoff ) != 20 )
-    {
-        return;
-    }
-
-    for( i = 0; i < 20; i++ )
-    {
-        phRPC->adfSAMP_NUM_COEFF[anOrder[i] - 1] = CPLAtof( papszCeoff[i] );
-    }
-
-    // sPolynomial refers to SAMP_DEN
-
-    phPolynomial = CPLGetXMLNode( phPolyModel, "sPolynomial" );
-
-    if ( phPolynomial == NULL )
-    {
-        return;
-    }
-
-    pszPolyCoeff = CPLGetXMLValue( phPolynomial, "polynomialCoefficients", "None" );
-
-    if ( EQUAL( pszPolyCoeff, "None" ) )
-    {
-        return;
-    }
-
-    papszCeoff = CSLTokenizeString2( pszPolyCoeff, " ", CSLT_STRIPLEADSPACES );
-
-    if( CSLCount( papszCeoff ) != 20 )
-    {
-        return;
-    }
-
-    for( i = 0; i < 20; i++ )
-    {
-        phRPC->adfSAMP_DEN_COEFF[anOrder[i] - 1] = CPLAtof( papszCeoff[i] );
-    }
-}
-
-//  ---------------------------------------------------------------------------
-//                                                                     SetRPC()
-//  ---------------------------------------------------------------------------
-
-void GeoRasterWrapper::SetRPC()
-{
-    //  -------------------------------------------------------------------
-    //  Remove "layerInfo" tree
-    //  -------------------------------------------------------------------
-
-    CPLXMLNode* phLayerInfo = CPLGetXMLNode( phMetadata, "layerInfo" );
-    CPLXMLNode* phClone = NULL;
-
-    if( phLayerInfo )
-    {
-        phClone = CPLCloneXMLTree( phLayerInfo );
-        CPLRemoveXMLChild( phMetadata, phLayerInfo );
-    }
-
-    //  -------------------------------------------------------------------
-    //  Start loading the RPC to "spatialReferenceInfo" tree
-    //  -------------------------------------------------------------------
-
-    int i = 0;
-    CPLString osField, osMultiField;
-    CPLXMLNode* phPolynomial = NULL;
-
-    CPLXMLNode* phSRSInfo = CPLGetXMLNode( phMetadata, 
-                                           "spatialReferenceInfo" );
-
-    if( ! phSRSInfo )
-    {
-        phSRSInfo = CPLCreateXMLNode( phMetadata, CXT_Element, 
-                                      "spatialReferenceInfo" );
-    }
-    else
-    {
-        CPLXMLNode* phNode = NULL;
-
-        phNode = CPLGetXMLNode( phSRSInfo, "isReferenced" );
-        if( phNode )
-        {
-            CPLRemoveXMLChild( phSRSInfo, phNode );
-        }
-
-        phNode = CPLGetXMLNode( phSRSInfo, "SRID" );
-        if( phNode )
-        {
-            CPLRemoveXMLChild( phSRSInfo, phNode );
-        }
-
-        phNode = CPLGetXMLNode( phSRSInfo, "modelCoordinateLocation" );
-        if( phNode )
-        {
-            CPLRemoveXMLChild( phSRSInfo, phNode );
-        }
-
-        phNode = CPLGetXMLNode( phSRSInfo, "modelType" );
-        if( phNode )
-        {
-            CPLRemoveXMLChild( phSRSInfo, phNode );
-        }
-
-        phNode = CPLGetXMLNode( phSRSInfo, "polynomialModel" );
-        if( phNode )
-        {
-            CPLRemoveXMLChild( phSRSInfo, phNode );
-        }
-    }
-
-    CPLCreateXMLElementAndValue( phSRSInfo, "isReferenced", "true" );
-    CPLCreateXMLElementAndValue( phSRSInfo, "SRID", "4327" );
-    CPLCreateXMLElementAndValue( phSRSInfo, "modelCoordinateLocation", 
-                                            "CENTER" );
-    CPLCreateXMLElementAndValue( phSRSInfo, "modelType", "FunctionalFitting" );
-    CPLSetXMLValue( phSRSInfo, "polynomialModel.#rowOff",      
-                                    CPLSPrintf( "%.15g", phRPC->dfLINE_OFF ) );
-    CPLSetXMLValue( phSRSInfo, "polynomialModel.#columnOff",   
-                                    CPLSPrintf( "%.15g", phRPC->dfSAMP_OFF ) );
-    CPLSetXMLValue( phSRSInfo, "polynomialModel.#xOff",        
-                                    CPLSPrintf( "%.15g", phRPC->dfLONG_OFF ) );
-    CPLSetXMLValue( phSRSInfo, "polynomialModel.#yOff",        
-                                    CPLSPrintf( "%.15g", phRPC->dfLAT_OFF ) );
-    CPLSetXMLValue( phSRSInfo, "polynomialModel.#zOff",        
-                                    CPLSPrintf( "%.15g", phRPC->dfHEIGHT_OFF ) );
-    CPLSetXMLValue( phSRSInfo, "polynomialModel.#rowScale",    
-                                    CPLSPrintf( "%.15g", phRPC->dfLINE_SCALE ) );
-    CPLSetXMLValue( phSRSInfo, "polynomialModel.#columnScale", 
-                                    CPLSPrintf( "%.15g", phRPC->dfSAMP_SCALE ) );
-    CPLSetXMLValue( phSRSInfo, "polynomialModel.#xScale",      
-                                    CPLSPrintf( "%.15g", phRPC->dfLONG_SCALE ) );
-    CPLSetXMLValue( phSRSInfo, "polynomialModel.#yScale",      
-                                    CPLSPrintf( "%.15g", phRPC->dfLAT_SCALE ) );
-    CPLSetXMLValue( phSRSInfo, "polynomialModel.#zScale",      
-                                    CPLSPrintf( "%.15g", phRPC->dfHEIGHT_SCALE ) );
-    CPLXMLNode*     phPloyModel = CPLGetXMLNode( phSRSInfo, "polynomialModel" );
-
-    // pPolynomial refers to LINE_NUM
-
-    CPLSetXMLValue( phPloyModel, "pPolynomial.#pType",         "1" );
-    CPLSetXMLValue( phPloyModel, "pPolynomial.#nVars",         "3" );
-    CPLSetXMLValue( phPloyModel, "pPolynomial.#order",         "3" );
-    CPLSetXMLValue( phPloyModel, "pPolynomial.#nCoefficients", "20" );
-    for( i = 0; i < 20; i++ )
-    {
-        osField.Printf( "%.15g", phRPC->adfLINE_NUM_COEFF[anOrder[i] - 1] );
-        if( i > 0 )
-            osMultiField += " ";
-        else
-            osMultiField = "";
-        osMultiField += osField;
-    }
-    phPolynomial = CPLGetXMLNode( phPloyModel, "pPolynomial" );
-    CPLCreateXMLElementAndValue( phPolynomial, "polynomialCoefficients", 
-                                 osMultiField );
-
-    // qPolynomial refers to LINE_DEN
-
-    CPLSetXMLValue( phPloyModel, "qPolynomial.#pType",         "1" );
-    CPLSetXMLValue( phPloyModel, "qPolynomial.#nVars",         "3" );
-    CPLSetXMLValue( phPloyModel, "qPolynomial.#order",         "3" );
-    CPLSetXMLValue( phPloyModel, "qPolynomial.#nCoefficients", "20" );
-    for( i = 0; i < 20; i++ )
-    {
-        osField.Printf( "%.15g", phRPC->adfLINE_DEN_COEFF[anOrder[i] - 1] );
-        if( i > 0 )
-            osMultiField += " ";
-        else
-            osMultiField = "";
-        osMultiField += osField;
-    }
-    phPolynomial = CPLGetXMLNode( phPloyModel, "qPolynomial" );
-    CPLCreateXMLElementAndValue( phPolynomial, "polynomialCoefficients", 
-                                 osMultiField );
-
-    // rPolynomial refers to SAMP_NUM
-
-    CPLSetXMLValue( phPloyModel, "rPolynomial.#pType",         "1" );
-    CPLSetXMLValue( phPloyModel, "rPolynomial.#nVars",         "3" );
-    CPLSetXMLValue( phPloyModel, "rPolynomial.#order",         "3" );
-    CPLSetXMLValue( phPloyModel, "rPolynomial.#nCoefficients", "20" );
-    for( i = 0; i < 20; i++ )
-    {
-        osField.Printf( "%.15g", phRPC->adfSAMP_NUM_COEFF[anOrder[i] - 1] );
-        if( i > 0 )
-            osMultiField += " ";
-        else
-            osMultiField = "";
-        osMultiField += osField;
-    }
-    phPolynomial = CPLGetXMLNode( phPloyModel, "rPolynomial" );
-    CPLCreateXMLElementAndValue( phPolynomial, "polynomialCoefficients", 
-                                 osMultiField );
-
-    // sPolynomial refers to SAMP_DEN
-
-    CPLSetXMLValue( phPloyModel, "sPolynomial.#pType",         "1" );
-    CPLSetXMLValue( phPloyModel, "sPolynomial.#nVars",         "3" );
-    CPLSetXMLValue( phPloyModel, "sPolynomial.#order",         "3" );
-    CPLSetXMLValue( phPloyModel, "sPolynomial.#nCoefficients", "20" );
-    for( i = 0; i < 20; i++ )
-    {
-        osField.Printf( "%.15g", phRPC->adfSAMP_DEN_COEFF[anOrder[i] - 1] );
-        if( i > 0 )
-            osMultiField += " ";
-        else
-            osMultiField = "";
-        osMultiField += osField;
-    }
-    phPolynomial = CPLGetXMLNode( phPloyModel, "sPolynomial" );
-    CPLCreateXMLElementAndValue( phPolynomial, "polynomialCoefficients", 
-                                 osMultiField );
-
-    //  -------------------------------------------------------------------
-    //  Add "layerInfo" tree back
-    //  -------------------------------------------------------------------
-
-    CPLAddXMLChild( phMetadata, phClone );
-}
-
-//  ---------------------------------------------------------------------------
 //                                                                  GetNoData()
 //  ---------------------------------------------------------------------------
 
@@ -3073,16 +2697,6 @@ bool GeoRasterWrapper::FlushMetadata()
       nMLC = MCL_UPPERLEFT;
     }
 
-    if( phRPC )
-    {
-        SetRPC();
-        nSRID = 0;
-    }
-
-    //  --------------------------------------------------------------------
-    //  Serialize XML metadata to plain text
-    //  --------------------------------------------------------------------
-
     char* pszMetadata = CPLSerializeXMLTree( phMetadata );
 
     if( pszMetadata == NULL )
@@ -3090,67 +2704,49 @@ bool GeoRasterWrapper::FlushMetadata()
         return false;
     }
 
-    if( bGenSpatialIndex )
-    {
-        nExtentSRID = nExtentSRID == 0 ? nSRID : nExtentSRID;
-    }
-    else
-    {
-        nExtentSRID = 0; /* Set spatialExtent to null */
-    }
-
-    //  --------------------------------------------------------------------
-    //  Update GeoRaster Metadata
-    //  --------------------------------------------------------------------
-
-    int nException = 0;
+    CPLDebug("GEOR","Binds( %ld, %d, %f, %f, %f, %f, %f, %f )", 
+                  nSRID,
+                  nMLC,
+                  dfXCoef[0],
+                  dfXCoef[1],
+                  dfXCoef[2],
+                  dfYCoef[0],
+                  dfYCoef[1],
+                  dfYCoef[2] );
 
     OCILobLocator* phLocator = NULL;
 
     OWStatement* poStmt = poConnection->CreateStatement( CPLSPrintf(
         "DECLARE\n"
-        "  GR1      sdo_georaster;\n"
-        "  GM1      sdo_geometry;\n"
-        "  SRID     number  := :1;\n"
-        "  EXT_SRID number  := :2;\n"
-        "  VAT      varchar2(128);\n"
+        "  GR1  sdo_georaster;\n"
+        "  SRID number;\n"
+        "  VAT varchar2(128);\n"
         "BEGIN\n"
         "\n"
         "  SELECT %s INTO GR1 FROM %s%s T WHERE %s FOR UPDATE;\n"
         "\n"
-        "  GR1.metadata := sys.xmltype.createxml(:3);\n"
+        "  GR1.metadata := sys.xmltype.createxml(:1);\n"
         "\n"
-        "  IF SRID != 0 THEN\n"
-        "    SDO_GEOR.georeference( GR1, SRID, :4,"
-        "      SDO_NUMBER_ARRAY(:5, :6, :7), SDO_NUMBER_ARRAY(:8, :9, :10));\n"
+        "  SRID := :2;\n"
+        "  IF SRID = 0 THEN\n"
+        "    SRID := %d;\n"
         "  END IF;\n"
         "\n"
-        "  IF EXT_SRID = 0 THEN\n"
-        "    GM1 := NULL;\n"
+        "  SDO_GEOR.georeference( GR1, SRID, :3,"
+        "  SDO_NUMBER_ARRAY(:4, :5, :6), SDO_NUMBER_ARRAY(:7, :8, :9));\n"
+        "\n"
+        "  IF SRID = %d THEN\n"
+        "    GR1.spatialExtent := NULL;\n"
         "  ELSE\n"
-        "    GM1 := SDO_GEOR.generateSpatialExtent( GR1 );\n"
-        "    IF EXT_SRID != SRID THEN\n"
-        "      GM1 := SDO_CS.transform( GM1, EXT_SRID );\n"
-        "    END IF;\n"
+        "    GR1.spatialExtent := SDO_GEOR.generateSpatialExtent( GR1 );\n"
         "  END IF;\n"
-        "\n"
-        "  GR1.spatialExtent := GM1;\n"
         "\n"
         "  VAT := '%s';\n"
         "  IF VAT != '' THEN\n"
         "    SDO_GEOR.setVAT(GR1, 1, VAT);\n"
         "  END IF;\n"
         "\n"
-        "  BEGIN\n"
-        "    UPDATE %s%s T SET %s = GR1\n"
-        "    WHERE %s;\n"
-        "  EXCEPTION\n"
-        "    WHEN OTHERS THEN\n"
-        "      :except := SQLCODE;\n"
-        "      IF (SQLCODE != -29877) THEN\n"
-        "        RAISE;\n"
-        "      END IF;\n"
-        "  END\n"
+        "  UPDATE %s%s T SET %s = GR1 WHERE %s;\n"
         "\n"
         "  COMMIT;\n"
         "END;",
@@ -3158,6 +2754,8 @@ bool GeoRasterWrapper::FlushMetadata()
             sSchema.c_str(),
             sTable.c_str(),
             sWhere.c_str(),
+            UNKNOWN_CRS,
+            UNKNOWN_CRS,
             sValueAttributeTab.c_str(),
             sSchema.c_str(),
             sTable.c_str(),
@@ -3166,9 +2764,8 @@ bool GeoRasterWrapper::FlushMetadata()
 
     poStmt->WriteCLob( &phLocator, pszMetadata );
     
-    poStmt->Bind( &nSRID );
-    poStmt->Bind( &nExtentSRID );
     poStmt->Bind( &phLocator );
+    poStmt->Bind( &nSRID );
     poStmt->Bind( &nMLC );
     poStmt->Bind( &dfXCoef[0] );
     poStmt->Bind( &dfXCoef[1] );
@@ -3176,7 +2773,6 @@ bool GeoRasterWrapper::FlushMetadata()
     poStmt->Bind( &dfYCoef[0] );
     poStmt->Bind( &dfYCoef[1] );
     poStmt->Bind( &dfYCoef[2] );
-    poStmt->BindName( ":except", &nException );
 
     CPLFree( pszMetadata );
 
@@ -3190,12 +2786,6 @@ bool GeoRasterWrapper::FlushMetadata()
     OCIDescriptorFree( phLocator, OCI_DTYPE_LOB );
 
     delete poStmt;
-
-    if( nException )
-    {
-        CPLError( CE_Warning, CPLE_AppDefined, 
-            "Cannot generate spatialExtent! (ORA-%d) ", nException );
-    }
 
     return true;
 }

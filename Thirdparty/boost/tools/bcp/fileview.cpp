@@ -1,15 +1,14 @@
 /*
  *
  * Copyright (c) 2003 Dr John Maddock
- * Use, modification and distribution is subject to the
- * Boost Software License, Version 1.0. (See accompanying file
+ * Use, modification and distribution is subject to the 
+ * Boost Software License, Version 1.0. (See accompanying file 
  * LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
  *
  * This file implements the fileview class
  */
 
 #include "fileview.hpp"
-#include <boost/filesystem/fstream.hpp>
 #include <vector>
 #include <algorithm>
 #include <string>
@@ -39,7 +38,7 @@ fileview::~fileview()
 {
 }
 
-fileview::fileview(const fileview& )
+fileview::fileview(const fileview& that)
 {
 }
 
@@ -58,11 +57,11 @@ void fileview::close()
 void fileview::open(const boost::filesystem::path& p)
 {
    cow();
-   boost::filesystem::ifstream is(p);
+   std::ifstream is(p.native_file_string().c_str());
    if(!is)
    {
       std::string msg("Bad file name: ");
-      msg += p.string();
+      msg += p.native_file_string();
       std::runtime_error e(msg);
       boost::throw_exception(e);
    }
@@ -74,7 +73,7 @@ void fileview::open(const boost::filesystem::path& p)
 // iterators:
 fileview::const_iterator         fileview::begin() const
 {
-   return pimpl->m_data.size() ? &(pimpl->m_data[0]) : 0;
+   return &(pimpl->m_data[0]);
 }
 
 fileview::const_iterator         fileview::end() const

@@ -99,13 +99,6 @@ public delegate void GDALErrorHandlerDelegate(int eclass, int code, IntPtr msg);
     if (OsrPINVOKE.SWIGPendingException.Pending) throw OsrPINVOKE.SWIGPendingException.Retrieve();
   }
 
-  public static CoordinateTransformation CreateCoordinateTransformation(SpatialReference src, SpatialReference dst) {
-    IntPtr cPtr = OsrPINVOKE.CreateCoordinateTransformation(SpatialReference.getCPtr(src), SpatialReference.getCPtr(dst));
-    CoordinateTransformation ret = (cPtr == IntPtr.Zero) ? null : new CoordinateTransformation(cPtr, true, ThisOwn_true());
-    if (OsrPINVOKE.SWIGPendingException.Pending) throw OsrPINVOKE.SWIGPendingException.Retrieve();
-    return ret;
-  }
-
   public const string SRS_WKT_WGS84 = "GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9108\"]],AUTHORITY[\"EPSG\",\"4326\"]]";
   public const string SRS_PT_ALBERS_CONIC_EQUAL_AREA = "Albers_Conic_Equal_Area";
   public const string SRS_PT_AZIMUTHAL_EQUIDISTANT = "Azimuthal_Equidistant";
@@ -126,7 +119,6 @@ public delegate void GDALErrorHandlerDelegate(int eclass, int code, IntPtr msg);
   public const string SRS_PT_GOODE_HOMOLOSINE = "Goode_Homolosine";
   public const string SRS_PT_IGH = "Interrupted_Goode_Homolosine";
   public const string SRS_PT_GNOMONIC = "Gnomonic";
-  public const string SRS_PT_HOTINE_OBLIQUE_MERCATOR_AZIMUTH_CENTER = "Hotine_Oblique_Mercator_Azimuth_Center";
   public const string SRS_PT_HOTINE_OBLIQUE_MERCATOR = "Hotine_Oblique_Mercator";
   public const string SRS_PT_HOTINE_OBLIQUE_MERCATOR_TWO_POINT_NATURAL_ORIGIN = "Hotine_Oblique_Mercator_Two_Point_Natural_Origin";
   public const string SRS_PT_LABORDE_OBLIQUE_MERCATOR = "Laborde_Oblique_Mercator";

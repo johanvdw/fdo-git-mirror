@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdaldrivermanager.cpp 25627 2013-02-10 10:17:19Z rouault $
+ * $Id: gdaldrivermanager.cpp 23175 2011-10-04 21:28:28Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of GDALDriverManager class.
@@ -33,16 +33,8 @@
 #include "ogr_srs_api.h"
 #include "cpl_multiproc.h"
 #include "gdal_pam.h"
-#include "gdal_alg_priv.h"
 
-#ifdef _MSC_VER
-#  ifdef MSVC_USE_VLD
-#    include <wchar.h>
-#    include <vld.h>
-#  endif
-#endif
-
-CPL_CVSID("$Id: gdaldrivermanager.cpp 25627 2013-02-10 10:17:19Z rouault $");
+CPL_CVSID("$Id: gdaldrivermanager.cpp 23175 2011-10-04 21:28:28Z rouault $");
 
 static const char *pszUpdatableINST_DATA = 
 "__INST_DATA_TARGET:                                                                                                                                      ";
@@ -55,8 +47,6 @@ static const char *pszUpdatableINST_DATA =
 
 static volatile GDALDriverManager        *poDM = NULL;
 static void *hDMMutex = NULL;
-
-void** GDALGetphDMMutex() { return &hDMMutex; }
 
 /************************************************************************/
 /*                        GetGDALDriverManager()                        */
@@ -207,8 +197,6 @@ GDALDriverManager::~GDALDriverManager()
         delete poDriver;
     }
 
-    delete GDALGetAPIPROXYDriver();
-
 /* -------------------------------------------------------------------- */
 /*      Cleanup local memory.                                           */
 /* -------------------------------------------------------------------- */
@@ -227,7 +215,6 @@ GDALDriverManager::~GDALDriverManager()
 /* -------------------------------------------------------------------- */
     CPLFinderClean();
     CPLFreeConfig();
-    CPLCleanupSharedFileMutex();
 
 /* -------------------------------------------------------------------- */
 /*      Cleanup any memory allocated by the OGRSpatialReference         */
@@ -254,31 +241,6 @@ GDALDriverManager::~GDALDriverManager()
         CPLDestroyMutex( hDMMutex );
         hDMMutex = NULL;
     }
-
-/* -------------------------------------------------------------------- */
-/*      Cleanup dataset list mutex                                      */
-/* -------------------------------------------------------------------- */
-    if ( *GDALGetphDLMutex() != NULL ) 
-    { 
-        CPLDestroyMutex( *GDALGetphDLMutex() ); 
-        *GDALGetphDLMutex() = NULL; 
-    } 
-
-/* -------------------------------------------------------------------- */
-/*      Cleanup gdaltransformer.cpp mutex                               */
-/* -------------------------------------------------------------------- */
-    GDALCleanupTransformDeserializerMutex();
-
-/* -------------------------------------------------------------------- */
-/*      Cleanup cpl_error.cpp mutex                                     */
-/* -------------------------------------------------------------------- */
-    CPLCleanupErrorMutex();
-
-/* -------------------------------------------------------------------- */
-/*      Cleanup the master CPL mutex, which governs the creation        */
-/*      of all other mutexes.                                           */ 
-/* -------------------------------------------------------------------- */
-    CPLCleanupMasterMutex();
 
 /* -------------------------------------------------------------------- */
 /*      Ensure the global driver manager pointer is NULLed out.         */

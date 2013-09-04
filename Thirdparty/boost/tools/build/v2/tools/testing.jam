@@ -205,12 +205,12 @@ rule dump-tests
 local rule get-library-name ( path )
 {
     # Path is in normalized form, so all slashes are forward.
-    local match1 = [ MATCH /(tools|libs)/(.*)/(test|example) : $(path) ] ;
-    local match2 = [ MATCH /(tools|libs)/(.*)$ : $(path) ] ;
+    local match1 = [ MATCH /libs/(.*)/(test|example) : $(path) ] ;
+    local match2 = [ MATCH /libs/(.*)$ : $(path) ] ;
     local match3 = [ MATCH (/status$) : $(path) ] ;
 
-    if $(match1) { return $(match1[2]) ; }
-    else if $(match2) { return $(match2[2]) ; }
+    if $(match1) { return $(match1[0]) ; }
+    else if $(match2) { return $(match2[0]) ; }
     else if $(match3) { return "" ; }
     else if --dump-tests in [ modules.peek : ARGV ]
     {
@@ -533,7 +533,7 @@ rule unit-test ( target : source : properties * )
 actions unit-test
 {
     $(PATH_SETUP)
-    $(LAUNCHER) "$(>)" $(ARGS) && $(.MAKE_FILE) "$(<)"
+    $(LAUNCHER) $(>) $(ARGS) && $(.MAKE_FILE) $(<)
 }
 
 
@@ -541,46 +541,33 @@ IMPORT $(__name__) : compile compile-fail run run-fail link link-fail
     : : compile compile-fail run run-fail link link-fail ;
 
 
-# This is a composing generator to support cases where a generator for the
-# specified target constructs other targets as well. One such example is msvc's
-# exe generator that constructs both EXE and PDB targets.
 type.register TIME : time ;
-generators.register-composing testing.time : : TIME ;
+generators.register-standard testing.time : : TIME ;
 
 
-# Note that this rule may be called multiple times for a single target in case
-# there are multiple actions operating on the same target in sequence. One such
-# example are msvc exe targets first created by a linker action and then updated
-# with an embedded manifest file by a separate action.
 rule record-time ( target : source : start end user system )
 {
     local src-string = [$(source:G=:J=",")"] " ;
     USER_TIME on $(target) += $(src-string)$(user) ;
     SYSTEM_TIME on $(target) += $(src-string)$(system) ;
-
-    # We need the following variables because attempting to perform such
-    # variable expansion in actions would not work due to quotes getting treated
-    # as regular characters.
-    USER_TIME_SECONDS on $(target) += $(src-string)$(user)" seconds" ;
-    SYSTEM_TIME_SECONDS on $(target) += $(src-string)$(system)" seconds" ;
 }
 
 
 IMPORT testing : record-time : : testing.record-time ;
 
 
-# Calling this rule requests that Boost Build time how long it takes to build
-# the 'source' target and display the results both on the standard output and in
-# the 'target' file.
+# Calling this rule requests that Boost Build time how long it taks to build the
+# 'source' target and display the results both on the standard output and in the
+# 'target' file.
 #
-rule time ( target : sources + : properties *  )
+rule time ( target : source : properties *  )
 {
     # Set up rule for recording timing information.
-    __TIMING_RULE__ on $(sources) = testing.record-time $(target) ;
+    __TIMING_RULE__ on $(source) = testing.record-time $(target) ;
 
-    # Make sure the sources get rebuilt any time we need to retrieve that
+    # Make sure that the source is rebuilt any time we need to retrieve that
     # information.
-    REBUILDS $(target) : $(sources) ;
+    REBUILDS $(target) : $(source) ;
 }
 
 
@@ -589,6 +576,6 @@ actions time
     echo user: $(USER_TIME)
     echo system: $(SYSTEM_TIME)
 
-    echo user: $(USER_TIME_SECONDS) > "$(<)"
-    echo system: $(SYSTEM_TIME_SECONDS) >> "$(<)"
+    echo user: $(USER_TIME)" seconds" > "$(<)"
+    echo system: $(SYSTEM_TIME)" seconds" >> "$(<)"
 }

@@ -1,5 +1,5 @@
 /*****************************************************************************
- * $Id: EHapi.c 25847 2013-04-03 09:45:20Z dron $
+ * $Id: EHapi.c 22144 2011-04-12 15:37:38Z warmerdam $
  *
  * This module has a number of additions and improvements over the original
  * implementation to be suitable for usage in GDAL HDF driver.
@@ -20,13 +20,12 @@ this permission notice appear in supporting documentation.
 #include "mfhdf.h"
 #include "HdfEosDef.h"
 
-/* Set maximum number of HDF-EOS files to HDF limit (MAX_FILE) */
+/* Set maximun number of HDF-EOS files to HDF limit (MAX_FILE) */
 #define NEOSHDF MAX_FILE
-static intn  EHXmaxfilecount = 0;
-static uint8 *EHXtypeTable = NULL;
-static uint8 *EHXacsTable = NULL;
-static int32 *EHXfidTable = NULL;
-static int32 *EHXsdTable = NULL;
+static uint8 EHXtypeTable[NEOSHDF];
+static uint8 EHXacsTable[NEOSHDF];
+static int32 EHXfidTable[NEOSHDF];
+static int32 EHXsdTable[NEOSHDF];
 
 /* define a macro for the string size of the utility strings and some dimension
    list strings. The value in previous versions of this code may not be 
@@ -46,9 +45,7 @@ static int32 *EHXsdTable = NULL;
 
 /* Function Prototypes */
 static intn EHmetalist(char *, char *);
-static intn EHreset_maxopenfiles(intn);
-static intn EHget_maxopenfiles(intn *, intn *);
-static intn EHget_numfiles();
+
 
 /*----------------------------------------------------------------------------|
 |  BEGIN_PROLOG                                                               |
@@ -93,12 +90,11 @@ EHopen(char *filename, intn access)
     intn            i;		/* Loop index */
     intn            status = 0;	/* routine return status variable */
     intn            dum;	/* Dummy variable */
-    intn            curr_max = 0;	/* maximum # of HDF files to open */
-    intn            sys_limit = 0;	/* OS limit for maximum # of opened files */
 
     int32           HDFfid;	/* HDF file ID */
     int32           fid = -1;	/* HDF-EOS file ID */
     int32           sdInterfaceID;	/* HDF SDS interface ID */
+    int32           nfileopen = 0;	/* # of HDF files open */
     int32           attrIndex;	/* Structural Metadata attribute index */
 
     uint8           acs;	/* Read (0) / Write (1) access code */
@@ -110,23 +106,19 @@ EHopen(char *filename, intn access)
 
     intn            retryCount;
 
-    /* Request the system allowed number of opened files */
-    /* and increase HDFEOS file tables to the same size  */
-    /* ------------------------------------------------- */
-    if (EHget_maxopenfiles(&curr_max, &sys_limit) >= 0
-        && curr_max < sys_limit)
+
+    /* Determine number of files currently opened */
+    /* ------------------------------------------ */
+    for (i = 0; i < NEOSHDF; i++)
     {
-        if (EHreset_maxopenfiles(sys_limit) < 0)
-        {
-	    HEpush(DFE_ALROPEN, "EHopen", __FILE__, __LINE__);
-	    HEreport("Can't set maximum opened files number to \"%d\".\n", curr_max);
-	    return -1;
-        }
+	nfileopen += EHXtypeTable[i];
     }
+
+
 
     /* Setup file interface */
     /* -------------------- */
-    if (EHget_numfiles() < EHXmaxfilecount)
+    if (nfileopen < NEOSHDF)
     {
 
 	/*
@@ -137,7 +129,7 @@ EHopen(char *filename, intn access)
 	{
 	    /* Loop through all files */
 	    /* ---------------------- */
-	    for (i = 0; i < EHXmaxfilecount; i++)
+	    for (i = 0; i < NEOSHDF; i++)
 	    {
 		/* if entry is active file opened for write access ... */
 		/* --------------------------------------------------- */
@@ -422,7 +414,7 @@ EHopen(char *filename, intn access)
 	fid = -1;
 	HEpush(DFE_TOOMANY, "EHopen", __FILE__, __LINE__);
 	HEreport("No more than %d files may be open simultaneously (%s).\n",
-		 EHXmaxfilecount, filename);
+		 NEOSHDF, filename);
     }
 
 
@@ -437,7 +429,7 @@ EHopen(char *filename, intn access)
 
 	/* Assign HDFEOS fid # & Load HDF fid and sdInterfaceID tables */
 	/* ----------------------------------------------------------- */
-	for (i = 0; i < EHXmaxfilecount; i++)
+	for (i = 0; i < NEOSHDF; i++)
 	{
 	    if (EHXtypeTable[i] == 0)
 	    {
@@ -501,12 +493,12 @@ EHchkfid(int32 fid, char *name, int32 * HDFfid, int32 * sdInterfaceID,
 
     /* Check for valid HDFEOS file ID range */
     /* ------------------------------------ */
-    if (fid < EHIDOFFSET || fid > EHXmaxfilecount + EHIDOFFSET)
+    if (fid < EHIDOFFSET || fid > NEOSHDF + EHIDOFFSET)
     {
 	status = -1;
 	HEpush(DFE_RANGE, "EHchkfid", __FILE__, __LINE__);
 	HEreport("Invalid file id: %d.  ID must be >= %d and < %d (%s).\n",
-		 fid, EHIDOFFSET, EHXmaxfilecount + EHIDOFFSET, name);
+		 fid, EHIDOFFSET, NEOSHDF + EHIDOFFSET, name);
     } else
     {
 	/* Compute "reduced" file ID */
@@ -3510,7 +3502,7 @@ EHclose(int32 fid)
 
     /* Check for valid HDFEOS file ID range */
     /* ------------------------------------ */
-    if (fid >= EHIDOFFSET && fid < EHXmaxfilecount + EHIDOFFSET)
+    if (fid >= EHIDOFFSET && fid < NEOSHDF + EHIDOFFSET)
     {
 	/* Compute "reduced" file ID */
 	/* ------------------------- */
@@ -3534,24 +3526,12 @@ EHclose(int32 fid)
 	EHXacsTable[fid0] = 0;
 	EHXfidTable[fid0] = 0;
 	EHXsdTable[fid0] = 0;
-        if (EHget_numfiles() == 0)
-        {
-            free(EHXtypeTable);
-            EHXtypeTable = NULL;
-            free(EHXacsTable);
-            EHXacsTable = NULL;
-            free(EHXfidTable);
-            EHXfidTable = NULL;
-            free(EHXsdTable);
-            EHXsdTable = NULL;
-            EHXmaxfilecount = 0;
-        }
     } else
     {
 	status = -1;
 	HEpush(DFE_RANGE, "EHclose", __FILE__, __LINE__);
 	HEreport("Invalid file id: %d.  ID must be >= %d and < %d.\n",
-		 fid, EHIDOFFSET, EHXmaxfilecount + EHIDOFFSET);
+		 fid, EHIDOFFSET, NEOSHDF + EHIDOFFSET);
     }
 
     return (status);
@@ -3613,165 +3593,3 @@ EHnumstr(const char *strcode)
         return DFNT_NONE;
 }
 
-/*----------------------------------------------------------------------------|
-|  BEGIN_PROLOG                                                               |
-|                                                                             |
-|  FUNCTION: EHreset_maxopenfiles                                             |
-|                                                                             |
-|  DESCRIPTION: Change the allowed number of opened HDFEOS files.             |
-|                                                                             |
-|                                                                             |
-|  Return Value    Type     Units     Description                             |
-|  ============   ======  =========   =====================================   |
-|  numbertype     intn                The current maximum number of opened    |
-|                                     files allowed, or -1, if unable         |
-|                                     to reset it.                            |
-|                                                                             |
-|  INPUTS:                                                                    |
-|  strcode        intn                Requested number of opened files.       |
-|                                                                             |
-|                                                                             |
-|  OUTPUTS:                                                                   |
-|             None                                                            |
-|                                                                             |
-|  NOTES:                                                                     |
-|                                                                             |
-|                                                                             |
-|   Date        Programmer     Description                                    |
-|  ==========   ============   ============================================== |
-|  2013.04.03   Andrey Kiselev Original Programmer                            |
-|                                                                             |
-|  END_PROLOG                                                                 |
------------------------------------------------------------------------------*/
-static intn
-EHreset_maxopenfiles(intn req_max)
-{
-    intn    ret_value;
-
-    if (req_max <= EHXmaxfilecount)
-        return EHXmaxfilecount;
-
-    /* Falback to built-in NEOSHDF constant if           */
-    /* SDreset_maxopenfiles() interface is not available */
-    /* ------------------------------------------------- */
-#ifdef HDF4_HAS_MAXOPENFILES
-    ret_value = SDreset_maxopenfiles(req_max);
-#else
-    ret_value = NEOSHDF;
-#endif /* HDF4_HAS_MAXOPENFILES */
-
-    if (ret_value > 0)
-    {
-        EHXtypeTable = realloc(EHXtypeTable, ret_value * sizeof(*EHXtypeTable));
-        memset(EHXtypeTable + EHXmaxfilecount, 0,
-               (ret_value - EHXmaxfilecount) * sizeof(*EHXtypeTable));
-        EHXacsTable = realloc(EHXacsTable, ret_value * sizeof(*EHXacsTable));
-        memset(EHXacsTable + EHXmaxfilecount, 0,
-               (ret_value - EHXmaxfilecount) * sizeof(*EHXacsTable));
-        EHXfidTable = realloc(EHXfidTable, ret_value * sizeof(*EHXfidTable));
-        memset(EHXfidTable + EHXmaxfilecount, 0,
-               (ret_value - EHXmaxfilecount) * sizeof(*EHXfidTable));
-        EHXsdTable = realloc(EHXsdTable, ret_value * sizeof(*EHXsdTable));
-        memset(EHXsdTable + EHXmaxfilecount, 0,
-               (ret_value - EHXmaxfilecount) * sizeof(*EHXsdTable));
-        EHXmaxfilecount = ret_value;
-    }
-
-    return ret_value;
-}
-
-/*----------------------------------------------------------------------------|
-|  BEGIN_PROLOG                                                               |
-|                                                                             |
-|  FUNCTION: EHget_maxopenfiles                                               |
-|                                                                             |
-|  DESCRIPTION: Request the allowed number of opened HDFEOS files and maximum |
-|               number of opened files allowed in the system.                 |
-|                                                                             |
-|                                                                             |
-|  Return Value    Type     Units     Description                             |
-|  ============   ======  =========   =====================================   |
-|  status         intn                return status (0) SUCCEED, (-1) FAIL    |
-|                                                                             |
-|  INPUTS:                                                                    |
-|             None                                                            |
-|                                                                             |
-|                                                                             |
-|  OUTPUTS:                                                                   |
-|  curr_max       intn                Current number of open files allowed.   |
-|  sys_limit      intn                Maximum number of open files allowed    |
-|                                     in the system.                          |
-|                                                                             |
-|  NOTES:                                                                     |
-|                                                                             |
-|                                                                             |
-|   Date        Programmer     Description                                    |
-|  ==========   ============   ============================================== |
-|  2013.04.03   Andrey Kiselev Original Programmer                            |
-|                                                                             |
-|  END_PROLOG                                                                 |
------------------------------------------------------------------------------*/
-static intn
-EHget_maxopenfiles(intn *curr_max,
-		   intn *sys_limit)
-{
-    intn ret_value = 0;
-
-#ifdef HDF4_HAS_MAXOPENFILES
-    ret_value = SDget_maxopenfiles(curr_max, sys_limit);
-#else
-    *sys_limit = NEOSHDF;
-#endif /* HDF4_HAS_MAXOPENFILES */
-
-    *curr_max = EHXmaxfilecount;
-
-    return ret_value;
-}
-
-/*----------------------------------------------------------------------------|
-|  BEGIN_PROLOG                                                               |
-|                                                                             |
-|  FUNCTION: EHget_numfiles                                                   |
-|                                                                             |
-|  DESCRIPTION: Request the number of HDFEOS files currently opened.          |
-|                                                                             |
-|                                                                             |
-|  Return Value    Type     Units     Description                             |
-|  ============   ======  =========   =====================================   |
-|  nfileopen      intn                Number of HDFEOS files already opened.  |
-|                                                                             |
-|  INPUTS:                                                                    |
-|             None                                                            |
-|                                                                             |
-|                                                                             |
-|  OUTPUTS:                                                                   |
-|             None                                                            |
-|                                     in the system.                          |
-|                                                                             |
-|  NOTES:                                                                     |
-|                                                                             |
-|                                                                             |
-|   Date        Programmer     Description                                    |
-|  ==========   ============   ============================================== |
-|  2013.04.03   Andrey Kiselev Original Programmer                            |
-|                                                                             |
-|  END_PROLOG                                                                 |
------------------------------------------------------------------------------*/
-static intn
-EHget_numfiles()
-{
-    intn            i;		    /* Loop index */
-    intn            nfileopen = 0;  /* # of HDF files open */
-
-    if (EHXtypeTable)
-    {
-        /* Determine number of files currently opened */
-        /* ------------------------------------------ */
-        for (i = 0; i < EHXmaxfilecount; i++)
-        {
-            nfileopen += EHXtypeTable[i];
-        }
-    }
-
-    return nfileopen;
-}

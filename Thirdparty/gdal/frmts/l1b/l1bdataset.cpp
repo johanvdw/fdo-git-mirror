@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: l1bdataset.cpp 25940 2013-04-20 14:23:19Z rouault $
+ * $Id: l1bdataset.cpp 22715 2011-07-12 10:34:07Z rouault $
  *
  * Project:  NOAA Polar Orbiter Level 1b Dataset Reader (AVHRR)
  * Purpose:  Can read NOAA-9(F)-NOAA-17(M) AVHRR datasets
@@ -32,7 +32,7 @@
 #include "gdal_pam.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: l1bdataset.cpp 25940 2013-04-20 14:23:19Z rouault $");
+CPL_CVSID("$Id: l1bdataset.cpp 22715 2011-07-12 10:34:07Z rouault $");
 
 CPL_C_START
 void    GDALRegister_L1B(void);
@@ -47,7 +47,6 @@ enum {                  // File formats
 
 enum {          // Spacecrafts:
     TIROSN,     // TIROS-N
-    // NOAA are given a letter before launch and a number after launch
     NOAA6,      // NOAA-6(A)
     NOAAB,      // NOAA-B
     NOAA7,      // NOAA-7(C)
@@ -62,11 +61,7 @@ enum {          // Spacecrafts:
     NOAA16,     // NOAA-16(L)
     NOAA17,     // NOAA-17(M)
     NOAA18,     // NOAA-18(N)
-    NOAA19,     // NOAA-19(N')
-    // MetOp are given a number before launch and a letter after launch
-    METOP2,     // METOP-A(2)
-    METOP1,     // METOP-B(1)
-    METOP3,     // METOP-C(3)
+    METOP2      // METOP-2(A)
 };
 
 enum {          // Product types
@@ -213,7 +208,7 @@ class L1BDataset : public GDALPamDataset
 {
     friend class L1BRasterBand;
 
-    //char        pszRevolution[6]; // Five-digit number identifying spacecraft revolution
+    char        pszRevolution[6]; // Five-digit number identifying spacecraft revolution
     int         eSource;        // Source of data (receiving station name)
     int         eProcCenter;    // Data processing center
     TimeCode    sStartTime;
@@ -743,30 +738,6 @@ void L1BDataset::ProcessRecordHeaders()
 }
 
 /************************************************************************/
-/*                           EBCDICToASCII                              */
-/************************************************************************/
-
-static const GByte EBCDICToASCII[] =
-{
-0x00, 0x01, 0x02, 0x03, 0x9C, 0x09, 0x86, 0x7F, 0x97, 0x8D, 0x8E, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
-0x10, 0x11, 0x12, 0x13, 0x9D, 0x85, 0x08, 0x87, 0x18, 0x19, 0x92, 0x8F, 0x1C, 0x1D, 0x1E, 0x1F,
-0x80, 0x81, 0x82, 0x83, 0x84, 0x0A, 0x17, 0x1B, 0x88, 0x89, 0x8A, 0x8B, 0x8C, 0x05, 0x06, 0x07,
-0x90, 0x91, 0x16, 0x93, 0x94, 0x95, 0x96, 0x04, 0x98, 0x99, 0x9A, 0x9B, 0x14, 0x15, 0x9E, 0x1A,
-0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xA2, 0x2E, 0x3C, 0x28, 0x2B, 0x7C,
-0x26, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x21, 0x24, 0x2A, 0x29, 0x3B, 0xAC,
-0x2D, 0x2F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xA6, 0x2C, 0x25, 0x5F, 0x3E, 0x3F,
-0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x60, 0x3A, 0x23, 0x40, 0x27, 0x3D, 0x22,
-0x00, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-0x00, 0x6A, 0x6B, 0x6C, 0x6D, 0x6E, 0x6F, 0x70, 0x71, 0x72, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-0x00, 0x7E, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7A, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
-0x7B, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-0x7D, 0x4A, 0x4B, 0x4C, 0x4D, 0x4E, 0x4F, 0x50, 0x51, 0x52, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-0x5C, 0x00, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5A, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x00, 0x00, 0x00, 0x00, 0x00, 0x9F,
-};
-
-/************************************************************************/
 /*                      ProcessDatasetHeader()                          */
 /************************************************************************/
 
@@ -784,20 +755,6 @@ CPLErr L1BDataset::ProcessDatasetHeader()
         {
             CPLDebug( "L1B", "Can't read NOAA-9/14 TBM header." );
             return CE_Failure;
-        }
-
-        // If dataset name in EBCDIC, decode it in ASCII
-        if ( *(abyTBMHeader + 8 + 25) == 'K'
-            && *(abyTBMHeader + 8 + 30) == 'K'
-            && *(abyTBMHeader + 8 + 33) == 'K'
-            && *(abyTBMHeader + 8 + 40) == 'K'
-            && *(abyTBMHeader + 8 + 46) == 'K'
-            && *(abyTBMHeader + 8 + 52) == 'K'
-            && *(abyTBMHeader + 8 + 61) == 'K' )
-        {
-            for(int i=0;i<L1B_DATASET_NAME_SIZE;i++)
-                abyTBMHeader[L1B_NOAA9_HDR_NAME_OFF+i] =
-                    EBCDICToASCII[abyTBMHeader[L1B_NOAA9_HDR_NAME_OFF+i]];
         }
 
         // Fetch dataset name. NOAA-9/14 datasets contain the names in TBM
@@ -1052,7 +1009,6 @@ CPLErr L1BDataset::ProcessDatasetHeader()
              eProcCenter = UNKNOWN_CENTER;
 
         // Determine the spacecraft name
-		// See http://www.ncdc.noaa.gov/oa/pod-guide/ncdc/docs/klm/html/c8/sec83132-2.htm
         int iWord = CPL_MSBWORD16( *(GUInt16 *)
             (abyRecHeader + L1B_NOAA15_HDR_REC_ID_OFF) );
         switch ( iWord )
@@ -1069,21 +1025,16 @@ CPLErr L1BDataset::ProcessDatasetHeader()
             case 7:
                 eSpacecraftID = NOAA18;
                 break;
-            case 8:
-                eSpacecraftID = NOAA19;
+            /* FIXME: find appropriate samples and test these two cases:
+             * case 8:
+                eSpacecraftID = NOAA-N';
                 break;
             case 11:
-                eSpacecraftID = METOP1;
-                break;
+                eSpacecraftID = METOP-1;
+                break;*/
             case 12:
+            case 14:    // METOP simulator (code used in AAPP format)
                 eSpacecraftID = METOP2;
-                break;
-            // METOP3 is not documented yet
-            case 13:
-                eSpacecraftID = METOP3;
-                break;
-            case 14:
-                eSpacecraftID = METOP3;
                 break;
             default:
 #ifdef DEBUG
@@ -1204,17 +1155,8 @@ CPLErr L1BDataset::ProcessDatasetHeader()
         case NOAA18:
             pszText = "NOAA-18(N)";
             break;
-        case NOAA19:
-            pszText = "NOAA-19(N')";
-            break;
         case METOP2:
-            pszText = "METOP-A(2)";
-            break;
-        case METOP1:
-            pszText = "METOP-B(1)";
-            break;
-        case METOP3:
-            pszText = "METOP-C(3)";
+            pszText = "METOP-2(A)";
             break;
         default:
             pszText = "Unknown";
@@ -1628,16 +1570,6 @@ int L1BDataset::DetectFormat( GDALOpenInfo *poOpenInfo )
          && *(pabyHeader + 8 + 61) == '.' )
         return L1B_NOAA9;
 
-    // Next try the NOAA-9/14 formats with dataset name in EBCDIC
-    if ( *(pabyHeader + 8 + 25) == 'K'
-         && *(pabyHeader + 8 + 30) == 'K'
-         && *(pabyHeader + 8 + 33) == 'K'
-         && *(pabyHeader + 8 + 40) == 'K'
-         && *(pabyHeader + 8 + 46) == 'K'
-         && *(pabyHeader + 8 + 52) == 'K'
-         && *(pabyHeader + 8 + 61) == 'K' )
-        return L1B_NOAA9;
-
     // Finally try the AAPP formats 
     if ( *(pabyHeader + 25) == '.'
          && *(pabyHeader + 30) == '.'
@@ -1802,7 +1734,7 @@ GDALDataset *L1BDataset::Open( GDALOpenInfo * poOpenInfo )
         poDS->SetBand( iBand, new L1BRasterBand( poDS, iBand ));
         
         // Channels descriptions
-        if ( poDS->eSpacecraftID >= NOAA6 && poDS->eSpacecraftID <= METOP3 )
+        if ( poDS->eSpacecraftID >= NOAA6 && poDS->eSpacecraftID <= METOP2 )
         {
             if ( !(i & 0x01) && poDS->iChannelsMask & 0x01 )
             {
@@ -1819,7 +1751,7 @@ GDALDataset *L1BDataset::Open( GDALOpenInfo * poOpenInfo )
             if ( !(i & 0x04) && poDS->iChannelsMask & 0x04 )
             {
                 if ( poDS->eSpacecraftID >= NOAA15
-                     && poDS->eSpacecraftID <= METOP3 )
+                     && poDS->eSpacecraftID <= METOP2 )
                     if ( poDS->iInstrumentStatus & 0x0400 )
                         poDS->GetRasterBand(iBand)->SetDescription( apszBandDesc[7] );
                     else
@@ -1922,7 +1854,6 @@ void GDALRegister_L1B()
         poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
 
         poDriver->pfnOpen = L1BDataset::Open;
-        poDriver->pfnIdentify = L1BDataset::Identify;
 
         GetGDALDriverManager()->RegisterDriver( poDriver );
     }

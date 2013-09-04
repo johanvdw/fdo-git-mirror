@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: dteddataset.cpp 24517 2012-05-30 21:07:47Z rouault $
+ * $Id: dteddataset.cpp 21837 2011-02-24 21:16:42Z rouault $
  *
  * Project:  DTED Translator
  * Purpose:  GDALDataset driver for DTED translator.
@@ -31,7 +31,7 @@
 #include "gdal_pam.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: dteddataset.cpp 24517 2012-05-30 21:07:47Z rouault $");
+CPL_CVSID("$Id: dteddataset.cpp 21837 2011-02-24 21:16:42Z rouault $");
 
 CPL_C_START
 void    GDALRegister_DTED(void);
@@ -458,11 +458,7 @@ GDALDataset *DTEDDataset::Open( GDALOpenInfo * poOpenInfo )
     pszValue = DTEDGetMetadata( psDTED, DTEDMD_NIMA_DESIGNATOR ); 
     poDS->SetMetadataItem( "DTED_NimaDesignator", pszValue ); 
     free( pszValue );
-
-    pszValue = DTEDGetMetadata( psDTED, DTEDMD_PARTIALCELL_DSI );
-    poDS->SetMetadataItem( "DTED_PartialCellIndicator", pszValue );
-    free( pszValue ); 
-
+    
     poDS->SetMetadataItem( GDALMD_AREA_OR_POINT, GDALMD_AOP_POINT );
 
 /* -------------------------------------------------------------------- */
@@ -792,7 +788,7 @@ DTEDCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
            iPartialCell=1;
     }
     sprintf(szPartialCell,"%02d",iPartialCell);
-    DTEDSetMetadata(psDTED, DTEDMD_PARTIALCELL_DSI, szPartialCell); 
+    strncpy((char *) (psDTED->pachDSIRecord+289), szPartialCell, 2 );
 
 /* -------------------------------------------------------------------- */
 /*      Try to copy any matching available metadata.                    */

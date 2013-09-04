@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: xyzdataset.cpp 24593 2012-06-16 18:58:42Z rouault $
+ * $Id: xyzdataset.cpp 22596 2011-06-27 18:53:18Z rouault $
  *
  * Project:  XYZ driver
  * Purpose:  GDALDataset driver for XYZ dataset.
@@ -31,7 +31,7 @@
 #include "cpl_string.h"
 #include "gdal_pam.h"
 
-CPL_CVSID("$Id: xyzdataset.cpp 24593 2012-06-16 18:58:42Z rouault $");
+CPL_CVSID("$Id: xyzdataset.cpp 22596 2011-06-27 18:53:18Z rouault $");
 
 CPL_C_START
 void    GDALRegister_XYZ(void);
@@ -259,7 +259,6 @@ XYZDataset::XYZDataset()
     fp = NULL;
     nDataLineNum = INT_MAX;
     nLineNum = 0;
-    nCommentLineCount = 0;
     bHasHeaderLine = FALSE;
     nXIndex = -1;
     nYIndex = -1;
@@ -908,10 +907,7 @@ GDALDataset* XYZDataset::CreateCopy( const char * pszFilename,
             }
         }
         if (!pfnProgress( (j+1) * 1.0 / nYSize, NULL, pProgressData))
-        {
-            eErr = CE_Failure;
             break;
-        }
     }
     CPLFree(pLineBuffer);
     VSIFCloseL(fp);
@@ -919,29 +915,21 @@ GDALDataset* XYZDataset::CreateCopy( const char * pszFilename,
     if (eErr != CE_None)
         return NULL;
 
-/* -------------------------------------------------------------------- */
-/*      We don't want to call GDALOpen() since it will be expensive,    */
-/*      so we "hand prepare" an XYZ dataset referencing our file.       */
-/* -------------------------------------------------------------------- */
+    /* If outputing to stdout, we can't reopen it, so we'll return */
+    /* a fake dataset to make the caller happy */
+    CPLPushErrorHandler(CPLQuietErrorHandler);
+    GDALDataset* poDS = (GDALDataset*) GDALOpen(pszFilename, GA_ReadOnly);
+    CPLPopErrorHandler();
+    if (poDS)
+        return poDS;
+
+    CPLErrorReset();
+
     XYZDataset* poXYZ_DS = new XYZDataset();
     poXYZ_DS->nRasterXSize = nXSize;
     poXYZ_DS->nRasterYSize = nYSize;
     poXYZ_DS->nBands = 1;
     poXYZ_DS->SetBand( 1, new XYZRasterBand( poXYZ_DS, 1, eReqDT ) );
-    /* If outputing to stdout, we can't reopen it --> silence warning */
-    CPLPushErrorHandler(CPLQuietErrorHandler);
-    poXYZ_DS->fp = VSIFOpenL( pszFilename, "r" );
-    CPLPopErrorHandler();
-    memcpy( &(poXYZ_DS->adfGeoTransform), adfGeoTransform, sizeof(double)*6 );
-    poXYZ_DS->nXIndex = 0;
-    poXYZ_DS->nYIndex = 1;
-    poXYZ_DS->nZIndex = 2;
-    if( pszAddHeaderLine )
-    {
-        poXYZ_DS->nDataLineNum = 1;
-        poXYZ_DS->bHasHeaderLine = TRUE;
-    }
-
     return poXYZ_DS;
 }
 

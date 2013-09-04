@@ -1,16 +1,19 @@
 #
+# $Id: makefile.dj,v 1.14 2009-07-14 13:25:14 gknauf Exp $
+#
 #  Adapted for djgpp2 / Watt-32 / DOS by
-#  Gisle Vanem <gvanem@broadpark.no>
+#  Gisle Vanem <giva@bgnett.no>
 #
 
-DEPEND_PREREQ = # tool_hugehelp.c
+DEPEND_PREREQ = curl_config.h hugehelp.c
 
+top_srcdir = ..
 TOPDIR = ..
 
 include ../packages/DOS/common.dj
 include Makefile.inc
 
-CSOURCES = $(CURL_CFILES)
+CSOURCES = $(CURL_SOURCES)
 
 ifeq ($(USE_SSL),1)
   EX_LIBS += $(OPENSSL_ROOT)/lib/libssl.a $(OPENSSL_ROOT)/lib/libcrypt.a
@@ -36,23 +39,31 @@ CFLAGS += -DUSE_ENVIRONMENT
 PROGRAM  = curl.exe
 OBJECTS += $(addprefix $(OBJ_DIR)/, $(CSOURCES:.c=.o))
 
-all: $(OBJ_DIR) $(PROGRAM)
+all: $(OBJ_DIR) curl_config.h $(PROGRAM)
 	@echo Welcome to cURL
 
 $(PROGRAM): $(OBJECTS) ../lib/libcurl.a
 	$(CC) -o $@ $^ $(LDFLAGS) $(EX_LIBS)
 
+curl_config.h:
+ifeq ($(IS_UNIX_SHELL),1)
+	@echo '#include "../lib/config.dos"' > $@
+else
+	@echo #include "../lib/config.dos" > $@
+endif
+
 #
 # groff 1.18+ requires "-P -c"
 #
-tool_hugehelp.c: ../docs/MANUAL ../docs/curl.1 mkhelp.pl
+hugehelp.c: ../docs/MANUAL ../docs/curl.1 mkhelp.pl
 	groff -Tascii -man ../docs/curl.1 | \
 	perl -w mkhelp.pl ../docs/MANUAL > $@
 
 # clean generated files
 #
 genclean:
-	- $(DELETE) tool_hugehelp.c
+	- $(DELETE) curl_config.h
+	- $(DELETE) hugehelp.c
 
 # clean object files and subdir
 #

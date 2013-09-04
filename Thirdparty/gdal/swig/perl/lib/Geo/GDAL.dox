@@ -110,8 +110,7 @@
 # 'GDAL_PAM_ENABLED', 'GDAL_PAM_MODE', 'GDAL_PAM_PROXY_DIR',
 # 'GDAL_MAX_DATASET_POOL_SIZE', 'GDAL_FORCE_CACHING', 'GDAL_CACHEMAX',
 # 'GDAL_SWATH_SIZE', 'PROJSO', 'CENTER_LONG',
-# 'OGR_DEBUG_ORGANIZE_POLYGONS', 'OGR_ORGANIZE_POLYGONS',
-# and 'GDAL_JP2K_ALT_OFFSETVECTOR_ORDER'.
+# 'OGR_DEBUG_ORGANIZE_POLYGONS', and 'OGR_ORGANIZE_POLYGONS'.
 # Consult the GDAL main documentation for the semantics of config options.
 # @param value A value for the option, typically 'YES', 'NO',
 # undef, a path, or a filename.
@@ -154,7 +153,7 @@
 
 ## @fn $GetDataTypeSize($GDALDataType)
 # @param GDALDataType An integer (one of keys of
-# Geo::GDAL::TYPE_INT2STRING hash).
+# %Geo::GDAL::TYPE_INT2STRING).
 # @return the size as the number of bits.
 
 ## @fn @DataTypeValueRange($DataType)
@@ -164,7 +163,7 @@
 
 ## @fn $DataTypeIsComplex($GDALDataType)
 # @param GDALDataType An integer (one of keys of
-# Geo::GDAL::TYPE_INT2STRING hash).
+# %Geo::GDAL::TYPE_INT2STRING).
 # @return true if the data type is a complex number.
 
 ## @fn $DecToDMS($angle, $axis, $precision=2)
@@ -228,7 +227,7 @@
 
 ## @fn Geo::GDAL::Driver Driver($driver)
 # Create a driver object for the internal GDAL driver.
-# @note a.k.a. GetDriver
+# \note a.k.a. GetDriver
 # @param driver The name or number of the driver.
 # @return a new Geo::GDAL::Driver object
 
@@ -537,8 +536,7 @@
 
 ## @method Geo::GDAL::Dataset Create($name, $xsize, $ysize, $bands =1, $type = 'Byte', \%options = undef)
 # Create a GDAL dataset using this driver.
-# @note a.k.a. CreateDataset
-#
+# \note a.k.a. CreateDataset
 # Create a new Geo::GDAL::Dataset
 # @param name
 # @param xsize
@@ -643,7 +641,7 @@
 
 ## @method Geo::GDAL::Band Band($index)
 # Create a band object for the band within the dataset.
-# @note a.k.a. GetRasterBand
+# \note a.k.a. GetRasterBand
 # @param index 1...RasterCount
 # @return a new Geo::GDAL::Band object
 
@@ -801,7 +799,7 @@
 ## @ignore SetUnitType
 
 ## @method Unit($type)
-# @param type [optional] the unit (a string).
+# @param [optional] the unit (a string).
 # @return the unit (a string).
 # @since version 1.9 of the bindings.
 
@@ -884,30 +882,9 @@
 
 ## @method \@ReadTile($xoff = 0, $yoff = 0, $xsize = <width>, $ysize = <height>)
 #
-# Usage example (print the data from a band):
+# Usage example:
 # \code
 # print "@$_\n" for ( @{ $band->ReadTile() } );
-# \endcode
-# Another usage example (process the data of a large dataset that has one band):
-# \code
-# my($W,$H) = $dataset->Band(1)->Size();
-# my($xoff,$yoff,$w,$h) = (0,0,200,200);
-# while (1) {
-#     if ($xoff >= $W) {
-#         $xoff = 0;
-#         $yoff += $h;
-#         last if $yoff >= $H;
-#     }
-#     my $data = $dataset->Band(1)->ReadTile($xoff,$yoff,min($W-$xoff,$w),min($H-$yoff,$h));
-#     my $data = $dataset->Band(1)->ReadTile($xoff,$yoff,$w,$h);
-#     # add your data processing code here
-#     $dataset->Band(1)->WriteTile($data,$xoff,$yoff);
-#     $xoff += $w;
-# }
-#
-# sub min {
-#     return $_[0] < $_[1] ? $_[0] : $_[1];
-# }
 # \endcode
 # @param xoff
 # @param yoff
@@ -1027,23 +1004,14 @@
 ## @method Geo::OGR::Layer Contours($DataSource, \%LayerConstructor, $ContourInterval, $ContourBase, \@FixedLevels, $NoDataValue, $IDField, $ElevField, $callback, $callback_data)
 # Generate contours for this raster band. This method can also be used with named parameters.
 # @note This method is a wrapper for ContourGenerate.
-#
-# An example:
-# \code
-# use Geo::GDAL;
-# $dem = Geo::GDAL::Open('dem.gtiff');
-# $contours = $dem->Band->Contours(ContourInterval => 10, ElevField => 'z');
-# $n = $contours->GetFeatureCount;
-# \endcode
-#
 # @param DataSource a Geo::OGR::DataSource object, default is a Memory data source
 # @param LayerConstructor data for Geo::OGR::DataSource::CreateLayer, default is {Name => 'contours'}
 # @param ContourInterval default is 100
 # @param ContourBase default is 0
 # @param FixedLevels a reference to a list of fixed contour levels, default is []
 # @param NoDataValue default is undef
-# @param IDField default is '', i.e., no field (the field is created if this is given)
-# @param ElevField default is '', i.e., no field (the field is created if this is given)
+# @param IDField default is '', i.e., no field
+# @param ElevField default is '', i.e., no field
 # @param callback [optional] a reference to a subroutine, which will
 # be called with parameters (number progress, string msg, callback_data)
 # @param callback_data [optional]

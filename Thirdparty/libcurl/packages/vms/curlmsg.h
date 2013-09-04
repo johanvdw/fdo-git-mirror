@@ -1,30 +1,10 @@
 #ifndef HEADER_CURLMSG_H
 #define HEADER_CURLMSG_H
-/***************************************************************************
- *                                  _   _ ____  _
- *  Project                     ___| | | |  _ \| |
- *                             / __| | | | |_) | |
- *                            | (__| |_| |  _ <| |___
- *                             \___|\___/|_| \_\_____|
- *
- * Copyright (C) 1998 - 2011, Daniel Stenberg, <daniel@haxx.se>, et al.
- *
- * This software is licensed as described in the file COPYING, which
- * you should have received as part of this distribution. The terms
- * are also available at http://curl.haxx.se/docs/copyright.html.
- *
- * You may opt to use, copy, modify, merge, publish, distribute and/or sell
- * copies of the Software, and permit persons to whom the Software is
- * furnished to do so, under the terms of the COPYING file.
- *
- * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
- * KIND, either express or implied.
- *
- ***************************************************************************/
 
 #pragma __member_alignment __save
 #pragma __nomember_alignment
 
+/* $Id: curlmsg.h,v 1.8 2009-06-11 11:57:46 yangtse Exp $ */
 /*                                                                          */
 /* CURLMSG.H                                                                */
 /*                                                                          */
@@ -134,7 +114,7 @@
 #define CURL_SSL_CRL_BADFILE 251757210
 #define CURL_SSL_ISSUER_ERROR 251757218
 #define CURL_CURL_LAST 251757226
-
+ 
 #pragma __member_alignment __restore
 
 #endif /* HEADER_CURLMSG_H */

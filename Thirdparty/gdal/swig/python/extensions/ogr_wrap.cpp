@@ -2722,26 +2722,24 @@ SWIG_Python_MustGetPtr(PyObject *obj, swig_type_info *ty, int argnum, int flags)
 
 /* -------- TYPES TABLE (BEGIN) -------- */
 
-#define SWIGTYPE_p_GDALProgressFunc swig_types[0]
-#define SWIGTYPE_p_GIntBig swig_types[1]
-#define SWIGTYPE_p_OGRDataSourceShadow swig_types[2]
-#define SWIGTYPE_p_OGRDriverShadow swig_types[3]
-#define SWIGTYPE_p_OGRFeatureDefnShadow swig_types[4]
-#define SWIGTYPE_p_OGRFeatureShadow swig_types[5]
-#define SWIGTYPE_p_OGRFieldDefnShadow swig_types[6]
-#define SWIGTYPE_p_OGRGeometryShadow swig_types[7]
-#define SWIGTYPE_p_OGRLayerShadow swig_types[8]
-#define SWIGTYPE_p_OSRCoordinateTransformationShadow swig_types[9]
-#define SWIGTYPE_p_OSRSpatialReferenceShadow swig_types[10]
-#define SWIGTYPE_p_char swig_types[11]
-#define SWIGTYPE_p_double swig_types[12]
-#define SWIGTYPE_p_f_double_p_q_const__char_p_void__int swig_types[13]
-#define SWIGTYPE_p_int swig_types[14]
-#define SWIGTYPE_p_p_char swig_types[15]
-#define SWIGTYPE_p_p_double swig_types[16]
-#define SWIGTYPE_p_p_int swig_types[17]
-static swig_type_info *swig_types[19];
-static swig_module_info swig_module = {swig_types, 18, 0, 0, 0, 0};
+#define SWIGTYPE_p_GIntBig swig_types[0]
+#define SWIGTYPE_p_OGRDataSourceShadow swig_types[1]
+#define SWIGTYPE_p_OGRDriverShadow swig_types[2]
+#define SWIGTYPE_p_OGRFeatureDefnShadow swig_types[3]
+#define SWIGTYPE_p_OGRFeatureShadow swig_types[4]
+#define SWIGTYPE_p_OGRFieldDefnShadow swig_types[5]
+#define SWIGTYPE_p_OGRGeometryShadow swig_types[6]
+#define SWIGTYPE_p_OGRLayerShadow swig_types[7]
+#define SWIGTYPE_p_OSRCoordinateTransformationShadow swig_types[8]
+#define SWIGTYPE_p_OSRSpatialReferenceShadow swig_types[9]
+#define SWIGTYPE_p_char swig_types[10]
+#define SWIGTYPE_p_double swig_types[11]
+#define SWIGTYPE_p_int swig_types[12]
+#define SWIGTYPE_p_p_char swig_types[13]
+#define SWIGTYPE_p_p_double swig_types[14]
+#define SWIGTYPE_p_p_int swig_types[15]
+static swig_type_info *swig_types[17];
+static swig_module_info swig_module = {swig_types, 16, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -3039,68 +3037,6 @@ static void GDALPythonFreeCStr(void* ptr, int bToFree)
 
 
 
-
-typedef struct {
-    PyObject *psPyCallback;
-    PyObject *psPyCallbackData;
-    int nLastReported;
-} PyProgressData;
-
-/************************************************************************/
-/*                          PyProgressProxy()                           */
-/************************************************************************/
-
-int CPL_STDCALL
-PyProgressProxy( double dfComplete, const char *pszMessage, void *pData )
-
-{
-    PyProgressData *psInfo = (PyProgressData *) pData;
-    PyObject *psArgs, *psResult;
-    int      bContinue = TRUE;
-
-    if( psInfo->nLastReported == (int) (100.0 * dfComplete) )
-        return TRUE;
-
-    if( psInfo->psPyCallback == NULL || psInfo->psPyCallback == Py_None )
-        return TRUE;
-
-    psInfo->nLastReported = (int) (100.0 * dfComplete);
-    
-    if( pszMessage == NULL )
-        pszMessage = "";
-
-    if( psInfo->psPyCallbackData == NULL )
-        psArgs = Py_BuildValue("(dsO)", dfComplete, pszMessage, Py_None );
-    else
-        psArgs = Py_BuildValue("(dsO)", dfComplete, pszMessage, 
-	                       psInfo->psPyCallbackData );
-
-    psResult = PyEval_CallObject( psInfo->psPyCallback, psArgs);
-    Py_XDECREF(psArgs);
-
-    if( psResult == NULL )
-    {
-        return TRUE;
-    }
-
-    if( psResult == Py_None )
-    {
-	Py_XDECREF(Py_None);
-        return TRUE;
-    }
-
-    if( !PyArg_Parse( psResult, "i", &bContinue ) )
-    {
-        PyErr_SetString(PyExc_ValueError, "bad progress return value");
-	return FALSE;
-    }
-
-    Py_XDECREF(psResult);
-
-    return bContinue;    
-}
-
-
 SWIGINTERN int
 SWIG_AsCharPtrAndSize(PyObject *obj, char** cptr, size_t* psize, int *alloc)
 {
@@ -3333,15 +3269,12 @@ SWIG_AsVal_int (PyObject * obj, int *val)
 }
 
 SWIGINTERN OGRDataSourceShadow *OGRDriverShadow_Open(OGRDriverShadow *self,char const *utf8_path,int update=0){
-    CPLErrorReset();
     OGRDataSourceShadow* ds = (OGRDataSourceShadow*) OGR_Dr_Open(self, utf8_path, update);
     if( CPLGetLastErrorType() == CE_Failure && ds != NULL )
     {
-        CPLDebug(
-            "SWIG",
-            "OGR_Dr_Open() succeeded, but an error is posted, so we destroy"
-            " the datasource and fail at swig level.\nError:%s",
-            CPLGetLastErrorMsg() );
+        CPLDebug( "SWIG",
+          "OGR_Dr_Open() succeeded, but an error is posted, so we destroy"
+          " the datasource and fail at swig level." );
         OGRReleaseDataSource(ds);
         ds = NULL;
     }
@@ -3570,27 +3503,6 @@ SWIGINTERN GIntBig OGRLayerShadow_GetFeaturesRead(OGRLayerShadow *self){
   }
 SWIGINTERN OGRErr OGRLayerShadow_SetIgnoredFields(OGRLayerShadow *self,char const **options){
     return OGR_L_SetIgnoredFields( self, options );
-  }
-SWIGINTERN OGRErr OGRLayerShadow_Intersection(OGRLayerShadow *self,OGRLayerShadow *method_layer,OGRLayerShadow *result_layer,char **options=NULL,GDALProgressFunc callback=NULL,void *callback_data=NULL){
-    return OGR_L_Intersection( self, method_layer, result_layer, options, callback, callback_data );
-  }
-SWIGINTERN OGRErr OGRLayerShadow_Union(OGRLayerShadow *self,OGRLayerShadow *method_layer,OGRLayerShadow *result_layer,char **options=NULL,GDALProgressFunc callback=NULL,void *callback_data=NULL){
-    return OGR_L_Union( self, method_layer, result_layer, options, callback, callback_data );
-  }
-SWIGINTERN OGRErr OGRLayerShadow_SymDifference(OGRLayerShadow *self,OGRLayerShadow *method_layer,OGRLayerShadow *result_layer,char **options=NULL,GDALProgressFunc callback=NULL,void *callback_data=NULL){
-    return OGR_L_SymDifference( self, method_layer, result_layer, options, callback, callback_data );
-  }
-SWIGINTERN OGRErr OGRLayerShadow_Identity(OGRLayerShadow *self,OGRLayerShadow *method_layer,OGRLayerShadow *result_layer,char **options=NULL,GDALProgressFunc callback=NULL,void *callback_data=NULL){
-    return OGR_L_Identity( self, method_layer, result_layer, options, callback, callback_data );
-  }
-SWIGINTERN OGRErr OGRLayerShadow_Update(OGRLayerShadow *self,OGRLayerShadow *method_layer,OGRLayerShadow *result_layer,char **options=NULL,GDALProgressFunc callback=NULL,void *callback_data=NULL){
-    return OGR_L_Update( self, method_layer, result_layer, options, callback, callback_data );
-  }
-SWIGINTERN OGRErr OGRLayerShadow_Clip(OGRLayerShadow *self,OGRLayerShadow *method_layer,OGRLayerShadow *result_layer,char **options=NULL,GDALProgressFunc callback=NULL,void *callback_data=NULL){
-    return OGR_L_Clip( self, method_layer, result_layer, options, callback, callback_data );
-  }
-SWIGINTERN OGRErr OGRLayerShadow_Erase(OGRLayerShadow *self,OGRLayerShadow *method_layer,OGRLayerShadow *result_layer,char **options=NULL,GDALProgressFunc callback=NULL,void *callback_data=NULL){
-    return OGR_L_Erase( self, method_layer, result_layer, options, callback, callback_data );
   }
 SWIGINTERN void delete_OGRFeatureShadow(OGRFeatureShadow *self){
     OGR_F_Destroy(self);
@@ -4006,13 +3918,6 @@ OGRGeometryShadow* ForceToPolygon( OGRGeometryShadow *geom_in ) {
 }
 
 
-OGRGeometryShadow* ForceToLineString( OGRGeometryShadow *geom_in ) {
- if (geom_in == NULL)
-     return NULL;
- return (OGRGeometryShadow* )OGR_G_ForceToLineString( OGR_G_Clone(geom_in) );
-}
-
-
 OGRGeometryShadow* ForceToMultiPolygon( OGRGeometryShadow *geom_in ) {
  if (geom_in == NULL)
      return NULL;
@@ -4291,9 +4196,6 @@ SWIGINTERN OGRGeometryShadow *OGRGeometryShadow_Centroid(OGRGeometryShadow *self
     OGR_G_Centroid( self, pt );
     return pt;
   }
-SWIGINTERN OGRGeometryShadow *OGRGeometryShadow_PointOnSurface(OGRGeometryShadow *self){
-    return (OGRGeometryShadow*) OGR_G_PointOnSurface( self );
-  }
 SWIGINTERN int OGRGeometryShadow_WkbSize(OGRGeometryShadow *self){
     return OGR_G_WkbSize(self);
   }
@@ -4379,11 +4281,6 @@ OGRDriverShadow* GetDriver(int driver_number) {
     else
         return papszArgv;
   }
-
-
-int GDALTermProgress_nocb( double dfProgress, const char * pszMessage=NULL, void *pData=NULL ) {
-  return GDALTermProgress( dfProgress, pszMessage, pData);
-}
 
 #ifdef __cplusplus
 extern "C" {
@@ -4492,12 +4389,8 @@ SWIGINTERN PyObject *_wrap_Driver_CreateDataSource(PyObject *SWIGUNUSEDPARM(self
   if (obj2) {
     {
       /* %typemap(in) char **options */
-      /* Check if is a list (and reject strings, that are seen as sequence of characters)  */
-      if ( ! PySequence_Check(obj2) || PyUnicode_Check(obj2)
-  #if PY_VERSION_HEX < 0x03000000
-        || PyString_Check(obj2)
-  #endif
-        ) {
+      /* Check if is a list */
+      if ( ! PySequence_Check(obj2)) {
         PyErr_SetString(PyExc_TypeError,"not a sequence");
         SWIG_fail;
       }
@@ -4613,12 +4506,8 @@ SWIGINTERN PyObject *_wrap_Driver_CopyDataSource(PyObject *SWIGUNUSEDPARM(self),
   if (obj3) {
     {
       /* %typemap(in) char **options */
-      /* Check if is a list (and reject strings, that are seen as sequence of characters)  */
-      if ( ! PySequence_Check(obj3) || PyUnicode_Check(obj3)
-  #if PY_VERSION_HEX < 0x03000000
-        || PyString_Check(obj3)
-  #endif
-        ) {
+      /* Check if is a list */
+      if ( ! PySequence_Check(obj3)) {
         PyErr_SetString(PyExc_TypeError,"not a sequence");
         SWIG_fail;
       }
@@ -5356,12 +5245,8 @@ SWIGINTERN PyObject *_wrap_DataSource_CreateLayer(PyObject *SWIGUNUSEDPARM(self)
   if (obj4) {
     {
       /* %typemap(in) char **options */
-      /* Check if is a list (and reject strings, that are seen as sequence of characters)  */
-      if ( ! PySequence_Check(obj4) || PyUnicode_Check(obj4)
-  #if PY_VERSION_HEX < 0x03000000
-        || PyString_Check(obj4)
-  #endif
-        ) {
+      /* Check if is a list */
+      if ( ! PySequence_Check(obj4)) {
         PyErr_SetString(PyExc_TypeError,"not a sequence");
         SWIG_fail;
       }
@@ -5474,12 +5359,8 @@ SWIGINTERN PyObject *_wrap_DataSource_CopyLayer(PyObject *SWIGUNUSEDPARM(self), 
   if (obj3) {
     {
       /* %typemap(in) char **options */
-      /* Check if is a list (and reject strings, that are seen as sequence of characters)  */
-      if ( ! PySequence_Check(obj3) || PyUnicode_Check(obj3)
-  #if PY_VERSION_HEX < 0x03000000
-        || PyString_Check(obj3)
-  #endif
-        ) {
+      /* Check if is a list */
+      if ( ! PySequence_Check(obj3)) {
         PyErr_SetString(PyExc_TypeError,"not a sequence");
         SWIG_fail;
       }
@@ -7385,12 +7266,8 @@ SWIGINTERN PyObject *_wrap_Layer_SetIgnoredFields(PyObject *SWIGUNUSEDPARM(self)
   arg1 = reinterpret_cast< OGRLayerShadow * >(argp1);
   {
     /* %typemap(in) char **options */
-    /* Check if is a list (and reject strings, that are seen as sequence of characters)  */
-    if ( ! PySequence_Check(obj1) || PyUnicode_Check(obj1)
-  #if PY_VERSION_HEX < 0x03000000
-      || PyString_Check(obj1)
-  #endif
-      ) {
+    /* Check if is a list */
+    if ( ! PySequence_Check(obj1)) {
       PyErr_SetString(PyExc_TypeError,"not a sequence");
       SWIG_fail;
     }
@@ -7465,1280 +7342,6 @@ fail:
   {
     /* %typemap(freearg) char **options */
     CSLDestroy( arg2 );
-  }
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_Layer_Intersection(PyObject *SWIGUNUSEDPARM(self), PyObject *args, PyObject *kwargs) {
-  PyObject *resultobj = 0;
-  OGRLayerShadow *arg1 = (OGRLayerShadow *) 0 ;
-  OGRLayerShadow *arg2 = (OGRLayerShadow *) 0 ;
-  OGRLayerShadow *arg3 = (OGRLayerShadow *) 0 ;
-  char **arg4 = (char **) NULL ;
-  GDALProgressFunc arg5 = (GDALProgressFunc) NULL ;
-  void *arg6 = (void *) NULL ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  void *argp2 = 0 ;
-  int res2 = 0 ;
-  void *argp3 = 0 ;
-  int res3 = 0 ;
-  PyObject * obj0 = 0 ;
-  PyObject * obj1 = 0 ;
-  PyObject * obj2 = 0 ;
-  PyObject * obj3 = 0 ;
-  PyObject * obj4 = 0 ;
-  PyObject * obj5 = 0 ;
-  char *  kwnames[] = {
-    (char *) "self",(char *) "method_layer",(char *) "result_layer",(char *) "options",(char *) "callback",(char *) "callback_data", NULL 
-  };
-  OGRErr result;
-  
-  /* %typemap(arginit) ( const char* callback_data=NULL)  */
-  PyProgressData *psProgressInfo;
-  psProgressInfo = (PyProgressData *) CPLCalloc(1,sizeof(PyProgressData));
-  psProgressInfo->nLastReported = -1;
-  psProgressInfo->psPyCallback = NULL;
-  psProgressInfo->psPyCallbackData = NULL;
-  arg6 = psProgressInfo;
-  if (!PyArg_ParseTupleAndKeywords(args,kwargs,(char *)"OOO|OOO:Layer_Intersection",kwnames,&obj0,&obj1,&obj2,&obj3,&obj4,&obj5)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_OGRLayerShadow, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Layer_Intersection" "', argument " "1"" of type '" "OGRLayerShadow *""'"); 
-  }
-  arg1 = reinterpret_cast< OGRLayerShadow * >(argp1);
-  res2 = SWIG_ConvertPtr(obj1, &argp2,SWIGTYPE_p_OGRLayerShadow, 0 |  0 );
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "Layer_Intersection" "', argument " "2"" of type '" "OGRLayerShadow *""'"); 
-  }
-  arg2 = reinterpret_cast< OGRLayerShadow * >(argp2);
-  res3 = SWIG_ConvertPtr(obj2, &argp3,SWIGTYPE_p_OGRLayerShadow, 0 |  0 );
-  if (!SWIG_IsOK(res3)) {
-    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "Layer_Intersection" "', argument " "3"" of type '" "OGRLayerShadow *""'"); 
-  }
-  arg3 = reinterpret_cast< OGRLayerShadow * >(argp3);
-  if (obj3) {
-    {
-      /* %typemap(in) char **options */
-      /* Check if is a list (and reject strings, that are seen as sequence of characters)  */
-      if ( ! PySequence_Check(obj3) || PyUnicode_Check(obj3)
-  #if PY_VERSION_HEX < 0x03000000
-        || PyString_Check(obj3)
-  #endif
-        ) {
-        PyErr_SetString(PyExc_TypeError,"not a sequence");
-        SWIG_fail;
-      }
-      
-      int size = PySequence_Size(obj3);
-      for (int i = 0; i < size; i++) {
-        PyObject* pyObj = PySequence_GetItem(obj3,i);
-        if (PyUnicode_Check(pyObj))
-        {
-          char *pszStr;
-          Py_ssize_t nLen;
-          PyObject* pyUTF8Str = PyUnicode_AsUTF8String(pyObj);
-#if PY_VERSION_HEX >= 0x03000000
-          PyBytes_AsStringAndSize(pyUTF8Str, &pszStr, &nLen);
-#else
-          PyString_AsStringAndSize(pyUTF8Str, &pszStr, &nLen);
-#endif
-          arg4 = CSLAddString( arg4, pszStr );
-          Py_XDECREF(pyUTF8Str);
-        }
-#if PY_VERSION_HEX >= 0x03000000
-        else if (PyBytes_Check(pyObj))
-        arg4 = CSLAddString( arg4, PyBytes_AsString(pyObj) );
-#else
-        else if (PyString_Check(pyObj))
-        arg4 = CSLAddString( arg4, PyString_AsString(pyObj) );
-#endif
-        else
-        {
-          Py_DECREF(pyObj);
-          PyErr_SetString(PyExc_TypeError,"sequence must contain strings");
-          SWIG_fail;
-        }
-        Py_DECREF(pyObj);
-      }
-    }
-  }
-  if (obj4) {
-    {
-      /* %typemap(in) (GDALProgressFunc callback = NULL) */
-      /* callback_func typemap */
-      if (obj4 && obj4 != Py_None ) {
-        void* cbfunction = NULL;
-        SWIG_ConvertPtr( obj4, 
-          (void**)&cbfunction,
-          SWIGTYPE_p_f_double_p_q_const__char_p_void__int,
-          SWIG_POINTER_EXCEPTION | 0 );
-        
-        if ( cbfunction == GDALTermProgress ) {
-          arg5 = GDALTermProgress;
-        } else {
-          if (!PyCallable_Check(obj4)) {
-            PyErr_SetString( PyExc_RuntimeError, 
-              "Object given is not a Python function" );
-            SWIG_fail;
-          }
-          psProgressInfo->psPyCallback = obj4;
-          arg5 = PyProgressProxy;
-        }
-        
-      }
-      
-    }
-  }
-  if (obj5) {
-    {
-      /* %typemap(in) ( void* callback_data=NULL)  */
-      psProgressInfo->psPyCallbackData = obj5 ;
-    }
-  }
-  {
-    if ( bUseExceptions ) {
-      CPLErrorReset();
-    }
-    result = (OGRErr)OGRLayerShadow_Intersection(arg1,arg2,arg3,arg4,arg5,arg6);
-    if ( bUseExceptions ) {
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-      }
-    }
-  }
-  {
-    /* %typemap(out) OGRErr */
-    if ( result != 0 && bUseExceptions) {
-      PyErr_SetString( PyExc_RuntimeError, OGRErrMessages(result) );
-      SWIG_fail;
-    }
-  }
-  {
-    /* %typemap(freearg) char **options */
-    CSLDestroy( arg4 );
-  }
-  {
-    /* %typemap(freearg) ( void* callback_data=NULL)  */
-    
-    CPLFree(psProgressInfo);
-    
-  }
-  {
-    /* %typemap(ret) OGRErr */
-    if (resultobj == Py_None ) {
-      Py_DECREF(resultobj);
-      resultobj = 0;
-    }
-    if (resultobj == 0) {
-      resultobj = PyInt_FromLong( result );
-    }
-  }
-  return resultobj;
-fail:
-  {
-    /* %typemap(freearg) char **options */
-    CSLDestroy( arg4 );
-  }
-  {
-    /* %typemap(freearg) ( void* callback_data=NULL)  */
-    
-    CPLFree(psProgressInfo);
-    
-  }
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_Layer_Union(PyObject *SWIGUNUSEDPARM(self), PyObject *args, PyObject *kwargs) {
-  PyObject *resultobj = 0;
-  OGRLayerShadow *arg1 = (OGRLayerShadow *) 0 ;
-  OGRLayerShadow *arg2 = (OGRLayerShadow *) 0 ;
-  OGRLayerShadow *arg3 = (OGRLayerShadow *) 0 ;
-  char **arg4 = (char **) NULL ;
-  GDALProgressFunc arg5 = (GDALProgressFunc) NULL ;
-  void *arg6 = (void *) NULL ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  void *argp2 = 0 ;
-  int res2 = 0 ;
-  void *argp3 = 0 ;
-  int res3 = 0 ;
-  PyObject * obj0 = 0 ;
-  PyObject * obj1 = 0 ;
-  PyObject * obj2 = 0 ;
-  PyObject * obj3 = 0 ;
-  PyObject * obj4 = 0 ;
-  PyObject * obj5 = 0 ;
-  char *  kwnames[] = {
-    (char *) "self",(char *) "method_layer",(char *) "result_layer",(char *) "options",(char *) "callback",(char *) "callback_data", NULL 
-  };
-  OGRErr result;
-  
-  /* %typemap(arginit) ( const char* callback_data=NULL)  */
-  PyProgressData *psProgressInfo;
-  psProgressInfo = (PyProgressData *) CPLCalloc(1,sizeof(PyProgressData));
-  psProgressInfo->nLastReported = -1;
-  psProgressInfo->psPyCallback = NULL;
-  psProgressInfo->psPyCallbackData = NULL;
-  arg6 = psProgressInfo;
-  if (!PyArg_ParseTupleAndKeywords(args,kwargs,(char *)"OOO|OOO:Layer_Union",kwnames,&obj0,&obj1,&obj2,&obj3,&obj4,&obj5)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_OGRLayerShadow, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Layer_Union" "', argument " "1"" of type '" "OGRLayerShadow *""'"); 
-  }
-  arg1 = reinterpret_cast< OGRLayerShadow * >(argp1);
-  res2 = SWIG_ConvertPtr(obj1, &argp2,SWIGTYPE_p_OGRLayerShadow, 0 |  0 );
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "Layer_Union" "', argument " "2"" of type '" "OGRLayerShadow *""'"); 
-  }
-  arg2 = reinterpret_cast< OGRLayerShadow * >(argp2);
-  res3 = SWIG_ConvertPtr(obj2, &argp3,SWIGTYPE_p_OGRLayerShadow, 0 |  0 );
-  if (!SWIG_IsOK(res3)) {
-    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "Layer_Union" "', argument " "3"" of type '" "OGRLayerShadow *""'"); 
-  }
-  arg3 = reinterpret_cast< OGRLayerShadow * >(argp3);
-  if (obj3) {
-    {
-      /* %typemap(in) char **options */
-      /* Check if is a list (and reject strings, that are seen as sequence of characters)  */
-      if ( ! PySequence_Check(obj3) || PyUnicode_Check(obj3)
-  #if PY_VERSION_HEX < 0x03000000
-        || PyString_Check(obj3)
-  #endif
-        ) {
-        PyErr_SetString(PyExc_TypeError,"not a sequence");
-        SWIG_fail;
-      }
-      
-      int size = PySequence_Size(obj3);
-      for (int i = 0; i < size; i++) {
-        PyObject* pyObj = PySequence_GetItem(obj3,i);
-        if (PyUnicode_Check(pyObj))
-        {
-          char *pszStr;
-          Py_ssize_t nLen;
-          PyObject* pyUTF8Str = PyUnicode_AsUTF8String(pyObj);
-#if PY_VERSION_HEX >= 0x03000000
-          PyBytes_AsStringAndSize(pyUTF8Str, &pszStr, &nLen);
-#else
-          PyString_AsStringAndSize(pyUTF8Str, &pszStr, &nLen);
-#endif
-          arg4 = CSLAddString( arg4, pszStr );
-          Py_XDECREF(pyUTF8Str);
-        }
-#if PY_VERSION_HEX >= 0x03000000
-        else if (PyBytes_Check(pyObj))
-        arg4 = CSLAddString( arg4, PyBytes_AsString(pyObj) );
-#else
-        else if (PyString_Check(pyObj))
-        arg4 = CSLAddString( arg4, PyString_AsString(pyObj) );
-#endif
-        else
-        {
-          Py_DECREF(pyObj);
-          PyErr_SetString(PyExc_TypeError,"sequence must contain strings");
-          SWIG_fail;
-        }
-        Py_DECREF(pyObj);
-      }
-    }
-  }
-  if (obj4) {
-    {
-      /* %typemap(in) (GDALProgressFunc callback = NULL) */
-      /* callback_func typemap */
-      if (obj4 && obj4 != Py_None ) {
-        void* cbfunction = NULL;
-        SWIG_ConvertPtr( obj4, 
-          (void**)&cbfunction,
-          SWIGTYPE_p_f_double_p_q_const__char_p_void__int,
-          SWIG_POINTER_EXCEPTION | 0 );
-        
-        if ( cbfunction == GDALTermProgress ) {
-          arg5 = GDALTermProgress;
-        } else {
-          if (!PyCallable_Check(obj4)) {
-            PyErr_SetString( PyExc_RuntimeError, 
-              "Object given is not a Python function" );
-            SWIG_fail;
-          }
-          psProgressInfo->psPyCallback = obj4;
-          arg5 = PyProgressProxy;
-        }
-        
-      }
-      
-    }
-  }
-  if (obj5) {
-    {
-      /* %typemap(in) ( void* callback_data=NULL)  */
-      psProgressInfo->psPyCallbackData = obj5 ;
-    }
-  }
-  {
-    if ( bUseExceptions ) {
-      CPLErrorReset();
-    }
-    result = (OGRErr)OGRLayerShadow_Union(arg1,arg2,arg3,arg4,arg5,arg6);
-    if ( bUseExceptions ) {
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-      }
-    }
-  }
-  {
-    /* %typemap(out) OGRErr */
-    if ( result != 0 && bUseExceptions) {
-      PyErr_SetString( PyExc_RuntimeError, OGRErrMessages(result) );
-      SWIG_fail;
-    }
-  }
-  {
-    /* %typemap(freearg) char **options */
-    CSLDestroy( arg4 );
-  }
-  {
-    /* %typemap(freearg) ( void* callback_data=NULL)  */
-    
-    CPLFree(psProgressInfo);
-    
-  }
-  {
-    /* %typemap(ret) OGRErr */
-    if (resultobj == Py_None ) {
-      Py_DECREF(resultobj);
-      resultobj = 0;
-    }
-    if (resultobj == 0) {
-      resultobj = PyInt_FromLong( result );
-    }
-  }
-  return resultobj;
-fail:
-  {
-    /* %typemap(freearg) char **options */
-    CSLDestroy( arg4 );
-  }
-  {
-    /* %typemap(freearg) ( void* callback_data=NULL)  */
-    
-    CPLFree(psProgressInfo);
-    
-  }
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_Layer_SymDifference(PyObject *SWIGUNUSEDPARM(self), PyObject *args, PyObject *kwargs) {
-  PyObject *resultobj = 0;
-  OGRLayerShadow *arg1 = (OGRLayerShadow *) 0 ;
-  OGRLayerShadow *arg2 = (OGRLayerShadow *) 0 ;
-  OGRLayerShadow *arg3 = (OGRLayerShadow *) 0 ;
-  char **arg4 = (char **) NULL ;
-  GDALProgressFunc arg5 = (GDALProgressFunc) NULL ;
-  void *arg6 = (void *) NULL ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  void *argp2 = 0 ;
-  int res2 = 0 ;
-  void *argp3 = 0 ;
-  int res3 = 0 ;
-  PyObject * obj0 = 0 ;
-  PyObject * obj1 = 0 ;
-  PyObject * obj2 = 0 ;
-  PyObject * obj3 = 0 ;
-  PyObject * obj4 = 0 ;
-  PyObject * obj5 = 0 ;
-  char *  kwnames[] = {
-    (char *) "self",(char *) "method_layer",(char *) "result_layer",(char *) "options",(char *) "callback",(char *) "callback_data", NULL 
-  };
-  OGRErr result;
-  
-  /* %typemap(arginit) ( const char* callback_data=NULL)  */
-  PyProgressData *psProgressInfo;
-  psProgressInfo = (PyProgressData *) CPLCalloc(1,sizeof(PyProgressData));
-  psProgressInfo->nLastReported = -1;
-  psProgressInfo->psPyCallback = NULL;
-  psProgressInfo->psPyCallbackData = NULL;
-  arg6 = psProgressInfo;
-  if (!PyArg_ParseTupleAndKeywords(args,kwargs,(char *)"OOO|OOO:Layer_SymDifference",kwnames,&obj0,&obj1,&obj2,&obj3,&obj4,&obj5)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_OGRLayerShadow, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Layer_SymDifference" "', argument " "1"" of type '" "OGRLayerShadow *""'"); 
-  }
-  arg1 = reinterpret_cast< OGRLayerShadow * >(argp1);
-  res2 = SWIG_ConvertPtr(obj1, &argp2,SWIGTYPE_p_OGRLayerShadow, 0 |  0 );
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "Layer_SymDifference" "', argument " "2"" of type '" "OGRLayerShadow *""'"); 
-  }
-  arg2 = reinterpret_cast< OGRLayerShadow * >(argp2);
-  res3 = SWIG_ConvertPtr(obj2, &argp3,SWIGTYPE_p_OGRLayerShadow, 0 |  0 );
-  if (!SWIG_IsOK(res3)) {
-    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "Layer_SymDifference" "', argument " "3"" of type '" "OGRLayerShadow *""'"); 
-  }
-  arg3 = reinterpret_cast< OGRLayerShadow * >(argp3);
-  if (obj3) {
-    {
-      /* %typemap(in) char **options */
-      /* Check if is a list (and reject strings, that are seen as sequence of characters)  */
-      if ( ! PySequence_Check(obj3) || PyUnicode_Check(obj3)
-  #if PY_VERSION_HEX < 0x03000000
-        || PyString_Check(obj3)
-  #endif
-        ) {
-        PyErr_SetString(PyExc_TypeError,"not a sequence");
-        SWIG_fail;
-      }
-      
-      int size = PySequence_Size(obj3);
-      for (int i = 0; i < size; i++) {
-        PyObject* pyObj = PySequence_GetItem(obj3,i);
-        if (PyUnicode_Check(pyObj))
-        {
-          char *pszStr;
-          Py_ssize_t nLen;
-          PyObject* pyUTF8Str = PyUnicode_AsUTF8String(pyObj);
-#if PY_VERSION_HEX >= 0x03000000
-          PyBytes_AsStringAndSize(pyUTF8Str, &pszStr, &nLen);
-#else
-          PyString_AsStringAndSize(pyUTF8Str, &pszStr, &nLen);
-#endif
-          arg4 = CSLAddString( arg4, pszStr );
-          Py_XDECREF(pyUTF8Str);
-        }
-#if PY_VERSION_HEX >= 0x03000000
-        else if (PyBytes_Check(pyObj))
-        arg4 = CSLAddString( arg4, PyBytes_AsString(pyObj) );
-#else
-        else if (PyString_Check(pyObj))
-        arg4 = CSLAddString( arg4, PyString_AsString(pyObj) );
-#endif
-        else
-        {
-          Py_DECREF(pyObj);
-          PyErr_SetString(PyExc_TypeError,"sequence must contain strings");
-          SWIG_fail;
-        }
-        Py_DECREF(pyObj);
-      }
-    }
-  }
-  if (obj4) {
-    {
-      /* %typemap(in) (GDALProgressFunc callback = NULL) */
-      /* callback_func typemap */
-      if (obj4 && obj4 != Py_None ) {
-        void* cbfunction = NULL;
-        SWIG_ConvertPtr( obj4, 
-          (void**)&cbfunction,
-          SWIGTYPE_p_f_double_p_q_const__char_p_void__int,
-          SWIG_POINTER_EXCEPTION | 0 );
-        
-        if ( cbfunction == GDALTermProgress ) {
-          arg5 = GDALTermProgress;
-        } else {
-          if (!PyCallable_Check(obj4)) {
-            PyErr_SetString( PyExc_RuntimeError, 
-              "Object given is not a Python function" );
-            SWIG_fail;
-          }
-          psProgressInfo->psPyCallback = obj4;
-          arg5 = PyProgressProxy;
-        }
-        
-      }
-      
-    }
-  }
-  if (obj5) {
-    {
-      /* %typemap(in) ( void* callback_data=NULL)  */
-      psProgressInfo->psPyCallbackData = obj5 ;
-    }
-  }
-  {
-    if ( bUseExceptions ) {
-      CPLErrorReset();
-    }
-    result = (OGRErr)OGRLayerShadow_SymDifference(arg1,arg2,arg3,arg4,arg5,arg6);
-    if ( bUseExceptions ) {
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-      }
-    }
-  }
-  {
-    /* %typemap(out) OGRErr */
-    if ( result != 0 && bUseExceptions) {
-      PyErr_SetString( PyExc_RuntimeError, OGRErrMessages(result) );
-      SWIG_fail;
-    }
-  }
-  {
-    /* %typemap(freearg) char **options */
-    CSLDestroy( arg4 );
-  }
-  {
-    /* %typemap(freearg) ( void* callback_data=NULL)  */
-    
-    CPLFree(psProgressInfo);
-    
-  }
-  {
-    /* %typemap(ret) OGRErr */
-    if (resultobj == Py_None ) {
-      Py_DECREF(resultobj);
-      resultobj = 0;
-    }
-    if (resultobj == 0) {
-      resultobj = PyInt_FromLong( result );
-    }
-  }
-  return resultobj;
-fail:
-  {
-    /* %typemap(freearg) char **options */
-    CSLDestroy( arg4 );
-  }
-  {
-    /* %typemap(freearg) ( void* callback_data=NULL)  */
-    
-    CPLFree(psProgressInfo);
-    
-  }
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_Layer_Identity(PyObject *SWIGUNUSEDPARM(self), PyObject *args, PyObject *kwargs) {
-  PyObject *resultobj = 0;
-  OGRLayerShadow *arg1 = (OGRLayerShadow *) 0 ;
-  OGRLayerShadow *arg2 = (OGRLayerShadow *) 0 ;
-  OGRLayerShadow *arg3 = (OGRLayerShadow *) 0 ;
-  char **arg4 = (char **) NULL ;
-  GDALProgressFunc arg5 = (GDALProgressFunc) NULL ;
-  void *arg6 = (void *) NULL ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  void *argp2 = 0 ;
-  int res2 = 0 ;
-  void *argp3 = 0 ;
-  int res3 = 0 ;
-  PyObject * obj0 = 0 ;
-  PyObject * obj1 = 0 ;
-  PyObject * obj2 = 0 ;
-  PyObject * obj3 = 0 ;
-  PyObject * obj4 = 0 ;
-  PyObject * obj5 = 0 ;
-  char *  kwnames[] = {
-    (char *) "self",(char *) "method_layer",(char *) "result_layer",(char *) "options",(char *) "callback",(char *) "callback_data", NULL 
-  };
-  OGRErr result;
-  
-  /* %typemap(arginit) ( const char* callback_data=NULL)  */
-  PyProgressData *psProgressInfo;
-  psProgressInfo = (PyProgressData *) CPLCalloc(1,sizeof(PyProgressData));
-  psProgressInfo->nLastReported = -1;
-  psProgressInfo->psPyCallback = NULL;
-  psProgressInfo->psPyCallbackData = NULL;
-  arg6 = psProgressInfo;
-  if (!PyArg_ParseTupleAndKeywords(args,kwargs,(char *)"OOO|OOO:Layer_Identity",kwnames,&obj0,&obj1,&obj2,&obj3,&obj4,&obj5)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_OGRLayerShadow, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Layer_Identity" "', argument " "1"" of type '" "OGRLayerShadow *""'"); 
-  }
-  arg1 = reinterpret_cast< OGRLayerShadow * >(argp1);
-  res2 = SWIG_ConvertPtr(obj1, &argp2,SWIGTYPE_p_OGRLayerShadow, 0 |  0 );
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "Layer_Identity" "', argument " "2"" of type '" "OGRLayerShadow *""'"); 
-  }
-  arg2 = reinterpret_cast< OGRLayerShadow * >(argp2);
-  res3 = SWIG_ConvertPtr(obj2, &argp3,SWIGTYPE_p_OGRLayerShadow, 0 |  0 );
-  if (!SWIG_IsOK(res3)) {
-    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "Layer_Identity" "', argument " "3"" of type '" "OGRLayerShadow *""'"); 
-  }
-  arg3 = reinterpret_cast< OGRLayerShadow * >(argp3);
-  if (obj3) {
-    {
-      /* %typemap(in) char **options */
-      /* Check if is a list (and reject strings, that are seen as sequence of characters)  */
-      if ( ! PySequence_Check(obj3) || PyUnicode_Check(obj3)
-  #if PY_VERSION_HEX < 0x03000000
-        || PyString_Check(obj3)
-  #endif
-        ) {
-        PyErr_SetString(PyExc_TypeError,"not a sequence");
-        SWIG_fail;
-      }
-      
-      int size = PySequence_Size(obj3);
-      for (int i = 0; i < size; i++) {
-        PyObject* pyObj = PySequence_GetItem(obj3,i);
-        if (PyUnicode_Check(pyObj))
-        {
-          char *pszStr;
-          Py_ssize_t nLen;
-          PyObject* pyUTF8Str = PyUnicode_AsUTF8String(pyObj);
-#if PY_VERSION_HEX >= 0x03000000
-          PyBytes_AsStringAndSize(pyUTF8Str, &pszStr, &nLen);
-#else
-          PyString_AsStringAndSize(pyUTF8Str, &pszStr, &nLen);
-#endif
-          arg4 = CSLAddString( arg4, pszStr );
-          Py_XDECREF(pyUTF8Str);
-        }
-#if PY_VERSION_HEX >= 0x03000000
-        else if (PyBytes_Check(pyObj))
-        arg4 = CSLAddString( arg4, PyBytes_AsString(pyObj) );
-#else
-        else if (PyString_Check(pyObj))
-        arg4 = CSLAddString( arg4, PyString_AsString(pyObj) );
-#endif
-        else
-        {
-          Py_DECREF(pyObj);
-          PyErr_SetString(PyExc_TypeError,"sequence must contain strings");
-          SWIG_fail;
-        }
-        Py_DECREF(pyObj);
-      }
-    }
-  }
-  if (obj4) {
-    {
-      /* %typemap(in) (GDALProgressFunc callback = NULL) */
-      /* callback_func typemap */
-      if (obj4 && obj4 != Py_None ) {
-        void* cbfunction = NULL;
-        SWIG_ConvertPtr( obj4, 
-          (void**)&cbfunction,
-          SWIGTYPE_p_f_double_p_q_const__char_p_void__int,
-          SWIG_POINTER_EXCEPTION | 0 );
-        
-        if ( cbfunction == GDALTermProgress ) {
-          arg5 = GDALTermProgress;
-        } else {
-          if (!PyCallable_Check(obj4)) {
-            PyErr_SetString( PyExc_RuntimeError, 
-              "Object given is not a Python function" );
-            SWIG_fail;
-          }
-          psProgressInfo->psPyCallback = obj4;
-          arg5 = PyProgressProxy;
-        }
-        
-      }
-      
-    }
-  }
-  if (obj5) {
-    {
-      /* %typemap(in) ( void* callback_data=NULL)  */
-      psProgressInfo->psPyCallbackData = obj5 ;
-    }
-  }
-  {
-    if ( bUseExceptions ) {
-      CPLErrorReset();
-    }
-    result = (OGRErr)OGRLayerShadow_Identity(arg1,arg2,arg3,arg4,arg5,arg6);
-    if ( bUseExceptions ) {
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-      }
-    }
-  }
-  {
-    /* %typemap(out) OGRErr */
-    if ( result != 0 && bUseExceptions) {
-      PyErr_SetString( PyExc_RuntimeError, OGRErrMessages(result) );
-      SWIG_fail;
-    }
-  }
-  {
-    /* %typemap(freearg) char **options */
-    CSLDestroy( arg4 );
-  }
-  {
-    /* %typemap(freearg) ( void* callback_data=NULL)  */
-    
-    CPLFree(psProgressInfo);
-    
-  }
-  {
-    /* %typemap(ret) OGRErr */
-    if (resultobj == Py_None ) {
-      Py_DECREF(resultobj);
-      resultobj = 0;
-    }
-    if (resultobj == 0) {
-      resultobj = PyInt_FromLong( result );
-    }
-  }
-  return resultobj;
-fail:
-  {
-    /* %typemap(freearg) char **options */
-    CSLDestroy( arg4 );
-  }
-  {
-    /* %typemap(freearg) ( void* callback_data=NULL)  */
-    
-    CPLFree(psProgressInfo);
-    
-  }
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_Layer_Update(PyObject *SWIGUNUSEDPARM(self), PyObject *args, PyObject *kwargs) {
-  PyObject *resultobj = 0;
-  OGRLayerShadow *arg1 = (OGRLayerShadow *) 0 ;
-  OGRLayerShadow *arg2 = (OGRLayerShadow *) 0 ;
-  OGRLayerShadow *arg3 = (OGRLayerShadow *) 0 ;
-  char **arg4 = (char **) NULL ;
-  GDALProgressFunc arg5 = (GDALProgressFunc) NULL ;
-  void *arg6 = (void *) NULL ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  void *argp2 = 0 ;
-  int res2 = 0 ;
-  void *argp3 = 0 ;
-  int res3 = 0 ;
-  PyObject * obj0 = 0 ;
-  PyObject * obj1 = 0 ;
-  PyObject * obj2 = 0 ;
-  PyObject * obj3 = 0 ;
-  PyObject * obj4 = 0 ;
-  PyObject * obj5 = 0 ;
-  char *  kwnames[] = {
-    (char *) "self",(char *) "method_layer",(char *) "result_layer",(char *) "options",(char *) "callback",(char *) "callback_data", NULL 
-  };
-  OGRErr result;
-  
-  /* %typemap(arginit) ( const char* callback_data=NULL)  */
-  PyProgressData *psProgressInfo;
-  psProgressInfo = (PyProgressData *) CPLCalloc(1,sizeof(PyProgressData));
-  psProgressInfo->nLastReported = -1;
-  psProgressInfo->psPyCallback = NULL;
-  psProgressInfo->psPyCallbackData = NULL;
-  arg6 = psProgressInfo;
-  if (!PyArg_ParseTupleAndKeywords(args,kwargs,(char *)"OOO|OOO:Layer_Update",kwnames,&obj0,&obj1,&obj2,&obj3,&obj4,&obj5)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_OGRLayerShadow, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Layer_Update" "', argument " "1"" of type '" "OGRLayerShadow *""'"); 
-  }
-  arg1 = reinterpret_cast< OGRLayerShadow * >(argp1);
-  res2 = SWIG_ConvertPtr(obj1, &argp2,SWIGTYPE_p_OGRLayerShadow, 0 |  0 );
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "Layer_Update" "', argument " "2"" of type '" "OGRLayerShadow *""'"); 
-  }
-  arg2 = reinterpret_cast< OGRLayerShadow * >(argp2);
-  res3 = SWIG_ConvertPtr(obj2, &argp3,SWIGTYPE_p_OGRLayerShadow, 0 |  0 );
-  if (!SWIG_IsOK(res3)) {
-    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "Layer_Update" "', argument " "3"" of type '" "OGRLayerShadow *""'"); 
-  }
-  arg3 = reinterpret_cast< OGRLayerShadow * >(argp3);
-  if (obj3) {
-    {
-      /* %typemap(in) char **options */
-      /* Check if is a list (and reject strings, that are seen as sequence of characters)  */
-      if ( ! PySequence_Check(obj3) || PyUnicode_Check(obj3)
-  #if PY_VERSION_HEX < 0x03000000
-        || PyString_Check(obj3)
-  #endif
-        ) {
-        PyErr_SetString(PyExc_TypeError,"not a sequence");
-        SWIG_fail;
-      }
-      
-      int size = PySequence_Size(obj3);
-      for (int i = 0; i < size; i++) {
-        PyObject* pyObj = PySequence_GetItem(obj3,i);
-        if (PyUnicode_Check(pyObj))
-        {
-          char *pszStr;
-          Py_ssize_t nLen;
-          PyObject* pyUTF8Str = PyUnicode_AsUTF8String(pyObj);
-#if PY_VERSION_HEX >= 0x03000000
-          PyBytes_AsStringAndSize(pyUTF8Str, &pszStr, &nLen);
-#else
-          PyString_AsStringAndSize(pyUTF8Str, &pszStr, &nLen);
-#endif
-          arg4 = CSLAddString( arg4, pszStr );
-          Py_XDECREF(pyUTF8Str);
-        }
-#if PY_VERSION_HEX >= 0x03000000
-        else if (PyBytes_Check(pyObj))
-        arg4 = CSLAddString( arg4, PyBytes_AsString(pyObj) );
-#else
-        else if (PyString_Check(pyObj))
-        arg4 = CSLAddString( arg4, PyString_AsString(pyObj) );
-#endif
-        else
-        {
-          Py_DECREF(pyObj);
-          PyErr_SetString(PyExc_TypeError,"sequence must contain strings");
-          SWIG_fail;
-        }
-        Py_DECREF(pyObj);
-      }
-    }
-  }
-  if (obj4) {
-    {
-      /* %typemap(in) (GDALProgressFunc callback = NULL) */
-      /* callback_func typemap */
-      if (obj4 && obj4 != Py_None ) {
-        void* cbfunction = NULL;
-        SWIG_ConvertPtr( obj4, 
-          (void**)&cbfunction,
-          SWIGTYPE_p_f_double_p_q_const__char_p_void__int,
-          SWIG_POINTER_EXCEPTION | 0 );
-        
-        if ( cbfunction == GDALTermProgress ) {
-          arg5 = GDALTermProgress;
-        } else {
-          if (!PyCallable_Check(obj4)) {
-            PyErr_SetString( PyExc_RuntimeError, 
-              "Object given is not a Python function" );
-            SWIG_fail;
-          }
-          psProgressInfo->psPyCallback = obj4;
-          arg5 = PyProgressProxy;
-        }
-        
-      }
-      
-    }
-  }
-  if (obj5) {
-    {
-      /* %typemap(in) ( void* callback_data=NULL)  */
-      psProgressInfo->psPyCallbackData = obj5 ;
-    }
-  }
-  {
-    if ( bUseExceptions ) {
-      CPLErrorReset();
-    }
-    result = (OGRErr)OGRLayerShadow_Update(arg1,arg2,arg3,arg4,arg5,arg6);
-    if ( bUseExceptions ) {
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-      }
-    }
-  }
-  {
-    /* %typemap(out) OGRErr */
-    if ( result != 0 && bUseExceptions) {
-      PyErr_SetString( PyExc_RuntimeError, OGRErrMessages(result) );
-      SWIG_fail;
-    }
-  }
-  {
-    /* %typemap(freearg) char **options */
-    CSLDestroy( arg4 );
-  }
-  {
-    /* %typemap(freearg) ( void* callback_data=NULL)  */
-    
-    CPLFree(psProgressInfo);
-    
-  }
-  {
-    /* %typemap(ret) OGRErr */
-    if (resultobj == Py_None ) {
-      Py_DECREF(resultobj);
-      resultobj = 0;
-    }
-    if (resultobj == 0) {
-      resultobj = PyInt_FromLong( result );
-    }
-  }
-  return resultobj;
-fail:
-  {
-    /* %typemap(freearg) char **options */
-    CSLDestroy( arg4 );
-  }
-  {
-    /* %typemap(freearg) ( void* callback_data=NULL)  */
-    
-    CPLFree(psProgressInfo);
-    
-  }
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_Layer_Clip(PyObject *SWIGUNUSEDPARM(self), PyObject *args, PyObject *kwargs) {
-  PyObject *resultobj = 0;
-  OGRLayerShadow *arg1 = (OGRLayerShadow *) 0 ;
-  OGRLayerShadow *arg2 = (OGRLayerShadow *) 0 ;
-  OGRLayerShadow *arg3 = (OGRLayerShadow *) 0 ;
-  char **arg4 = (char **) NULL ;
-  GDALProgressFunc arg5 = (GDALProgressFunc) NULL ;
-  void *arg6 = (void *) NULL ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  void *argp2 = 0 ;
-  int res2 = 0 ;
-  void *argp3 = 0 ;
-  int res3 = 0 ;
-  PyObject * obj0 = 0 ;
-  PyObject * obj1 = 0 ;
-  PyObject * obj2 = 0 ;
-  PyObject * obj3 = 0 ;
-  PyObject * obj4 = 0 ;
-  PyObject * obj5 = 0 ;
-  char *  kwnames[] = {
-    (char *) "self",(char *) "method_layer",(char *) "result_layer",(char *) "options",(char *) "callback",(char *) "callback_data", NULL 
-  };
-  OGRErr result;
-  
-  /* %typemap(arginit) ( const char* callback_data=NULL)  */
-  PyProgressData *psProgressInfo;
-  psProgressInfo = (PyProgressData *) CPLCalloc(1,sizeof(PyProgressData));
-  psProgressInfo->nLastReported = -1;
-  psProgressInfo->psPyCallback = NULL;
-  psProgressInfo->psPyCallbackData = NULL;
-  arg6 = psProgressInfo;
-  if (!PyArg_ParseTupleAndKeywords(args,kwargs,(char *)"OOO|OOO:Layer_Clip",kwnames,&obj0,&obj1,&obj2,&obj3,&obj4,&obj5)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_OGRLayerShadow, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Layer_Clip" "', argument " "1"" of type '" "OGRLayerShadow *""'"); 
-  }
-  arg1 = reinterpret_cast< OGRLayerShadow * >(argp1);
-  res2 = SWIG_ConvertPtr(obj1, &argp2,SWIGTYPE_p_OGRLayerShadow, 0 |  0 );
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "Layer_Clip" "', argument " "2"" of type '" "OGRLayerShadow *""'"); 
-  }
-  arg2 = reinterpret_cast< OGRLayerShadow * >(argp2);
-  res3 = SWIG_ConvertPtr(obj2, &argp3,SWIGTYPE_p_OGRLayerShadow, 0 |  0 );
-  if (!SWIG_IsOK(res3)) {
-    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "Layer_Clip" "', argument " "3"" of type '" "OGRLayerShadow *""'"); 
-  }
-  arg3 = reinterpret_cast< OGRLayerShadow * >(argp3);
-  if (obj3) {
-    {
-      /* %typemap(in) char **options */
-      /* Check if is a list (and reject strings, that are seen as sequence of characters)  */
-      if ( ! PySequence_Check(obj3) || PyUnicode_Check(obj3)
-  #if PY_VERSION_HEX < 0x03000000
-        || PyString_Check(obj3)
-  #endif
-        ) {
-        PyErr_SetString(PyExc_TypeError,"not a sequence");
-        SWIG_fail;
-      }
-      
-      int size = PySequence_Size(obj3);
-      for (int i = 0; i < size; i++) {
-        PyObject* pyObj = PySequence_GetItem(obj3,i);
-        if (PyUnicode_Check(pyObj))
-        {
-          char *pszStr;
-          Py_ssize_t nLen;
-          PyObject* pyUTF8Str = PyUnicode_AsUTF8String(pyObj);
-#if PY_VERSION_HEX >= 0x03000000
-          PyBytes_AsStringAndSize(pyUTF8Str, &pszStr, &nLen);
-#else
-          PyString_AsStringAndSize(pyUTF8Str, &pszStr, &nLen);
-#endif
-          arg4 = CSLAddString( arg4, pszStr );
-          Py_XDECREF(pyUTF8Str);
-        }
-#if PY_VERSION_HEX >= 0x03000000
-        else if (PyBytes_Check(pyObj))
-        arg4 = CSLAddString( arg4, PyBytes_AsString(pyObj) );
-#else
-        else if (PyString_Check(pyObj))
-        arg4 = CSLAddString( arg4, PyString_AsString(pyObj) );
-#endif
-        else
-        {
-          Py_DECREF(pyObj);
-          PyErr_SetString(PyExc_TypeError,"sequence must contain strings");
-          SWIG_fail;
-        }
-        Py_DECREF(pyObj);
-      }
-    }
-  }
-  if (obj4) {
-    {
-      /* %typemap(in) (GDALProgressFunc callback = NULL) */
-      /* callback_func typemap */
-      if (obj4 && obj4 != Py_None ) {
-        void* cbfunction = NULL;
-        SWIG_ConvertPtr( obj4, 
-          (void**)&cbfunction,
-          SWIGTYPE_p_f_double_p_q_const__char_p_void__int,
-          SWIG_POINTER_EXCEPTION | 0 );
-        
-        if ( cbfunction == GDALTermProgress ) {
-          arg5 = GDALTermProgress;
-        } else {
-          if (!PyCallable_Check(obj4)) {
-            PyErr_SetString( PyExc_RuntimeError, 
-              "Object given is not a Python function" );
-            SWIG_fail;
-          }
-          psProgressInfo->psPyCallback = obj4;
-          arg5 = PyProgressProxy;
-        }
-        
-      }
-      
-    }
-  }
-  if (obj5) {
-    {
-      /* %typemap(in) ( void* callback_data=NULL)  */
-      psProgressInfo->psPyCallbackData = obj5 ;
-    }
-  }
-  {
-    if ( bUseExceptions ) {
-      CPLErrorReset();
-    }
-    result = (OGRErr)OGRLayerShadow_Clip(arg1,arg2,arg3,arg4,arg5,arg6);
-    if ( bUseExceptions ) {
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-      }
-    }
-  }
-  {
-    /* %typemap(out) OGRErr */
-    if ( result != 0 && bUseExceptions) {
-      PyErr_SetString( PyExc_RuntimeError, OGRErrMessages(result) );
-      SWIG_fail;
-    }
-  }
-  {
-    /* %typemap(freearg) char **options */
-    CSLDestroy( arg4 );
-  }
-  {
-    /* %typemap(freearg) ( void* callback_data=NULL)  */
-    
-    CPLFree(psProgressInfo);
-    
-  }
-  {
-    /* %typemap(ret) OGRErr */
-    if (resultobj == Py_None ) {
-      Py_DECREF(resultobj);
-      resultobj = 0;
-    }
-    if (resultobj == 0) {
-      resultobj = PyInt_FromLong( result );
-    }
-  }
-  return resultobj;
-fail:
-  {
-    /* %typemap(freearg) char **options */
-    CSLDestroy( arg4 );
-  }
-  {
-    /* %typemap(freearg) ( void* callback_data=NULL)  */
-    
-    CPLFree(psProgressInfo);
-    
-  }
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_Layer_Erase(PyObject *SWIGUNUSEDPARM(self), PyObject *args, PyObject *kwargs) {
-  PyObject *resultobj = 0;
-  OGRLayerShadow *arg1 = (OGRLayerShadow *) 0 ;
-  OGRLayerShadow *arg2 = (OGRLayerShadow *) 0 ;
-  OGRLayerShadow *arg3 = (OGRLayerShadow *) 0 ;
-  char **arg4 = (char **) NULL ;
-  GDALProgressFunc arg5 = (GDALProgressFunc) NULL ;
-  void *arg6 = (void *) NULL ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  void *argp2 = 0 ;
-  int res2 = 0 ;
-  void *argp3 = 0 ;
-  int res3 = 0 ;
-  PyObject * obj0 = 0 ;
-  PyObject * obj1 = 0 ;
-  PyObject * obj2 = 0 ;
-  PyObject * obj3 = 0 ;
-  PyObject * obj4 = 0 ;
-  PyObject * obj5 = 0 ;
-  char *  kwnames[] = {
-    (char *) "self",(char *) "method_layer",(char *) "result_layer",(char *) "options",(char *) "callback",(char *) "callback_data", NULL 
-  };
-  OGRErr result;
-  
-  /* %typemap(arginit) ( const char* callback_data=NULL)  */
-  PyProgressData *psProgressInfo;
-  psProgressInfo = (PyProgressData *) CPLCalloc(1,sizeof(PyProgressData));
-  psProgressInfo->nLastReported = -1;
-  psProgressInfo->psPyCallback = NULL;
-  psProgressInfo->psPyCallbackData = NULL;
-  arg6 = psProgressInfo;
-  if (!PyArg_ParseTupleAndKeywords(args,kwargs,(char *)"OOO|OOO:Layer_Erase",kwnames,&obj0,&obj1,&obj2,&obj3,&obj4,&obj5)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_OGRLayerShadow, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Layer_Erase" "', argument " "1"" of type '" "OGRLayerShadow *""'"); 
-  }
-  arg1 = reinterpret_cast< OGRLayerShadow * >(argp1);
-  res2 = SWIG_ConvertPtr(obj1, &argp2,SWIGTYPE_p_OGRLayerShadow, 0 |  0 );
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "Layer_Erase" "', argument " "2"" of type '" "OGRLayerShadow *""'"); 
-  }
-  arg2 = reinterpret_cast< OGRLayerShadow * >(argp2);
-  res3 = SWIG_ConvertPtr(obj2, &argp3,SWIGTYPE_p_OGRLayerShadow, 0 |  0 );
-  if (!SWIG_IsOK(res3)) {
-    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "Layer_Erase" "', argument " "3"" of type '" "OGRLayerShadow *""'"); 
-  }
-  arg3 = reinterpret_cast< OGRLayerShadow * >(argp3);
-  if (obj3) {
-    {
-      /* %typemap(in) char **options */
-      /* Check if is a list (and reject strings, that are seen as sequence of characters)  */
-      if ( ! PySequence_Check(obj3) || PyUnicode_Check(obj3)
-  #if PY_VERSION_HEX < 0x03000000
-        || PyString_Check(obj3)
-  #endif
-        ) {
-        PyErr_SetString(PyExc_TypeError,"not a sequence");
-        SWIG_fail;
-      }
-      
-      int size = PySequence_Size(obj3);
-      for (int i = 0; i < size; i++) {
-        PyObject* pyObj = PySequence_GetItem(obj3,i);
-        if (PyUnicode_Check(pyObj))
-        {
-          char *pszStr;
-          Py_ssize_t nLen;
-          PyObject* pyUTF8Str = PyUnicode_AsUTF8String(pyObj);
-#if PY_VERSION_HEX >= 0x03000000
-          PyBytes_AsStringAndSize(pyUTF8Str, &pszStr, &nLen);
-#else
-          PyString_AsStringAndSize(pyUTF8Str, &pszStr, &nLen);
-#endif
-          arg4 = CSLAddString( arg4, pszStr );
-          Py_XDECREF(pyUTF8Str);
-        }
-#if PY_VERSION_HEX >= 0x03000000
-        else if (PyBytes_Check(pyObj))
-        arg4 = CSLAddString( arg4, PyBytes_AsString(pyObj) );
-#else
-        else if (PyString_Check(pyObj))
-        arg4 = CSLAddString( arg4, PyString_AsString(pyObj) );
-#endif
-        else
-        {
-          Py_DECREF(pyObj);
-          PyErr_SetString(PyExc_TypeError,"sequence must contain strings");
-          SWIG_fail;
-        }
-        Py_DECREF(pyObj);
-      }
-    }
-  }
-  if (obj4) {
-    {
-      /* %typemap(in) (GDALProgressFunc callback = NULL) */
-      /* callback_func typemap */
-      if (obj4 && obj4 != Py_None ) {
-        void* cbfunction = NULL;
-        SWIG_ConvertPtr( obj4, 
-          (void**)&cbfunction,
-          SWIGTYPE_p_f_double_p_q_const__char_p_void__int,
-          SWIG_POINTER_EXCEPTION | 0 );
-        
-        if ( cbfunction == GDALTermProgress ) {
-          arg5 = GDALTermProgress;
-        } else {
-          if (!PyCallable_Check(obj4)) {
-            PyErr_SetString( PyExc_RuntimeError, 
-              "Object given is not a Python function" );
-            SWIG_fail;
-          }
-          psProgressInfo->psPyCallback = obj4;
-          arg5 = PyProgressProxy;
-        }
-        
-      }
-      
-    }
-  }
-  if (obj5) {
-    {
-      /* %typemap(in) ( void* callback_data=NULL)  */
-      psProgressInfo->psPyCallbackData = obj5 ;
-    }
-  }
-  {
-    if ( bUseExceptions ) {
-      CPLErrorReset();
-    }
-    result = (OGRErr)OGRLayerShadow_Erase(arg1,arg2,arg3,arg4,arg5,arg6);
-    if ( bUseExceptions ) {
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-      }
-    }
-  }
-  {
-    /* %typemap(out) OGRErr */
-    if ( result != 0 && bUseExceptions) {
-      PyErr_SetString( PyExc_RuntimeError, OGRErrMessages(result) );
-      SWIG_fail;
-    }
-  }
-  {
-    /* %typemap(freearg) char **options */
-    CSLDestroy( arg4 );
-  }
-  {
-    /* %typemap(freearg) ( void* callback_data=NULL)  */
-    
-    CPLFree(psProgressInfo);
-    
-  }
-  {
-    /* %typemap(ret) OGRErr */
-    if (resultobj == Py_None ) {
-      Py_DECREF(resultobj);
-      resultobj = 0;
-    }
-    if (resultobj == 0) {
-      resultobj = PyInt_FromLong( result );
-    }
-  }
-  return resultobj;
-fail:
-  {
-    /* %typemap(freearg) char **options */
-    CSLDestroy( arg4 );
-  }
-  {
-    /* %typemap(freearg) ( void* callback_data=NULL)  */
-    
-    CPLFree(psProgressInfo);
-    
   }
   return NULL;
 }
@@ -11428,12 +10031,8 @@ SWIGINTERN PyObject *_wrap_Feature_SetFieldStringList(PyObject *SWIGUNUSEDPARM(s
   arg2 = static_cast< int >(val2);
   {
     /* %typemap(in) char **options */
-    /* Check if is a list (and reject strings, that are seen as sequence of characters)  */
-    if ( ! PySequence_Check(obj2) || PyUnicode_Check(obj2)
-  #if PY_VERSION_HEX < 0x03000000
-      || PyString_Check(obj2)
-  #endif
-      ) {
+    /* Check if is a list */
+    if ( ! PySequence_Check(obj2)) {
       PyErr_SetString(PyExc_TypeError,"not a sequence");
       SWIG_fail;
     }
@@ -13515,39 +12114,6 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_ForceToLineString(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  OGRGeometryShadow *arg1 = (OGRGeometryShadow *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  PyObject * obj0 = 0 ;
-  OGRGeometryShadow *result = 0 ;
-  
-  if (!PyArg_ParseTuple(args,(char *)"O:ForceToLineString",&obj0)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_OGRGeometryShadow, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ForceToLineString" "', argument " "1"" of type '" "OGRGeometryShadow *""'"); 
-  }
-  arg1 = reinterpret_cast< OGRGeometryShadow * >(argp1);
-  {
-    if ( bUseExceptions ) {
-      CPLErrorReset();
-    }
-    result = (OGRGeometryShadow *)ForceToLineString(arg1);
-    if ( bUseExceptions ) {
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-      }
-    }
-  }
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_OGRGeometryShadow, SWIG_POINTER_OWN |  0 );
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
 SWIGINTERN PyObject *_wrap_ForceToMultiPolygon(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   OGRGeometryShadow *arg1 = (OGRGeometryShadow *) 0 ;
@@ -13994,12 +12560,8 @@ SWIGINTERN PyObject *_wrap_Geometry_ExportToGML(PyObject *SWIGUNUSEDPARM(self), 
   if (obj1) {
     {
       /* %typemap(in) char **options */
-      /* Check if is a list (and reject strings, that are seen as sequence of characters)  */
-      if ( ! PySequence_Check(obj1) || PyUnicode_Check(obj1)
-  #if PY_VERSION_HEX < 0x03000000
-        || PyString_Check(obj1)
-  #endif
-        ) {
+      /* Check if is a list */
+      if ( ! PySequence_Check(obj1)) {
         PyErr_SetString(PyExc_TypeError,"not a sequence");
         SWIG_fail;
       }
@@ -14147,12 +12709,8 @@ SWIGINTERN PyObject *_wrap_Geometry_ExportToJson(PyObject *SWIGUNUSEDPARM(self),
   if (obj1) {
     {
       /* %typemap(in) char **options */
-      /* Check if is a list (and reject strings, that are seen as sequence of characters)  */
-      if ( ! PySequence_Check(obj1) || PyUnicode_Check(obj1)
-  #if PY_VERSION_HEX < 0x03000000
-        || PyString_Check(obj1)
-  #endif
-        ) {
+      /* Check if is a list */
+      if ( ! PySequence_Check(obj1)) {
         PyErr_SetString(PyExc_TypeError,"not a sequence");
         SWIG_fail;
       }
@@ -16855,39 +15413,6 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_Geometry_PointOnSurface(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  OGRGeometryShadow *arg1 = (OGRGeometryShadow *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  PyObject * obj0 = 0 ;
-  OGRGeometryShadow *result = 0 ;
-  
-  if (!PyArg_ParseTuple(args,(char *)"O:Geometry_PointOnSurface",&obj0)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_OGRGeometryShadow, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Geometry_PointOnSurface" "', argument " "1"" of type '" "OGRGeometryShadow *""'"); 
-  }
-  arg1 = reinterpret_cast< OGRGeometryShadow * >(argp1);
-  {
-    if ( bUseExceptions ) {
-      CPLErrorReset();
-    }
-    result = (OGRGeometryShadow *)OGRGeometryShadow_PointOnSurface(arg1);
-    if ( bUseExceptions ) {
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-      }
-    }
-  }
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_OGRGeometryShadow, SWIG_POINTER_OWN |  0 );
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
 SWIGINTERN PyObject *_wrap_Geometry_WkbSize(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   OGRGeometryShadow *arg1 = (OGRGeometryShadow *) 0 ;
@@ -17457,12 +15982,8 @@ SWIGINTERN PyObject *_wrap_GeneralCmdLineProcessor(PyObject *SWIGUNUSEDPARM(self
   if (!PyArg_ParseTuple(args,(char *)"O|O:GeneralCmdLineProcessor",&obj0,&obj1)) SWIG_fail;
   {
     /* %typemap(in) char **options */
-    /* Check if is a list (and reject strings, that are seen as sequence of characters)  */
-    if ( ! PySequence_Check(obj0) || PyUnicode_Check(obj0)
-  #if PY_VERSION_HEX < 0x03000000
-      || PyString_Check(obj0)
-  #endif
-      ) {
+    /* Check if is a list */
+    if ( ! PySequence_Check(obj0)) {
       PyErr_SetString(PyExc_TypeError,"not a sequence");
       SWIG_fail;
     }
@@ -17545,65 +16066,6 @@ fail:
     /* %typemap(freearg) char **options */
     CSLDestroy( arg1 );
   }
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_TermProgress_nocb(PyObject *SWIGUNUSEDPARM(self), PyObject *args, PyObject *kwargs) {
-  PyObject *resultobj = 0;
-  double arg1 ;
-  char *arg2 = (char *) NULL ;
-  void *arg3 = (void *) NULL ;
-  double val1 ;
-  int ecode1 = 0 ;
-  int res2 ;
-  char *buf2 = 0 ;
-  int alloc2 = 0 ;
-  int res3 ;
-  PyObject * obj0 = 0 ;
-  PyObject * obj1 = 0 ;
-  PyObject * obj2 = 0 ;
-  char *  kwnames[] = {
-    (char *) "dfProgress",(char *) "pszMessage",(char *) "pData", NULL 
-  };
-  int result;
-  
-  if (!PyArg_ParseTupleAndKeywords(args,kwargs,(char *)"O|OO:TermProgress_nocb",kwnames,&obj0,&obj1,&obj2)) SWIG_fail;
-  ecode1 = SWIG_AsVal_double(obj0, &val1);
-  if (!SWIG_IsOK(ecode1)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "TermProgress_nocb" "', argument " "1"" of type '" "double""'");
-  } 
-  arg1 = static_cast< double >(val1);
-  if (obj1) {
-    res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
-    if (!SWIG_IsOK(res2)) {
-      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "TermProgress_nocb" "', argument " "2"" of type '" "char const *""'");
-    }
-    arg2 = reinterpret_cast< char * >(buf2);
-  }
-  if (obj2) {
-    res3 = SWIG_ConvertPtr(obj2,SWIG_as_voidptrptr(&arg3), 0, 0);
-    if (!SWIG_IsOK(res3)) {
-      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "TermProgress_nocb" "', argument " "3"" of type '" "void *""'"); 
-    }
-  }
-  {
-    if ( bUseExceptions ) {
-      CPLErrorReset();
-    }
-    result = (int)GDALTermProgress_nocb(arg1,(char const *)arg2,arg3);
-    if ( bUseExceptions ) {
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-      }
-    }
-  }
-  resultobj = SWIG_From_int(static_cast< int >(result));
-  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
-  return resultobj;
-fail:
-  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   return NULL;
 }
 
@@ -19087,41 +17549,6 @@ static PyMethodDef SwigMethods[] = {
 		"OGRERR_NONE if all field names have been resolved (even if the driver\n"
 		"does not support this method) \n"
 		""},
-	 { (char *)"Layer_Intersection", (PyCFunction) _wrap_Layer_Intersection, METH_VARARGS | METH_KEYWORDS, (char *)"\n"
-		"Layer_Intersection(Layer self, Layer method_layer, Layer result_layer, \n"
-		"    char options = None, GDALProgressFunc callback = None, \n"
-		"    void callback_data = None) -> OGRErr\n"
-		""},
-	 { (char *)"Layer_Union", (PyCFunction) _wrap_Layer_Union, METH_VARARGS | METH_KEYWORDS, (char *)"\n"
-		"Layer_Union(Layer self, Layer method_layer, Layer result_layer, \n"
-		"    char options = None, GDALProgressFunc callback = None, \n"
-		"    void callback_data = None) -> OGRErr\n"
-		""},
-	 { (char *)"Layer_SymDifference", (PyCFunction) _wrap_Layer_SymDifference, METH_VARARGS | METH_KEYWORDS, (char *)"\n"
-		"Layer_SymDifference(Layer self, Layer method_layer, Layer result_layer, \n"
-		"    char options = None, GDALProgressFunc callback = None, \n"
-		"    void callback_data = None) -> OGRErr\n"
-		""},
-	 { (char *)"Layer_Identity", (PyCFunction) _wrap_Layer_Identity, METH_VARARGS | METH_KEYWORDS, (char *)"\n"
-		"Layer_Identity(Layer self, Layer method_layer, Layer result_layer, \n"
-		"    char options = None, GDALProgressFunc callback = None, \n"
-		"    void callback_data = None) -> OGRErr\n"
-		""},
-	 { (char *)"Layer_Update", (PyCFunction) _wrap_Layer_Update, METH_VARARGS | METH_KEYWORDS, (char *)"\n"
-		"Layer_Update(Layer self, Layer method_layer, Layer result_layer, \n"
-		"    char options = None, GDALProgressFunc callback = None, \n"
-		"    void callback_data = None) -> OGRErr\n"
-		""},
-	 { (char *)"Layer_Clip", (PyCFunction) _wrap_Layer_Clip, METH_VARARGS | METH_KEYWORDS, (char *)"\n"
-		"Layer_Clip(Layer self, Layer method_layer, Layer result_layer, \n"
-		"    char options = None, GDALProgressFunc callback = None, \n"
-		"    void callback_data = None) -> OGRErr\n"
-		""},
-	 { (char *)"Layer_Erase", (PyCFunction) _wrap_Layer_Erase, METH_VARARGS | METH_KEYWORDS, (char *)"\n"
-		"Layer_Erase(Layer self, Layer method_layer, Layer result_layer, \n"
-		"    char options = None, GDALProgressFunc callback = None, \n"
-		"    void callback_data = None) -> OGRErr\n"
-		""},
 	 { (char *)"Layer_swigregister", Layer_swigregister, METH_VARARGS, NULL},
 	 { (char *)"delete_Feature", _wrap_delete_Feature, METH_VARARGS, (char *)"delete_Feature(Feature self)"},
 	 { (char *)"new_Feature", (PyCFunction) _wrap_new_Feature, METH_VARARGS | METH_KEYWORDS, (char *)"new_Feature(FeatureDefn feature_def) -> Feature"},
@@ -20303,7 +18730,6 @@ static PyMethodDef SwigMethods[] = {
 		"    double dfMaxAngleStepSizeDegrees) -> Geometry\n"
 		""},
 	 { (char *)"ForceToPolygon", _wrap_ForceToPolygon, METH_VARARGS, (char *)"ForceToPolygon(Geometry geom_in) -> Geometry"},
-	 { (char *)"ForceToLineString", _wrap_ForceToLineString, METH_VARARGS, (char *)"ForceToLineString(Geometry geom_in) -> Geometry"},
 	 { (char *)"ForceToMultiPolygon", _wrap_ForceToMultiPolygon, METH_VARARGS, (char *)"ForceToMultiPolygon(Geometry geom_in) -> Geometry"},
 	 { (char *)"ForceToMultiPoint", _wrap_ForceToMultiPoint, METH_VARARGS, (char *)"ForceToMultiPoint(Geometry geom_in) -> Geometry"},
 	 { (char *)"ForceToMultiLineString", _wrap_ForceToMultiLineString, METH_VARARGS, (char *)"ForceToMultiLineString(Geometry geom_in) -> Geometry"},
@@ -21326,7 +19752,6 @@ static PyMethodDef SwigMethods[] = {
 		"\n"
 		"OGRERR_NONE on success or OGRERR_FAILURE on error. \n"
 		""},
-	 { (char *)"Geometry_PointOnSurface", _wrap_Geometry_PointOnSurface, METH_VARARGS, (char *)"Geometry_PointOnSurface(Geometry self) -> Geometry"},
 	 { (char *)"Geometry_WkbSize", _wrap_Geometry_WkbSize, METH_VARARGS, (char *)"\n"
 		"Geometry_WkbSize(Geometry self) -> int\n"
 		"\n"
@@ -21429,14 +19854,12 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"GetDriverByName", _wrap_GetDriverByName, METH_VARARGS, (char *)"GetDriverByName(char name) -> Driver"},
 	 { (char *)"GetDriver", _wrap_GetDriver, METH_VARARGS, (char *)"GetDriver(int driver_number) -> Driver"},
 	 { (char *)"GeneralCmdLineProcessor", _wrap_GeneralCmdLineProcessor, METH_VARARGS, (char *)"GeneralCmdLineProcessor(char papszArgv, int nOptions = 0) -> char"},
-	 { (char *)"TermProgress_nocb", (PyCFunction) _wrap_TermProgress_nocb, METH_VARARGS | METH_KEYWORDS, (char *)"TermProgress_nocb(double dfProgress, char pszMessage = None, void pData = None) -> int"},
 	 { NULL, NULL, 0, NULL }
 };
 
 
 /* -------- TYPE CONVERSION AND EQUIVALENCE RULES (BEGIN) -------- */
 
-static swig_type_info _swigt__p_GDALProgressFunc = {"_p_GDALProgressFunc", "GDALProgressFunc *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_GIntBig = {"_p_GIntBig", "GIntBig *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_OGRDataSourceShadow = {"_p_OGRDataSourceShadow", "OGRDataSourceShadow *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_OGRDriverShadow = {"_p_OGRDriverShadow", "OGRDriverShadow *", 0, 0, (void*)0, 0};
@@ -21449,14 +19872,12 @@ static swig_type_info _swigt__p_OSRCoordinateTransformationShadow = {"_p_OSRCoor
 static swig_type_info _swigt__p_OSRSpatialReferenceShadow = {"_p_OSRSpatialReferenceShadow", "OSRSpatialReferenceShadow *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_char = {"_p_char", "char *|retStringAndCPLFree *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_double = {"_p_double", "double *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_f_double_p_q_const__char_p_void__int = {"_p_f_double_p_q_const__char_p_void__int", "int (*)(double,char const *,void *)", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_int = {"_p_int", "OGRFieldType *|int *|OGRwkbGeometryType *|OGRJustification *|OGRwkbByteOrder *|OGRErr *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_p_char = {"_p_p_char", "char **", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_p_double = {"_p_p_double", "double **", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_p_int = {"_p_p_int", "int **", 0, 0, (void*)0, 0};
 
 static swig_type_info *swig_type_initial[] = {
-  &_swigt__p_GDALProgressFunc,
   &_swigt__p_GIntBig,
   &_swigt__p_OGRDataSourceShadow,
   &_swigt__p_OGRDriverShadow,
@@ -21469,14 +19890,12 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_OSRSpatialReferenceShadow,
   &_swigt__p_char,
   &_swigt__p_double,
-  &_swigt__p_f_double_p_q_const__char_p_void__int,
   &_swigt__p_int,
   &_swigt__p_p_char,
   &_swigt__p_p_double,
   &_swigt__p_p_int,
 };
 
-static swig_cast_info _swigc__p_GDALProgressFunc[] = {  {&_swigt__p_GDALProgressFunc, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_GIntBig[] = {  {&_swigt__p_GIntBig, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_OGRDataSourceShadow[] = {  {&_swigt__p_OGRDataSourceShadow, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_OGRDriverShadow[] = {  {&_swigt__p_OGRDriverShadow, 0, 0, 0},{0, 0, 0, 0}};
@@ -21489,14 +19908,12 @@ static swig_cast_info _swigc__p_OSRCoordinateTransformationShadow[] = {  {&_swig
 static swig_cast_info _swigc__p_OSRSpatialReferenceShadow[] = {  {&_swigt__p_OSRSpatialReferenceShadow, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_char[] = {  {&_swigt__p_char, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_double[] = {  {&_swigt__p_double, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_f_double_p_q_const__char_p_void__int[] = {  {&_swigt__p_f_double_p_q_const__char_p_void__int, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_int[] = {  {&_swigt__p_int, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_p_char[] = {  {&_swigt__p_p_char, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_p_double[] = {  {&_swigt__p_p_double, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_p_int[] = {  {&_swigt__p_p_int, 0, 0, 0},{0, 0, 0, 0}};
 
 static swig_cast_info *swig_cast_initial[] = {
-  _swigc__p_GDALProgressFunc,
   _swigc__p_GIntBig,
   _swigc__p_OGRDataSourceShadow,
   _swigc__p_OGRDriverShadow,
@@ -21509,7 +19926,6 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_OSRSpatialReferenceShadow,
   _swigc__p_char,
   _swigc__p_double,
-  _swigc__p_f_double_p_q_const__char_p_void__int,
   _swigc__p_int,
   _swigc__p_p_char,
   _swigc__p_p_double,
@@ -21520,7 +19936,6 @@ static swig_cast_info *swig_cast_initial[] = {
 /* -------- TYPE CONVERSION AND EQUIVALENCE RULES (END) -------- */
 
 static swig_const_info swig_const_table[] = {
-{ SWIG_PY_POINTER, (char*)"TermProgress", 0, 0, (void *)((int (*)(double,char const *,void *))(GDALTermProgress)), &SWIGTYPE_p_f_double_p_q_const__char_p_void__int },
 {0, 0, 0, 0.0, 0, 0}};
 
 #ifdef __cplusplus
@@ -22173,7 +20588,6 @@ SWIG_init(void) {
   if ( OGRGetDriverCount() == 0 ) {
     OGRRegisterAll();
   }
-  
   
   
 #if PY_VERSION_HEX >= 0x03000000

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: northwood.cpp 24120 2012-03-15 19:41:49Z warmerdam $
+ * $Id: northwood.cpp 23577 2011-12-15 19:45:36Z rouault $
  *
  * Project:  GRC/GRD Reader
  * Purpose:  Northwood Format basic implementation
@@ -184,15 +184,11 @@ int nwt_ParseHeader( NWT_GRID * pGrd, char *nwtHeader )
     if( pGrd->cFormat & 0x80 )        // if is GRC load the Dictionary
     {
         VSIFSeekL( pGrd->fp,
-                   1024 + (pGrd->nXSide * pGrd->nYSide) * (pGrd->nBitsPerPixel/8),
-                   SEEK_SET );
+               1024 + (pGrd->nXSide * pGrd->nYSide) * pGrd->nBitsPerPixel / 8,
+               SEEK_SET );
 
         if( !VSIFReadL( &usTmp, 2, 1, pGrd->fp) )
-        {
-            CPLError( CE_Failure, CPLE_FileIO, 
-                      "Read failure, file short?" );
             return FALSE;
-        }
         CPL_LSBPTR16(&usTmp);
         pGrd->stClassDict =
             (NWT_CLASSIFIED_DICT *) calloc( sizeof(NWT_CLASSIFIED_DICT), 1 );
@@ -208,42 +204,36 @@ int nwt_ParseHeader( NWT_GRID * pGrd, char *nwtHeader )
         //load the dictionary
         for( usTmp=0; usTmp < pGrd->stClassDict->nNumClassifiedItems; usTmp++ )
         {
-            NWT_CLASSIFIED_ITEM *psItem = 
-                pGrd->stClassDict->stClassifedItem[usTmp] =
-                (NWT_CLASSIFIED_ITEM *) calloc(sizeof(NWT_CLASSIFIED_ITEM), 1);
-
+            pGrd->stClassDict->stClassifedItem[usTmp] =
+              (NWT_CLASSIFIED_ITEM *) calloc( sizeof(NWT_CLASSIFIED_ITEM), 1 );
             if( !VSIFReadL( &cTmp, 9, 1, pGrd->fp ) )
-            {
-                CPLError( CE_Failure, CPLE_FileIO, 
-                          "Read failure, file short?" );
                 return FALSE;
-            }
-            memcpy( (void *) &psItem->usPixVal, (void *) &cTmp[0], 2 );
-            CPL_LSBPTR16(&psItem->usPixVal);
-            memcpy( (void *) &psItem->res1,
+            memcpy( (void *) &pGrd->stClassDict->
+                    stClassifedItem[usTmp]->usPixVal, (void *) &cTmp[0], 2 );
+            CPL_LSBPTR16(&pGrd->stClassDict->stClassifedItem[usTmp]->usPixVal);
+            memcpy( (void *) &pGrd->stClassDict->stClassifedItem[usTmp]->res1,
                     (void *) &cTmp[2], 1 );
-            memcpy( (void *) &psItem->r,
+            memcpy( (void *) &pGrd->stClassDict->stClassifedItem[usTmp]->r,
                     (void *) &cTmp[3], 1 );
-            memcpy( (void *) &psItem->g,
+            memcpy( (void *) &pGrd->stClassDict->stClassifedItem[usTmp]->g,
                     (void *) &cTmp[4], 1 );
-            memcpy( (void *) &psItem->b,
+            memcpy( (void *) &pGrd->stClassDict->stClassifedItem[usTmp]->b,
                     (void *) &cTmp[5], 1 );
-            memcpy( (void *) &psItem->res2,
+            memcpy( (void *) &pGrd->stClassDict->stClassifedItem[usTmp]->res2,
                     (void *) &cTmp[6], 1 );
-            memcpy( (void *) &psItem->usLen,
+            memcpy( (void *) &pGrd->stClassDict->stClassifedItem[usTmp]->usLen,
                     (void *) &cTmp[7], 2 );
-            CPL_LSBPTR16(&psItem->usLen);
+            CPL_LSBPTR16(&pGrd->stClassDict->stClassifedItem[usTmp]->usLen);
                     
-            if ( psItem->usLen > sizeof(psItem->szClassName)-1 )
-            {
-                CPLError( CE_Failure, CPLE_AppDefined, 
-                          "Unexpected long class name, %d characters long - unable to read file.",
-                          psItem->usLen );
+            if ( pGrd->stClassDict->stClassifedItem[usTmp]->usLen > 256)
                 return FALSE;
-            }
 
-            if( !VSIFReadL( &psItem->szClassName, psItem->usLen, 1, pGrd->fp ) )
+            if( !VSIFReadL( &pGrd->stClassDict->stClassifedItem[usTmp]->szClassName,
+                        pGrd->stClassDict->stClassifedItem[usTmp]->usLen,
+                        1, pGrd->fp ) )
                 return FALSE;
+                
+            pGrd->stClassDict->stClassifedItem[usTmp]->szClassName[255] = '\0';
         }
     }
     

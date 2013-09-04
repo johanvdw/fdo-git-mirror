@@ -656,26 +656,6 @@ SWIGEXPORT int SWIGSTDCALL CSharp_GRA_Lanczos_get() {
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_GRA_Average_get() {
-  int jresult ;
-  int result;
-  
-  result = (int) GRA_Average;
-  jresult = result; 
-  return jresult;
-}
-
-
-SWIGEXPORT int SWIGSTDCALL CSharp_GRA_Mode_get() {
-  int jresult ;
-  int result;
-  
-  result = (int) GRA_Mode;
-  jresult = result; 
-  return jresult;
-}
-
-
 SWIGEXPORT int SWIGSTDCALL CSharp_GPI_Gray_get() {
   int jresult ;
   int result;
@@ -971,16 +951,6 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_GDAL_DMD_CREATIONDATATYPES_get() {
   char *result = 0 ;
   
   result = (char *) "DMD_CREATIONDATATYPES";
-  jresult = SWIG_csharp_string_callback((const char *)result); 
-  return jresult;
-}
-
-
-SWIGEXPORT char * SWIGSTDCALL CSharp_GDAL_DMD_SUBDATASETS_get() {
-  char * jresult ;
-  char *result = 0 ;
-  
-  result = (char *) "DMD_SUBDATASETS";
   jresult = SWIG_csharp_string_callback((const char *)result); 
   return jresult;
 }

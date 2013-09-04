@@ -7,7 +7,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2012, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2010, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -20,6 +20,7 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
+ * $Id: curlrules.h,v 1.8 2010-02-02 12:58:50 yangtse Exp $
  ***************************************************************************/
 
 /* ================================================================ */
@@ -186,11 +187,11 @@ typedef char
 /*          EXTERNALLY AND INTERNALLY VISIBLE DEFINITIONS           */
 /* ================================================================ */
 
-/*
+/* 
  * CURL_ISOCPP and CURL_OFF_T_C definitions are done here in order to allow
  * these to be visible and exported by the external libcurl interface API,
  * while also making them visible to the library internals, simply including
- * curl_setup.h, without actually needing to include curl.h internally.
+ * setup.h, without actually needing to include curl.h internally.
  * If some day this section would grow big enough, all this should be moved
  * to its own header file.
  */
@@ -216,23 +217,14 @@ typedef char
  * Macros for minimum-width signed and unsigned curl_off_t integer constants.
  */
 
-#if defined(__BORLANDC__) && (__BORLANDC__ == 0x0551)
-#  define __CURL_OFF_T_C_HLPR2(x) x
-#  define __CURL_OFF_T_C_HLPR1(x) __CURL_OFF_T_C_HLPR2(x)
-#  define CURL_OFF_T_C(Val)  __CURL_OFF_T_C_HLPR1(Val) ## \
-                             __CURL_OFF_T_C_HLPR1(CURL_SUFFIX_CURL_OFF_T)
-#  define CURL_OFF_TU_C(Val) __CURL_OFF_T_C_HLPR1(Val) ## \
-                             __CURL_OFF_T_C_HLPR1(CURL_SUFFIX_CURL_OFF_TU)
+#ifdef CURL_ISOCPP
+#  define __CURL_OFF_T_C_HELPER2(Val,Suffix) Val ## Suffix
 #else
-#  ifdef CURL_ISOCPP
-#    define __CURL_OFF_T_C_HLPR2(Val,Suffix) Val ## Suffix
-#  else
-#    define __CURL_OFF_T_C_HLPR2(Val,Suffix) Val/**/Suffix
-#  endif
-#  define __CURL_OFF_T_C_HLPR1(Val,Suffix) __CURL_OFF_T_C_HLPR2(Val,Suffix)
-#  define CURL_OFF_T_C(Val)  __CURL_OFF_T_C_HLPR1(Val,CURL_SUFFIX_CURL_OFF_T)
-#  define CURL_OFF_TU_C(Val) __CURL_OFF_T_C_HLPR1(Val,CURL_SUFFIX_CURL_OFF_TU)
+#  define __CURL_OFF_T_C_HELPER2(Val,Suffix) Val/**/Suffix
 #endif
+#define __CURL_OFF_T_C_HELPER1(Val,Suffix) __CURL_OFF_T_C_HELPER2(Val,Suffix)
+#define CURL_OFF_T_C(Val)  __CURL_OFF_T_C_HELPER1(Val,CURL_SUFFIX_CURL_OFF_T)
+#define CURL_OFF_TU_C(Val) __CURL_OFF_T_C_HELPER1(Val,CURL_SUFFIX_CURL_OFF_TU)
 
 /*
  * Get rid of macros private to this header file.
@@ -248,7 +240,6 @@ typedef char
 #undef CURL_PULL_WS2TCPIP_H
 #undef CURL_PULL_SYS_TYPES_H
 #undef CURL_PULL_SYS_SOCKET_H
-#undef CURL_PULL_SYS_POLL_H
 #undef CURL_PULL_STDINT_H
 #undef CURL_PULL_INTTYPES_H
 

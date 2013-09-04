@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrpolygon.cpp 24895 2012-09-02 18:12:08Z rouault $
+ * $Id: ogrpolygon.cpp 22466 2011-05-30 09:24:55Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRPolygon geometry class.
@@ -32,7 +32,7 @@
 #include "ogr_geos.h"
 #include "ogr_api.h"
 
-CPL_CVSID("$Id: ogrpolygon.cpp 24895 2012-09-02 18:12:08Z rouault $");
+CPL_CVSID("$Id: ogrpolygon.cpp 22466 2011-05-30 09:24:55Z rouault $");
 
 /************************************************************************/
 /*                             OGRPolygon()                             */
@@ -812,21 +812,49 @@ int OGRPolygon::PointOnSurface( OGRPoint *poPoint ) const
 {
     if( poPoint == NULL )
         return OGRERR_FAILURE;
+ 
+#ifndef HAVE_GEOS
+    return OGRERR_FAILURE;
+#else
+    GEOSGeom hThisGeosGeom = NULL;
+    GEOSGeom hOtherGeosGeom = NULL;
+     
+    hThisGeosGeom = exportToGEOS();
+ 
+    if( hThisGeosGeom != NULL )
+    {
+     	hOtherGeosGeom = GEOSPointOnSurface( hThisGeosGeom );
+        GEOSGeom_destroy( hThisGeosGeom );
 
-    OGRGeometryH hInsidePoint = OGR_G_PointOnSurface( (OGRGeometryH) this );
-    if( hInsidePoint == NULL )
-        return OGRERR_FAILURE;
+        if( hOtherGeosGeom == NULL )
+            return OGRERR_FAILURE;
 
-    OGRPoint *poInsidePoint = (OGRPoint *) hInsidePoint;
-    if( poInsidePoint->IsEmpty() )
-        poPoint->empty();
+        OGRGeometry *poInsidePointGeom = (OGRGeometry *) 
+            OGRGeometryFactory::createFromGEOS( hOtherGeosGeom );
+ 
+        GEOSGeom_destroy( hOtherGeosGeom );
+
+        if (poInsidePointGeom == NULL)
+            return OGRERR_FAILURE;
+        if (wkbFlatten(poInsidePointGeom->getGeometryType()) != wkbPoint)
+        {
+            delete poInsidePointGeom;
+            return OGRERR_FAILURE;
+        }
+
+        OGRPoint *poInsidePoint = (OGRPoint *) poInsidePointGeom;
+ 	poPoint->setX( poInsidePoint->getX() );
+ 	poPoint->setY( poInsidePoint->getY() );
+ 
+        delete poInsidePointGeom;
+ 
+     	return OGRERR_NONE;
+    }
     else
     {
-        poPoint->setX( poInsidePoint->getX() );
-        poPoint->setY( poInsidePoint->getY() );
+     	return OGRERR_FAILURE;
     }
-
-    return OGRERR_NONE;
+#endif /* HAVE_GEOS */
 }
 
 

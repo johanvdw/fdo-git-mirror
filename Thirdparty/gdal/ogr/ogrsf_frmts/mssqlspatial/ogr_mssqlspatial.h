@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_mssqlspatial.h 25860 2013-04-05 07:20:37Z tamas $
+ * $Id: ogr_mssqlspatial.h 21939 2011-03-11 21:55:49Z tamas $
  *
  * Project:  MSSQL Spatial driver
  * Purpose:  Definition of classes for OGR MSSQL Spatial driver.
@@ -40,7 +40,6 @@ class OGRMSSQLSpatialDataSource;
 #define MSSQLGEOMETRY_NATIVE 0
 #define MSSQLGEOMETRY_WKB 1
 #define MSSQLGEOMETRY_WKT 2
-#define MSSQLGEOMETRY_WKBZM 3  /* SQL Server 2012 */
 
 /* geometry column types */
 #define MSSQLCOLTYPE_GEOMETRY  0
@@ -104,8 +103,6 @@ protected:
     int nShapePos;
     int nNumShapes;
     int nSRSId;
-    /* geometry or geography */
-    int nColType;
 
 protected:
     OGRPoint*           ReadPoint(int iShape);
@@ -117,7 +114,7 @@ protected:
     OGRGeometryCollection* ReadGeometryCollection(int iShape);
 
 public:
-                        OGRMSSQLGeometryParser( int nGeomColumnType );
+                        OGRMSSQLGeometryParser();
     OGRErr              ParseSqlGeometry(unsigned char* pszInput, int nLen,
                                                         OGRGeometry **poGeom);
     int                 GetSRSId() { return nSRSId; };
@@ -147,8 +144,6 @@ class OGRMSSQLSpatialLayer : public OGRLayer
     char               *pszGeomColumn;
     char               *pszFIDColumn;
 
-    int                bIsIdentityFid;
-
     int                *panFieldOrdinals;
 
     CPLErr              BuildFeatureDefn( const char *pszLayerName,
@@ -166,7 +161,7 @@ class OGRMSSQLSpatialLayer : public OGRLayer
 
     virtual OGRFeature *GetFeature( long nFeatureId );
     
-    virtual OGRFeatureDefn *GetLayerDefn() { return poFeatureDefn; }
+    OGRFeatureDefn *    GetLayerDefn() { return poFeatureDefn; }
 
     virtual OGRSpatialReference *GetSpatialRef();
 
@@ -201,10 +196,7 @@ class OGRMSSQLSpatialTableLayer : public OGRMSSQLSpatialLayer
     virtual CPLODBCStatement *  GetStatement();
 
     char               *pszTableName;
-    char               *pszLayerName;
     char               *pszSchemaName;
-
-    OGRwkbGeometryType eGeomType;
 
   public:
                         OGRMSSQLSpatialTableLayer( OGRMSSQLSpatialDataSource * );
@@ -223,10 +215,6 @@ class OGRMSSQLSpatialTableLayer : public OGRMSSQLSpatialLayer
     virtual void        ResetReading();
     virtual int         GetFeatureCount( int );
 
-    virtual OGRFeatureDefn *GetLayerDefn();
-
-    virtual const char* GetName();
-
     virtual OGRErr      SetAttributeFilter( const char * );
 
     virtual OGRErr      SetFeature( OGRFeature *poFeature );
@@ -234,7 +222,6 @@ class OGRMSSQLSpatialTableLayer : public OGRMSSQLSpatialLayer
     virtual OGRErr      CreateFeature( OGRFeature *poFeature );
 
     const char*         GetTableName() { return pszTableName; }
-    const char*         GetLayerName() { return pszLayerName; }
     const char*         GetSchemaName() { return pszSchemaName; }
 
     virtual OGRErr      CreateField( OGRFieldDefn *poField,
@@ -300,8 +287,6 @@ class OGRMSSQLSpatialDataSource : public OGRDataSource
 
     int                 nGeometryFormat;
 
-    int                 bUseGeometryColumns;
-
     // We maintain a list of known SRID to reduce the number of trips to
     // the database to get SRSes. 
     int                 nKnownSRID;
@@ -327,7 +312,6 @@ class OGRMSSQLSpatialDataSource : public OGRDataSource
     OGRLayer            *GetLayer( int );
 
     int                 GetGeometryFormat() { return nGeometryFormat; }
-    int                 UseGeometryColumns() { return bUseGeometryColumns; }
 
     virtual int         DeleteLayer( int iLayer );
     virtual OGRLayer    *CreateLayer( const char *,

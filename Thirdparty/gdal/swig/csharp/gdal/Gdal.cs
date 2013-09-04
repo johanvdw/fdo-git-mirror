@@ -59,25 +59,10 @@ public delegate int GDALProgressFuncDelegate(double Complete, IntPtr Message, In
      }
      return ret;
    }
-   
- public static void FileFromMemBuffer(string utf8_path, byte[] bytes) {
-     GCHandle handle = GCHandle.Alloc(bytes, GCHandleType.Pinned);
-     try {
-          FileFromMemBuffer(utf8_path, bytes.Length, handle.AddrOfPinnedObject());
-     } finally {
-        handle.Free();
-     }
-  }
 
   public static void Debug(string msg_class, string message) {
     GdalPINVOKE.Debug(msg_class, message);
     if (GdalPINVOKE.SWIGPendingException.Pending) throw GdalPINVOKE.SWIGPendingException.Retrieve();
-  }
-
-  public static CPLErr SetErrorHandler(string pszCallbackName) {
-    CPLErr ret = (CPLErr)GdalPINVOKE.SetErrorHandler(pszCallbackName);
-    if (GdalPINVOKE.SWIGPendingException.Pending) throw GdalPINVOKE.SWIGPendingException.Retrieve();
-    return ret;
   }
 
   public static CPLErr PushErrorHandler(string pszCallbackName) {
@@ -89,24 +74,6 @@ public delegate int GDALProgressFuncDelegate(double Complete, IntPtr Message, In
   public static void Error(CPLErr msg_class, int err_code, string msg) {
     GdalPINVOKE.Error((int)msg_class, err_code, msg);
     if (GdalPINVOKE.SWIGPendingException.Pending) throw GdalPINVOKE.SWIGPendingException.Retrieve();
-  }
-
-  public static string GOA2GetAuthorizationURL(string pszScope) {
-    string ret = GdalPINVOKE.GOA2GetAuthorizationURL(pszScope);
-    if (GdalPINVOKE.SWIGPendingException.Pending) throw GdalPINVOKE.SWIGPendingException.Retrieve();
-    return ret;
-  }
-
-  public static string GOA2GetRefreshToken(string pszAuthToken, string pszScope) {
-    string ret = GdalPINVOKE.GOA2GetRefreshToken(pszAuthToken, pszScope);
-    if (GdalPINVOKE.SWIGPendingException.Pending) throw GdalPINVOKE.SWIGPendingException.Retrieve();
-    return ret;
-  }
-
-  public static string GOA2GetAccessToken(string pszRefreshToken, string pszScope) {
-    string ret = GdalPINVOKE.GOA2GetAccessToken(pszRefreshToken, pszScope);
-    if (GdalPINVOKE.SWIGPendingException.Pending) throw GdalPINVOKE.SWIGPendingException.Retrieve();
-    return ret;
   }
 
   public static void PushErrorHandler(Gdal.GDALErrorHandlerDelegate arg0) {
@@ -172,29 +139,6 @@ public delegate int GDALProgressFuncDelegate(double Complete, IntPtr Message, In
   public static string[] ReadDir(string utf8_path) {
         /* %typemap(csout) char** CSL */
         IntPtr cPtr = GdalPINVOKE.ReadDir(System.Text.Encoding.Default.GetString(System.Text.Encoding.UTF8.GetBytes(utf8_path)));
-        IntPtr objPtr;
-        int count = 0;
-        if (cPtr != IntPtr.Zero) {
-            while (Marshal.ReadIntPtr(cPtr, count*IntPtr.Size) != IntPtr.Zero)
-                ++count;
-        }
-        string[] ret = new string[count];
-        if (count > 0) {       
-	        for(int cx = 0; cx < count; cx++) {
-                objPtr = System.Runtime.InteropServices.Marshal.ReadIntPtr(cPtr, cx * System.Runtime.InteropServices.Marshal.SizeOf(typeof(IntPtr)));
-                ret[cx]= (objPtr == IntPtr.Zero) ? null : System.Runtime.InteropServices.Marshal.PtrToStringAnsi(objPtr);
-            }
-        }
-        if (cPtr != IntPtr.Zero)
-            GdalPINVOKE.StringListDestroy(cPtr);
-        
-    if (GdalPINVOKE.SWIGPendingException.Pending) throw GdalPINVOKE.SWIGPendingException.Retrieve();
-        return ret;
-}
-
-  public static string[] ReadDirRecursive(string utf8_path) {
-        /* %typemap(csout) char** CSL */
-        IntPtr cPtr = GdalPINVOKE.ReadDirRecursive(System.Text.Encoding.Default.GetString(System.Text.Encoding.UTF8.GetBytes(utf8_path)));
         IntPtr objPtr;
         int count = 0;
         if (cPtr != IntPtr.Zero) {

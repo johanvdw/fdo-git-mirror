@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogdidataset.cpp 25494 2013-01-13 12:55:17Z etourigny $
+ * $Id: ogdidataset.cpp 20588 2010-09-12 16:29:21Z rouault $
  *
  * Name:     ogdidataset.cpp
  * Project:  OGDI Bridge
@@ -34,7 +34,7 @@
 #include "cpl_string.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: ogdidataset.cpp 25494 2013-01-13 12:55:17Z etourigny $");
+CPL_CVSID("$Id: ogdidataset.cpp 20588 2010-09-12 16:29:21Z rouault $");
 
 CPL_C_START
 void	GDALRegister_OGDI(void);
@@ -966,7 +966,6 @@ void GDALRegister_OGDI()
                                    "OGDI Bridge" );
         poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, 
                                    "frmt_ogdi.html" );
-        poDriver->SetMetadataItem( GDAL_DMD_SUBDATASETS, "YES" );
 
         poDriver->pfnOpen = OGDIDataset::Open;
 

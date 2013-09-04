@@ -7,7 +7,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2011, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2010, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -20,9 +20,10 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
+ * $Id: sendf.h,v 1.49 2010-01-25 04:36:13 yangtse Exp $
  ***************************************************************************/
 
-#include "curl_setup.h"
+#include "setup.h"
 
 CURLcode Curl_sendf(curl_socket_t sockfd, struct connectdata *,
                     const char *fmt, ...);
@@ -32,9 +33,9 @@ void Curl_failf(struct SessionHandle *, const char *fmt, ...);
 #if defined(CURL_DISABLE_VERBOSE_STRINGS)
 
 #if defined(HAVE_VARIADIC_MACROS_C99)
-#define infof(...)  Curl_nop_stmt
+#define infof(...)  do { } while (0)
 #elif defined(HAVE_VARIADIC_MACROS_GCC)
-#define infof(x...)  Curl_nop_stmt
+#define infof(x...)  do { } while (0)
 #else
 #define infof (void)
 #endif
@@ -55,20 +56,15 @@ CURLcode Curl_client_write(struct connectdata *conn, int type, char *ptr,
                            size_t len);
 
 /* internal read-function, does plain socket only */
-CURLcode Curl_read_plain(curl_socket_t sockfd,
-                         char *buf,
-                         size_t bytesfromsocket,
-                         ssize_t *n);
-
-ssize_t Curl_recv_plain(struct connectdata *conn, int num, char *buf,
-                        size_t len, CURLcode *code);
-ssize_t Curl_send_plain(struct connectdata *conn, int num,
-                        const void *mem, size_t len, CURLcode *code);
+int Curl_read_plain(curl_socket_t sockfd,
+                    char *buf,
+                    size_t bytesfromsocket,
+                    ssize_t *n);
 
 /* internal read-function, does plain socket, SSL and krb4 */
-CURLcode Curl_read(struct connectdata *conn, curl_socket_t sockfd,
-                   char *buf, size_t buffersize,
-                   ssize_t *n);
+int Curl_read(struct connectdata *conn, curl_socket_t sockfd,
+              char *buf, size_t buffersize,
+              ssize_t *n);
 /* internal write-function, does plain socket, SSL, SCP, SFTP and krb4 */
 CURLcode Curl_write(struct connectdata *conn,
                     curl_socket_t sockfd,

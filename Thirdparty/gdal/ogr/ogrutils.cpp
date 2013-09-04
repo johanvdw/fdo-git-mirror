@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrutils.cpp 25496 2013-01-13 21:20:35Z rouault $
+ * $Id: ogrutils.cpp 23584 2011-12-17 09:43:03Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Utility functions for OGR classes, including some related to
@@ -28,8 +28,6 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#include "cpl_vsi.h"
-
 #include <ctype.h>
 
 #include "ogr_geometry.h"
@@ -39,7 +37,7 @@
 # include "ogrsf_frmts.h"
 #endif /* OGR_ENABLED */
 
-CPL_CVSID("$Id: ogrutils.cpp 25496 2013-01-13 21:20:35Z rouault $");
+CPL_CVSID("$Id: ogrutils.cpp 23584 2011-12-17 09:43:03Z rouault $");
 
 /************************************************************************/
 /*                        OGRFormatDouble()                             */
@@ -48,17 +46,14 @@ CPL_CVSID("$Id: ogrutils.cpp 25496 2013-01-13 21:20:35Z rouault $");
 void OGRFormatDouble( char *pszBuffer, int nBufferLen, double dfVal, char chDecimalSep, int nPrecision )
 {
     int i;
-    int nTruncations = 0;
+    int bHasTruncated = FALSE;
     char szFormat[16];
     sprintf(szFormat, "%%.%df", nPrecision);
 
     int ret = snprintf(pszBuffer, nBufferLen, szFormat, dfVal);
     /* Windows CRT doesn't conform with C99 and return -1 when buffer is truncated */
     if (ret >= nBufferLen || ret == -1)
-    {
-        snprintf(pszBuffer, nBufferLen, "%s", "too_big");
         return;
-    }
 
     while(TRUE)
     {
@@ -117,9 +112,10 @@ void OGRFormatDouble( char *pszBuffer, int nBufferLen, double dfVal, char chDeci
     /* -------------------------------------------------------------------- */
     /*      Detect trailing 99999X's as they are likely roundoff error.     */
     /* -------------------------------------------------------------------- */
-        if( i > 10 &&
+        if( !bHasTruncated &&
+            i > 10 &&
             iDotPos >= 0 &&
-            nPrecision + nTruncations >= 15)
+            nPrecision >= 15)
         {
             if (/*pszBuffer[i-1] == '9' && */
                  pszBuffer[i-2] == '9' 
@@ -128,10 +124,8 @@ void OGRFormatDouble( char *pszBuffer, int nBufferLen, double dfVal, char chDeci
                 && pszBuffer[i-5] == '9' 
                 && pszBuffer[i-6] == '9' )
             {
-                nPrecision --;
-                nTruncations ++;
-                sprintf(szFormat, "%%.%df", nPrecision);
-                snprintf(pszBuffer, nBufferLen, szFormat, dfVal);
+                snprintf(pszBuffer, nBufferLen, "%.9f", dfVal);
+                bHasTruncated = TRUE;
                 continue;
             }
             else if (i - 9 > iDotPos && /*pszBuffer[i-1] == '9' && */
@@ -144,10 +138,9 @@ void OGRFormatDouble( char *pszBuffer, int nBufferLen, double dfVal, char chDeci
                     && pszBuffer[i-8] == '9'
                     && pszBuffer[i-9] == '9')
             {
-                nPrecision --;
-                nTruncations ++;
-                sprintf(szFormat, "%%.%df", nPrecision);
+                sprintf(szFormat, "%%.%df", MIN(5,12 - nCountBeforeDot));
                 snprintf(pszBuffer, nBufferLen, szFormat, dfVal);
+                bHasTruncated = TRUE;
                 continue;
             }
         }
@@ -509,8 +502,7 @@ void OGRFree( void * pMemory )
  *        exit( -argc );
  *
  * @param nArgc number of values in the argument list.
- * @param ppapszArgv pointer to the argument list array (will be updated in place). 
- * @param nOptions unused.
+ * @param Pointer to the argument list array (will be updated in place). 
  *
  * @return updated nArgc argument count.  Return of 0 requests terminate 
  * without error, return of -1 requests exit with error code.
@@ -600,7 +592,6 @@ int OGRGeneralCmdLineProcessor( int nArgc, char ***ppapszArgv, int nOptions )
             for( i = 0; papszFiles[i] != NULL; i++ )
             {
                 CPLString osOldPath, osNewPath;
-                VSIStatBufL sStatBuf;
                 
                 if( EQUAL(papszFiles[i],".") || EQUAL(papszFiles[i],"..") )
                     continue;
@@ -608,14 +599,6 @@ int OGRGeneralCmdLineProcessor( int nArgc, char ***ppapszArgv, int nOptions )
                 osOldPath = CPLFormFilename( papszArgv[iArg+1], 
                                              papszFiles[i], NULL );
                 osNewPath.Printf( "/vsimem/%s", papszFiles[i] );
-
-                if( VSIStatL( osOldPath, &sStatBuf ) != 0
-                    || VSI_ISDIR( sStatBuf.st_mode ) )
-                {
-                    CPLDebug( "VSI", "Skipping preload of %s.", 
-                              osOldPath.c_str() );
-                    continue;
-                }
 
                 CPLDebug( "VSI", "Preloading %s to %s.", 
                           osOldPath.c_str(), osNewPath.c_str() );
@@ -830,14 +813,7 @@ int OGRParseDate( const char *pszInput, OGRField *psField, int nOptions )
     
     if( strstr(pszInput,"-") != NULL || strstr(pszInput,"/") != NULL )
     {
-        int nYear = atoi(pszInput);
-        if( nYear != (GInt16)nYear )
-        {
-            CPLError(CE_Failure, CPLE_NotSupported,
-                     "Years < -32768 or > 32767 are not supported");
-            return FALSE;
-        }
-        psField->Date.Year = (GInt16)nYear;
+        psField->Date.Year = (GInt16)atoi(pszInput);
         if( psField->Date.Year < 100 && psField->Date.Year >= 30 )
             psField->Date.Year += 1900;
         else if( psField->Date.Year < 30 && psField->Date.Year >= 0 )
@@ -1001,13 +977,6 @@ int OGRParseXMLDateTime( const char* pszXMLDateTime,
         TZ = 0;
         bRet = TRUE;
     }
-    /* Date is expressed as a UTC date with only year:month:day */
-    else if (sscanf(pszXMLDateTime, "%04d-%02d-%02d", &year, &month, &day) == 3)
-    {
-        TZ = 0;
-        bRet = TRUE;
-    }
-
     if (bRet)
     {
         if (pnYear) *pnYear = year;

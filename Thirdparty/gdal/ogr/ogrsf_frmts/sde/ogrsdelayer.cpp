@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrsdelayer.cpp 24943 2012-09-20 12:03:38Z tamas $
+ * $Id: ogrsdelayer.cpp 22470 2011-05-31 18:18:26Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRSDELayer class.
@@ -33,7 +33,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrsdelayer.cpp 24943 2012-09-20 12:03:38Z tamas $");
+CPL_CVSID("$Id: ogrsdelayer.cpp 22470 2011-05-31 18:18:26Z warmerdam $");
 
 /************************************************************************/
 /*                            OGRSDELayer()                             */
@@ -218,12 +218,6 @@ int OGRSDELayer::Initialize( const char *pszTableName,
 #endif
 #ifdef SE_NSTRING_TYPE
           case SE_NSTRING_TYPE:
-#endif
-#ifdef SE_CLOB_TYPE
-          case SE_CLOB_TYPE:
-#endif
-#ifdef SE_NCLOB_TYPE
-          case SE_NCLOB_TYPE:
 #endif
             eOGRType = OFTString;
             nWidth = asColumnDefs[iCol].size;
@@ -1882,68 +1876,6 @@ OGRFeature *OGRSDELayer::TranslateSDERecord()
               }
           }
           break;
-
-#ifdef SE_CLOB_TYPE
-          case SE_CLOB_TYPE:
-          {
-              SE_CLOB_INFO sClobVal;
-
-              memset(&sClobVal, 0, sizeof(sClobVal)); /* to prevent from the crash in SE_stream_get_clob */
-              nSDEErr = SE_stream_get_clob( hStream, anFieldMap[i]+1, 
-                                            &sClobVal );
-              if( nSDEErr == SE_SUCCESS )
-              {
-                  /* the returned string is not null-terminated */
-                  char* sClobstring = (char*)CPLMalloc(sizeof(char)*(sClobVal.clob_length+1));
-                  memcpy(sClobstring, sClobVal.clob_buffer, sClobVal.clob_length);
-				  sClobstring[sClobVal.clob_length] = '\0';
-                  
-                  poFeat->SetField( i, sClobstring );
-                  SE_clob_free( &sClobVal );
-                  CPLFree(sClobstring);
-              }
-              else if( nSDEErr != SE_NULL_VALUE )
-              {
-                  poDS->IssueSDEError( nSDEErr, "SE_stream_get_clob" );
-                  return NULL;
-              }
-          }
-          break;
-
-#endif
-
-#ifdef SE_NCLOB_TYPE
-          case SE_NCLOB_TYPE:
-          {
-              SE_NCLOB_INFO sNclobVal;
-
-              memset(&sNclobVal, 0, sizeof(sNclobVal)); /* to prevent from the crash in SE_stream_get_nclob */
-              nSDEErr = SE_stream_get_nclob( hStream, anFieldMap[i]+1, 
-                                            &sNclobVal );
-              if( nSDEErr == SE_SUCCESS )
-              {
-                  /* the returned string is not null-terminated */
-                  SE_WCHAR* sNclobstring = (SE_WCHAR*)CPLMalloc(sizeof(char)*(sNclobVal.nclob_length+2));
-                  memcpy(sNclobstring, sNclobVal.nclob_buffer, sNclobVal.nclob_length);
-				  sNclobstring[sNclobVal.nclob_length / 2] = '\0';
-
-                  char* pszUTF8 = CPLRecodeFromWChar((const wchar_t*)sNclobstring, CPL_ENC_UTF16, CPL_ENC_UTF8);
-
-                  poFeat->SetField( i, pszUTF8 );
-                  CPLFree( pszUTF8 );
-                  
-                  SE_nclob_free( &sNclobVal );
-                  CPLFree(sNclobstring);
-              }
-              else if( nSDEErr != SE_NULL_VALUE )
-              {
-                  poDS->IssueSDEError( nSDEErr, "SE_stream_get_nclob" );
-                  return NULL;
-              }
-          }
-          break;
-
-#endif
 
           case SE_DATE_TYPE:
           {

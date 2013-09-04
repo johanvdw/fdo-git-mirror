@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_idrisi.h 24397 2012-05-07 20:11:28Z rouault $
+ * $Id: ogr_idrisi.h 23040 2011-09-04 14:42:12Z rouault $
  *
  * Project:  Idrisi Translator
  * Purpose:  Definition of classes for OGR Idrisi driver.
@@ -44,7 +44,6 @@ protected:
     OGRwkbGeometryType eGeomType;
 
     VSILFILE*          fp;
-    VSILFILE*          fpAVL;
     int                bEOF;
 
     int                nNextFID;
@@ -57,14 +56,10 @@ protected:
 
     unsigned int       nTotalFeatures;
 
-    int                Detect_AVL_ADC(const char* pszFilename);
-    void               ReadAVLLine(OGRFeature* poFeature);
-
     virtual OGRFeature *       GetNextRawFeature();
 
   public:
-                        OGRIdrisiLayer(const char* pszFilename,
-                                       const char* pszLayerName, VSILFILE* fp,
+                        OGRIdrisiLayer(const char* pszLayerName, VSILFILE* fp,
                                        OGRwkbGeometryType eGeomType, const char* pszWTKString);
                         ~OGRIdrisiLayer();
 

@@ -47,33 +47,11 @@ $!  P6, if defined, sets a choice of crypto methods to compile.
 $!  WARNING: this should only be done to recompile some part of an already
 $!  fully compiled library.
 $!
-$!  P7, if defined, specifies the C pointer size.  Ignored on VAX.
-$!      ("64=ARGV" gives more efficient code with HP C V7.3 or newer.)
-$!      Supported values are:
-$!
-$!      ""       Compile with default (/NOPOINTER_SIZE)
-$!      32       Compile with /POINTER_SIZE=32 (SHORT)
-$!      64       Compile with /POINTER_SIZE=64[=ARGV] (LONG[=ARGV]).
-$!               (Automatically select ARGV if compiler supports it.)
-$!      64=      Compile with /POINTER_SIZE=64 (LONG).
-$!      64=ARGV  Compile with /POINTER_SIZE=64=ARGV (LONG=ARGV).
-$!
-$!  P8, if defined, specifies a directory where ZLIB files (zlib.h,
-$!  libz.olb) may be found.  Optionally, a non-default object library
-$!  name may be included ("dev:[dir]libz_64.olb", for example).
-$!
-$!
-$! Announce/identify.
-$!
-$ proc = f$environment( "procedure")
-$ write sys$output "@@@ "+ -
-   f$parse( proc, , , "name")+ f$parse( proc, , , "type")
 $!
 $! Define A TCP/IP Library That We Will Need To Link To.
 $! (That Is, If We Need To Link To One.)
 $!
 $ TCPIP_LIB = ""
-$ ZLIB_LIB = ""
 $!
 $! Check Which Architecture We Are Using.
 $!
@@ -82,7 +60,7 @@ $ THEN
 $!
 $!  The Architecture Is VAX
 $!
-$   ARCH = "VAX"
+$   ARCH := VAX
 $!
 $! Else...
 $!
@@ -97,50 +75,31 @@ $! End The Architecture Check.
 $!
 $ ENDIF
 $!
-$ ARCHD = ARCH
-$ LIB32 = "32"
-$ OPT_FILE = ""
-$ POINTER_SIZE = ""
-$!
 $! Define The Different Encryption Types.
 $! NOTE: Some might think this list ugly.  However, it's made this way to
 $! reflect the SDIRS variable in [-]Makefile.org as closely as possible,
 $! thereby making it fairly easy to verify that the lists are the same.
 $!
-$ ET_WHIRLPOOL = "WHRLPOOL"
-$ IF ARCH .EQS. "VAX" THEN ET_WHIRLPOOL = ""
 $ ENCRYPT_TYPES = "Basic,"+ -
 		  "OBJECTS,"+ -
-		  "MD2,MD4,MD5,SHA,MDC2,HMAC,RIPEMD,"+ET_WHIRLPOOL+","+ -
+		  "MD2,MD4,MD5,SHA,MDC2,HMAC,RIPEMD,WHRLPOOL,"+ -
 		  "DES,AES,RC2,RC4,RC5,IDEA,BF,CAST,CAMELLIA,SEED,MODES,"+ -
 		  "BN,EC,RSA,DSA,ECDSA,DH,ECDH,DSO,ENGINE,"+ -
 		  "BUFFER,BIO,STACK,LHASH,RAND,ERR,"+ -
 		  "EVP,EVP_2,EVP_3,ASN1,ASN1_2,PEM,X509,X509V3,"+ -
 		  "CONF,TXT_DB,PKCS7,PKCS12,COMP,OCSP,UI,KRB5,"+ -
-		  "CMS,PQUEUE,TS,JPAKE,SRP,STORE,CMAC"
+		  "STORE,CMS,PQUEUE,TS,JPAKE"
+$! Define The OBJ Directory.
+$!
+$ OBJ_DIR := SYS$DISK:[-.'ARCH'.OBJ.CRYPTO]
+$!
+$! Define The EXE Directory.
+$!
+$ EXE_DIR := SYS$DISK:[-.'ARCH'.EXE.CRYPTO]
 $!
 $! Check To Make Sure We Have Valid Command Line Parameters.
 $!
 $ GOSUB CHECK_OPTIONS
-$!
-$! Define The OBJ and EXE Directories.
-$!
-$ OBJ_DIR := SYS$DISK:[-.'ARCHD'.OBJ.CRYPTO]
-$ EXE_DIR := SYS$DISK:[-.'ARCHD'.EXE.CRYPTO]
-$!
-$! Specify the destination directory in any /MAP option.
-$!
-$ if (LINKMAP .eqs. "MAP")
-$ then
-$   LINKMAP = LINKMAP+ "=''EXE_DIR'"
-$ endif
-$!
-$! Add the location prefix to the linker options file name.
-$!
-$ if (OPT_FILE .nes. "")
-$ then
-$   OPT_FILE = EXE_DIR+ OPT_FILE
-$ endif
 $!
 $! Initialise logical names and such
 $!
@@ -148,7 +107,7 @@ $ GOSUB INITIALISE
 $!
 $! Tell The User What Kind of Machine We Run On.
 $!
-$ WRITE SYS$OUTPUT "Host system architecture: ''ARCHD'"
+$ WRITE SYS$OUTPUT "Compiling On A ",ARCH," Machine."
 $!
 $!
 $! Check To See If The Architecture Specific OBJ Directory Exists.
@@ -179,11 +138,11 @@ $ ENDIF
 $!
 $! Define The Library Name.
 $!
-$ LIB_NAME := 'EXE_DIR'SSL_LIBCRYPTO'LIB32'.OLB
+$ LIB_NAME := 'EXE_DIR'LIBCRYPTO.OLB
 $!
 $! Define The CRYPTO-LIB We Are To Use.
 $!
-$ CRYPTO_LIB := 'EXE_DIR'SSL_LIBCRYPTO'LIB32'.OLB
+$ CRYPTO_LIB := 'EXE_DIR'LIBCRYPTO.OLB
 $!
 $! Check To See If We Already Have A "[.xxx.EXE.CRYPTO]LIBCRYPTO.OLB" Library...
 $!
@@ -207,8 +166,7 @@ $!
 $ APPS_DES = "DES/DES,CBC3_ENC"
 $ APPS_PKCS7 = "ENC/ENC;DEC/DEC;SIGN/SIGN;VERIFY/VERIFY,EXAMPLE"
 $
-$ LIB_ = "cryptlib,mem,mem_clr,mem_dbg,cversion,ex_data,cpt_err,"+ -
-	"ebcdic,uid,o_time,o_str,o_dir,o_fips.c,o_init,fips_ers"
+$ LIB_ = "cryptlib,mem,mem_clr,mem_dbg,cversion,ex_data,cpt_err,ebcdic,uid,o_time,o_str,o_dir"
 $ LIB_MD2 = "md2_dgst,md2_one"
 $ LIB_MD4 = "md4_dgst,md4_one"
 $ LIB_MD5 = "md5_dgst,md5_one"
@@ -225,16 +183,15 @@ $ LIB_DES = "set_key,ecb_enc,cbc_enc,"+ -
 	"fcrypt,xcbc_enc,rpc_enc,cbc_cksm,"+ -
 	"ede_cbcm_enc,des_old,des_old2,read2pwd"
 $ LIB_RC2 = "rc2_ecb,rc2_skey,rc2_cbc,rc2cfb64,rc2ofb64"
-$ LIB_RC4 = "rc4_skey,rc4_enc,rc4_utl"
+$ LIB_RC4 = "rc4_skey,rc4_enc"
 $ LIB_RC5 = "rc5_skey,rc5_ecb,rc5_enc,rc5cfb64,rc5ofb64"
 $ LIB_IDEA = "i_cbc,i_cfb64,i_ofb64,i_ecb,i_skey"
 $ LIB_BF = "bf_skey,bf_ecb,bf_enc,bf_cfb64,bf_ofb64"
 $ LIB_CAST = "c_skey,c_ecb,c_enc,c_cfb64,c_ofb64"
 $ LIB_CAMELLIA = "camellia,cmll_misc,cmll_ecb,cmll_cbc,cmll_ofb,"+ -
-	"cmll_cfb,cmll_ctr,cmll_utl"
+	"cmll_cfb,cmll_ctr"
 $ LIB_SEED = "seed,seed_ecb,seed_cbc,seed_cfb,seed_ofb"
-$ LIB_MODES = "cbc128,ctr128,cts128,cfb128,ofb128,gcm128,"+ -
-	"ccm128,xts128"
+$ LIB_MODES = "cbc128,ctr128,cfb128,ofb128"
 $ LIB_BN_ASM = "[.asm]vms.mar,vms-helper"
 $ IF F$TRNLNM("OPENSSL_NO_ASM") .OR. ARCH .NES. "VAX" THEN -
      LIB_BN_ASM = "bn_asm"
@@ -242,16 +199,14 @@ $ LIB_BN = "bn_add,bn_div,bn_exp,bn_lib,bn_ctx,bn_mul,bn_mod,"+ -
 	"bn_print,bn_rand,bn_shift,bn_word,bn_blind,"+ -
 	"bn_kron,bn_sqrt,bn_gcd,bn_prime,bn_err,bn_sqr,"+LIB_BN_ASM+","+ -
 	"bn_recp,bn_mont,bn_mpi,bn_exp2,bn_gf2m,bn_nist,"+ -
-	"bn_depr,bn_const,bn_x931p"
+	"bn_depr,bn_const"
 $ LIB_EC = "ec_lib,ecp_smpl,ecp_mont,ecp_nist,ec_cvt,ec_mult,"+ -
 	"ec_err,ec_curve,ec_check,ec_print,ec_asn1,ec_key,"+ -
-	"ec2_smpl,ec2_mult,ec_ameth,ec_pmeth,eck_prn,"+ -
-	"ecp_nistp224,ecp_nistp256,ecp_nistp521,ecp_nistputil,"+ -
-	"ecp_oct,ec2_oct,ec_oct"
+	"ec2_smpl,ec2_mult,ec_ameth,ec_pmeth,eck_prn"
 $ LIB_RSA = "rsa_eay,rsa_gen,rsa_lib,rsa_sign,rsa_saos,rsa_err,"+ -
 	"rsa_pk1,rsa_ssl,rsa_none,rsa_oaep,rsa_chk,rsa_null,"+ -
 	"rsa_pss,rsa_x931,rsa_asn1,rsa_depr,rsa_ameth,rsa_prn,"+ -
-	"rsa_pmeth,rsa_crpt"
+	"rsa_pmeth"
 $ LIB_DSA = "dsa_gen,dsa_key,dsa_lib,dsa_asn1,dsa_vrf,dsa_sign,"+ -
 	"dsa_err,dsa_ossl,dsa_depr,dsa_ameth,dsa_pmeth,dsa_prn"
 $ LIB_ECDSA = "ecs_lib,ecs_asn1,ecs_ossl,ecs_sign,ecs_vrf,ecs_err"
@@ -264,11 +219,10 @@ $ LIB_ENGINE = "eng_err,eng_lib,eng_list,eng_init,eng_ctrl,"+ -
 	"eng_table,eng_pkey,eng_fat,eng_all,"+ -
 	"tb_rsa,tb_dsa,tb_ecdsa,tb_dh,tb_ecdh,tb_rand,tb_store,"+ -
 	"tb_cipher,tb_digest,tb_pkmeth,tb_asnmth,"+ -
-	"eng_openssl,eng_dyn,eng_cnf,eng_cryptodev,"+ -
-	"eng_rsax,eng_rdrand"
+	"eng_openssl,eng_dyn,eng_cnf,eng_cryptodev"
 $ LIB_AES = "aes_core,aes_misc,aes_ecb,aes_cbc,aes_cfb,aes_ofb,aes_ctr,"+ -
 	"aes_ige,aes_wrap"
-$ LIB_BUFFER = "buffer,buf_str,buf_err"
+$ LIB_BUFFER = "buffer,buf_err"
 $ LIB_BIO = "bio_lib,bio_cb,bio_err,"+ -
 	"bss_mem,bss_null,bss_fd,"+ -
 	"bss_file,bss_sock,bss_conn,"+ -
@@ -282,7 +236,7 @@ $ LIB_RAND = "md_rand,randfile,rand_lib,rand_err,rand_egd,"+ -
 	"rand_vms"
 $ LIB_ERR = "err,err_all,err_prn"
 $ LIB_OBJECTS = "o_names,obj_dat,obj_lib,obj_err,obj_xref"
-$ LIB_EVP = "encode,digest,evp_enc,evp_key,evp_acnf,evp_cnf,"+ -
+$ LIB_EVP = "encode,digest,evp_enc,evp_key,evp_acnf,"+ -
 	"e_des,e_bf,e_idea,e_des3,e_camellia,"+ -
 	"e_rc4,e_aes,names,e_seed,"+ -
 	"e_xcbc_d,e_rc2,e_cast,e_rc5"
@@ -292,8 +246,7 @@ $ LIB_EVP_2 = "m_null,m_md2,m_md4,m_md5,m_sha,m_sha1,m_wp," + -
 	"bio_md,bio_b64,bio_enc,evp_err,e_null,"+ -
 	"c_all,c_allc,c_alld,evp_lib,bio_ok,"+-
 	"evp_pkey,evp_pbe,p5_crpt,p5_crpt2"
-$ LIB_EVP_3 = "e_old,pmeth_lib,pmeth_fn,pmeth_gn,m_sigver,evp_fips,"+ -
-	"e_aes_cbc_hmac_sha1,e_rc4_hmac_md5"
+$ LIB_EVP_3 = "e_old,pmeth_lib,pmeth_fn,pmeth_gn,m_sigver"
 $ LIB_ASN1 = "a_object,a_bitstr,a_utctm,a_gentm,a_time,a_int,a_octet,"+ -
 	"a_print,a_type,a_set,a_dup,a_d2i_fp,a_i2d_fp,"+ -
 	"a_enum,a_utf8,a_sign,a_digest,a_verify,a_mbstr,a_strex,"+ -
@@ -335,37 +288,26 @@ $ LIB_OCSP = "ocsp_asn,ocsp_ext,ocsp_ht,ocsp_lib,ocsp_cl,"+ -
 $ LIB_UI_COMPAT = ",ui_compat"
 $ LIB_UI = "ui_err,ui_lib,ui_openssl,ui_util"+LIB_UI_COMPAT
 $ LIB_KRB5 = "krb5_asn"
+$ LIB_STORE = "str_err,str_lib,str_meth,str_mem"
 $ LIB_CMS = "cms_lib,cms_asn1,cms_att,cms_io,cms_smime,cms_err,"+ -
-	"cms_sd,cms_dd,cms_cd,cms_env,cms_enc,cms_ess,"+ -
-	"cms_pwri"
+	"cms_sd,cms_dd,cms_cd,cms_env,cms_enc,cms_ess"
 $ LIB_PQUEUE = "pqueue"
 $ LIB_TS = "ts_err,ts_req_utils,ts_req_print,ts_rsp_utils,ts_rsp_print,"+ -
 	"ts_rsp_sign,ts_rsp_verify,ts_verify_ctx,ts_lib,ts_conf,"+ -
 	"ts_asn1"
 $ LIB_JPAKE = "jpake,jpake_err"
-$ LIB_SRP = "srp_lib,srp_vfy"
-$ LIB_STORE = "str_err,str_lib,str_meth,str_mem"
-$ LIB_CMAC = "cmac,cm_ameth.c,cm_pmeth"
 $!
 $! Setup exceptional compilations
 $!
-$ CC3_SHOWN = 0
-$ CC4_SHOWN = 0
-$ CC5_SHOWN = 0
-$ CC6_SHOWN = 0
-$!
-$! The following lists must have leading and trailing commas, and no
-$! embedded spaces.  (They are scanned for ",name,".)
-$!
-$ ! Add definitions for no threads on OpenVMS 7.1 and higher.
+$ ! Add definitions for no threads on OpenVMS 7.1 and higher
 $ COMPILEWITH_CC3 = ",bss_rtcp,"
-$ ! Disable the DOLLARID warning.  Not needed with /STANDARD=RELAXED.
-$ COMPILEWITH_CC4 = "" !!! ",a_utctm,bss_log,o_time,o_dir,"
-$ ! Disable disjoint optimization on VAX with DECC.
+$ ! Disable the DOLLARID warning
+$ COMPILEWITH_CC4 = ",a_utctm,bss_log,o_time,o_dir"
+$ ! Disable disjoint optimization
 $ COMPILEWITH_CC5 = ",md2_dgst,md4_dgst,md5_dgst,mdc2dgst," + -
                     "seed,sha_dgst,sha1dgst,rmd_dgst,bf_enc,"
-$ ! Disable the MIXLINKAGE warning.
-$ COMPILEWITH_CC6 = "" !!! ",enc_read,set_key,"
+$ ! Disable the MIXLINKAGE warning
+$ COMPILEWITH_CC6 = ",enc_read,set_key,"
 $!
 $! Figure Out What Other Modules We Are To Build.
 $!
@@ -425,7 +367,7 @@ $!
 $ IF F$TYPE('LIB_MODULE') .EQS. ""
 $ THEN
 $   WRITE SYS$ERROR ""
-$   WRITE SYS$ERROR "The module ",MODULE_NAME1," does not exist.  Continuing..."
+$   WRITE SYS$ERROR "The module ",MODULE_NAME," does not exist.  Continuing..."
 $   WRITE SYS$ERROR ""
 $   GOTO MODULE_NEXT
 $ ENDIF
@@ -571,60 +513,31 @@ $   WRITE SYS$OUTPUT "Compiling The ",FILE_NAME," File.  (",BUILDALL,",",STATE,"
 $ ENDIF
 $ IF (MODULE_NAME.NES."")
 $ THEN 
-$   WRITE SYS$OUTPUT "        ",FILE_NAME,""
+$   WRITE SYS$OUTPUT "	",FILE_NAME,""
 $ ENDIF
 $!
 $! Compile The File.
 $!
 $ ON ERROR THEN GOTO NEXT_FILE
-$ FILE_NAME0 = ","+ F$ELEMENT(0,".",FILE_NAME)+ ","
+$ FILE_NAME0 = F$ELEMENT(0,".",FILE_NAME)
 $ IF FILE_NAME - ".mar" .NES. FILE_NAME
 $ THEN
 $   MACRO/OBJECT='OBJECT_FILE' 'SOURCE_FILE'
 $ ELSE
 $   IF COMPILEWITH_CC3 - FILE_NAME0 .NES. COMPILEWITH_CC3
 $   THEN
-$     write sys$output "        \Using special rule (3)"
-$     if (.not. CC3_SHOWN)
-$     then
-$       CC3_SHOWN = 1
-$       x = "    "+ CC3
-$       write /symbol sys$output x
-$     endif
 $     CC3/OBJECT='OBJECT_FILE' 'SOURCE_FILE'
 $   ELSE
 $     IF COMPILEWITH_CC4 - FILE_NAME0 .NES. COMPILEWITH_CC4
 $     THEN
-$       write /symbol sys$output "        \Using special rule (4)"
-$       if (.not. CC4_SHOWN)
-$       then
-$         CC4_SHOWN = 1
-$         x = "    "+ CC4
-$         write /symbol sys$output x
-$       endif
 $       CC4/OBJECT='OBJECT_FILE' 'SOURCE_FILE'
 $     ELSE
-$       IF CC5_DIFFERENT .AND. -
-         (COMPILEWITH_CC5 - FILE_NAME0 .NES. COMPILEWITH_CC5)
+$       IF COMPILEWITH_CC5 - FILE_NAME0 .NES. COMPILEWITH_CC5
 $       THEN
-$         write sys$output "        \Using special rule (5)"
-$         if (.not. CC5_SHOWN)
-$         then
-$           CC5_SHOWN = 1
-$           x = "    "+ CC5
-$           write /symbol sys$output x
-$         endif
 $         CC5/OBJECT='OBJECT_FILE' 'SOURCE_FILE'
 $       ELSE
 $         IF COMPILEWITH_CC6 - FILE_NAME0 .NES. COMPILEWITH_CC6
 $         THEN
-$           write sys$output "        \Using special rule (6)"
-$           if (.not. CC6_SHOWN)
-$           then
-$             CC6_SHOWN = 1
-$             x = "    "+ CC6
-$             write /symbol sys$output x
-$           endif
 $           CC6/OBJECT='OBJECT_FILE' 'SOURCE_FILE'
 $         ELSE
 $           CC/OBJECT='OBJECT_FILE' 'SOURCE_FILE'
@@ -671,22 +584,38 @@ $!   SHOW SYMBOL APPLICATION*
 $!
 $! Tell the user what happens
 $!
-$   WRITE SYS$OUTPUT "        ",APPLICATION,".exe"
+$   WRITE SYS$OUTPUT "	",APPLICATION,".exe"
 $!
 $! Link The Program.
 $!
 $   ON ERROR THEN GOTO NEXT_APPLICATION
 $!
-$!  Link With A TCP/IP Library.
+$! Check To See If We Are To Link With A Specific TCP/IP Library.
 $!
-$   LINK /'DEBUGGER' /'LINKMAP' /'TRACEBACK' -
-     /EXE='EXE_DIR''APPLICATION'.EXE -
-     'OBJ_DIR''APPLICATION_OBJECTS', -
-     'CRYPTO_LIB'/LIBRARY -
-     'TCPIP_LIB' -
-     'ZLIB_LIB' -
-     ,'OPT_FILE' /OPTIONS
+$   IF (TCPIP_LIB.NES."")
+$   THEN
 $!
+$!    Link With A TCP/IP Library.
+$!
+$     LINK/'DEBUGGER'/'TRACEBACK'/EXE='EXE_DIR''APPLICATION'.EXE -
+          'OBJ_DIR''APPLICATION_OBJECTS', -
+	  'CRYPTO_LIB'/LIBRARY, -
+          'TCPIP_LIB','OPT_FILE'/OPTION
+$!
+$! Else...
+$!
+$   ELSE
+$!
+$!    Don't Link With A TCP/IP Library.
+$!
+$     LINK/'DEBUGGER'/'TRACEBACK'/EXE='EXE_DIR''APPLICATION'.EXE -
+          'OBJ_DIR''APPLICATION_OBJECTS',-
+	  'CRYPTO_LIB'/LIBRARY, -
+          'OPT_FILE'/OPTION
+$!
+$! End The TCP/IP Library Check.
+$!
+$   ENDIF
 $   GOTO NEXT_APPLICATION
 $  APPLICATION_DONE:
 $ ENDIF
@@ -725,7 +654,7 @@ $!
 $     CREATE 'OPT_FILE'
 $DECK
 !
-! Default System Options File To Link Against 
+! Default System Options File To Link Agianst 
 ! The Sharable VAX C Runtime Library.
 !
 SYS$SHARE:VAXCRTL.EXE/SHARE
@@ -754,7 +683,7 @@ $!
 $     CREATE 'OPT_FILE'
 $DECK
 !
-! Default System Options File To Link Against 
+! Default System Options File To Link Agianst 
 ! The Sharable C Runtime Library.
 !
 GNU_CC:[000000]GCCLIB/LIBRARY
@@ -789,7 +718,7 @@ $!
 $       CREATE 'OPT_FILE'
 $DECK
 !
-! Default System Options File To Link Against 
+! Default System Options File To Link Agianst 
 ! The Sharable DEC C Runtime Library.
 !
 SYS$SHARE:DECC$SHR.EXE/SHARE
@@ -804,7 +733,7 @@ $!
 $       CREATE 'OPT_FILE'
 $DECK
 !
-! Default System Options File For non-VAX To Link Against 
+! Default System Options File For non-VAX To Link Agianst 
 ! The Sharable C Runtime Library.
 !
 SYS$SHARE:CMA$OPEN_LIB_SHR/SHARE
@@ -825,7 +754,7 @@ $ ENDIF
 $!
 $!  Tell The User What Linker Option File We Are Using.
 $!
-$ WRITE SYS$OUTPUT "Using Linker Option File ",OPT_FILE,"."
+$ WRITE SYS$OUTPUT "Using Linker Option File ",OPT_FILE,"."	
 $!
 $! Time To RETURN.
 $!
@@ -848,12 +777,12 @@ $! Else...
 $!
 $ ELSE
 $!
-$!  Else, Check To See If P1 Has A Valid Argument.
+$!  Else, Check To See If P1 Has A Valid Arguement.
 $!
 $   IF (P1.EQS."LIBRARY").OR.(P1.EQS."APPS")
 $   THEN
 $!
-$!    A Valid Argument.
+$!    A Valid Arguement.
 $!
 $     BUILDALL = P1
 $!
@@ -872,8 +801,8 @@ $     WRITE SYS$OUTPUT "    APPS     :  To Compile Just The [.xxx.EXE.CRYPTO]*.E
 $     WRITE SYS$OUTPUT ""
 $     WRITE SYS$OUTPUT " Where 'xxx' Stands For:"
 $     WRITE SYS$OUTPUT ""
-$     WRITE SYS$OUTPUT "    ALPHA[64]:  Alpha Architecture."
-$     WRITE SYS$OUTPUT "    IA64[64] :  IA64 Architecture."
+$     WRITE SYS$OUTPUT "    ALPHA    :  Alpha Architecture."
+$     WRITE SYS$OUTPUT "    IA64     :  IA64 Architecture."
 $     WRITE SYS$OUTPUT "    VAX      :  VAX Architecture."
 $     WRITE SYS$OUTPUT ""
 $!
@@ -881,7 +810,7 @@ $!    Time To EXIT.
 $!
 $     EXIT
 $!
-$!  End The Valid Argument Check.
+$!  End The Valid Arguement Check.
 $!
 $   ENDIF
 $!
@@ -894,16 +823,15 @@ $!
 $ IF (P2.EQS."NODEBUG")
 $ THEN
 $!
-$!  P2 Is NODEBUG, So Compile Without The Debugger Information.
+$!   P2 Is NODEBUG, So Compile Without The Debugger Information.
 $!
-$   DEBUGGER = "NODEBUG"
-$   LINKMAP = "NOMAP"
-$   TRACEBACK = "NOTRACEBACK" 
-$   GCC_OPTIMIZE = "OPTIMIZE"
-$   CC_OPTIMIZE = "OPTIMIZE"
-$   MACRO_OPTIMIZE = "OPTIMIZE"
-$   WRITE SYS$OUTPUT "No Debugger Information Will Be Produced During Compile."
-$   WRITE SYS$OUTPUT "Compiling With Compiler Optimization."
+$    DEBUGGER = "NODEBUG"
+$    TRACEBACK = "NOTRACEBACK" 
+$    GCC_OPTIMIZE = "OPTIMIZE"
+$    CC_OPTIMIZE = "OPTIMIZE"
+$    MACRO_OPTIMIZE = "OPTIMIZE"
+$    WRITE SYS$OUTPUT "No Debugger Information Will Be Produced During Compile."
+$    WRITE SYS$OUTPUT "Compiling With Compiler Optimization."
 $ ELSE
 $!
 $!  Check To See If We Are To Compile With Debugger Information.
@@ -914,7 +842,6 @@ $!
 $!    Compile With Debugger Information.
 $!
 $     DEBUGGER = "DEBUG"
-$     LINKMAP = "MAP"
 $     TRACEBACK = "TRACEBACK"
 $     GCC_OPTIMIZE = "NOOPTIMIZE"
 $     CC_OPTIMIZE = "NOOPTIMIZE"
@@ -923,7 +850,7 @@ $     WRITE SYS$OUTPUT "Debugger Information Will Be Produced During Compile."
 $     WRITE SYS$OUTPUT "Compiling Without Compiler Optimization."
 $   ELSE 
 $!
-$!    They Entered An Invalid Option.
+$!    They Entered An Invalid Option..
 $!
 $     WRITE SYS$OUTPUT ""
 $     WRITE SYS$OUTPUT "The Option ",P2," Is Invalid.  The Valid Options Are:"
@@ -936,7 +863,7 @@ $!    Time To EXIT.
 $!
 $     EXIT
 $!
-$!  End The Valid Argument Check.
+$!  End The Valid Arguement Check.
 $!
 $   ENDIF
 $!
@@ -977,60 +904,6 @@ $!
 $! End The P5 Check.
 $!
 $ ENDIF
-$!
-$! Check P7 (POINTER_SIZE).
-$!
-$ IF (P7 .NES. "") .AND. (ARCH .NES. "VAX")
-$ THEN
-$!
-$   IF (P7 .EQS. "32")
-$   THEN
-$     POINTER_SIZE = " /POINTER_SIZE=32"
-$   ELSE
-$     POINTER_SIZE = F$EDIT( P7, "COLLAPSE, UPCASE")
-$     IF ((POINTER_SIZE .EQS. "64") .OR. -
-       (POINTER_SIZE .EQS. "64=") .OR. -
-       (POINTER_SIZE .EQS. "64=ARGV"))
-$     THEN
-$       ARCHD = ARCH+ "_64"
-$       LIB32 = ""
-$       POINTER_SIZE = " /POINTER_SIZE=64"
-$     ELSE
-$!
-$!      Tell The User Entered An Invalid Option.
-$!
-$       WRITE SYS$OUTPUT ""
-$       WRITE SYS$OUTPUT "The Option ", P7, -
-         " Is Invalid.  The Valid Options Are:"
-$       WRITE SYS$OUTPUT ""
-$       WRITE SYS$OUTPUT -
-         "    """"       :  Compile with default (short) pointers."
-$       WRITE SYS$OUTPUT -
-         "    32       :  Compile with 32-bit (short) pointers."
-$       WRITE SYS$OUTPUT -
-         "    64       :  Compile with 64-bit (long) pointers (auto ARGV)."
-$       WRITE SYS$OUTPUT -
-         "    64=      :  Compile with 64-bit (long) pointers (no ARGV)."
-$       WRITE SYS$OUTPUT -
-         "    64=ARGV  :  Compile with 64-bit (long) pointers (ARGV)."
-$       WRITE SYS$OUTPUT ""
-$! 
-$!      Time To EXIT.
-$!
-$       EXIT
-$!
-$     ENDIF
-$!
-$   ENDIF
-$!
-$! End The P7 (POINTER_SIZE) Check.
-$!
-$ ENDIF
-$!
-$! Set basic C compiler /INCLUDE directories.
-$!
-$ CC_INCLUDES = "SYS$DISK:[.''ARCHD'],SYS$DISK:[],SYS$DISK:[-],"+ -
-   "SYS$DISK:[.ENGINE.VENDOR_DEFNS],SYS$DISK:[.MODES],SYS$DISK:[.ASN1],SYS$DISK:[.EVP]"
 $!
 $! Check To See If P3 Is Blank.
 $!
@@ -1132,64 +1005,11 @@ $ CCDEFS = "TCPIP_TYPE_''P4',DSO_VMS"
 $ IF F$TYPE(USER_CCDEFS) .NES. "" THEN CCDEFS = CCDEFS + "," + USER_CCDEFS
 $ CCEXTRAFLAGS = ""
 $ IF F$TYPE(USER_CCFLAGS) .NES. "" THEN CCEXTRAFLAGS = USER_CCFLAGS
-$ CCDISABLEWARNINGS = "" !!! "LONGLONGTYPE,LONGLONGSUFX,FOUNDCR"
+$ CCDISABLEWARNINGS = "LONGLONGTYPE,LONGLONGSUFX,FOUNDCR"
 $ IF F$TYPE(USER_CCDISABLEWARNINGS) .NES. "" THEN -
 	CCDISABLEWARNINGS = CCDISABLEWARNINGS + "," + USER_CCDISABLEWARNINGS
 $!
-$! Check To See If We Have A ZLIB Option.
-$!
-$ ZLIB = P8
-$ IF (ZLIB .NES. "")
-$ THEN
-$!
-$!  Check for expected ZLIB files.
-$!
-$   err = 0
-$   file1 = f$parse( "zlib.h", ZLIB, , , "SYNTAX_ONLY")
-$   if (f$search( file1) .eqs. "")
-$   then
-$     WRITE SYS$OUTPUT ""
-$     WRITE SYS$OUTPUT "The Option ", ZLIB, " Is Invalid."
-$     WRITE SYS$OUTPUT "    Can't find header: ''file1'"
-$     err = 1
-$   endif
-$   file1 = f$parse( "A.;", ZLIB)- "A.;"
-$!
-$   file2 = f$parse( ZLIB, "libz.olb", , , "SYNTAX_ONLY")
-$   if (f$search( file2) .eqs. "")
-$   then
-$     if (err .eq. 0)
-$     then
-$       WRITE SYS$OUTPUT ""
-$       WRITE SYS$OUTPUT "The Option ", ZLIB, " Is Invalid."
-$     endif
-$     WRITE SYS$OUTPUT "    Can't find library: ''file2'"
-$     WRITE SYS$OUTPUT ""
-$     err = err+ 2
-$   endif
-$   if (err .eq. 1)
-$   then
-$     WRITE SYS$OUTPUT ""
-$   endif
-$!
-$   if (err .ne. 0)
-$   then
-$     EXIT
-$   endif
-$!
-$   CCDEFS = """ZLIB=1"", "+ CCDEFS
-$   CC_INCLUDES = CC_INCLUDES+ ", "+ file1
-$   ZLIB_LIB = ", ''file2' /library"
-$!
-$!  Print info
-$!
-$   WRITE SYS$OUTPUT "ZLIB library spec: ", file2
-$!
-$! End The ZLIB Check.
-$!
-$ ENDIF
-$!
-$!  Check To See If The User Entered A Valid Parameter.
+$!  Check To See If The User Entered A Valid Paramter.
 $!
 $ IF (P3.EQS."VAXC").OR.(P3.EQS."DECC").OR.(P3.EQS."GNUC")
 $ THEN
@@ -1212,14 +1032,14 @@ $!
 $     CC = "CC"
 $     IF ARCH.EQS."VAX" .AND. F$TRNLNM("DECC$CC_DEFAULT").NES."/DECC" -
 	 THEN CC = "CC/DECC"
-$     CC = CC + " /''CC_OPTIMIZE' /''DEBUGGER' /STANDARD=RELAXED"+ -
-       "''POINTER_SIZE' /NOLIST /PREFIX=ALL" + -
-       " /INCLUDE=(''CC_INCLUDES')"+ -
-       CCEXTRAFLAGS
+$     CC = CC + "/''CC_OPTIMIZE'/''DEBUGGER'/STANDARD=ANSI89" + -
+           "/NOLIST/PREFIX=ALL" + -
+	   "/INCLUDE=(SYS$DISK:[],SYS$DISK:[.''ARCH'],SYS$DISK:[-],SYS$DISK:[.ENGINE.VENDOR_DEFNS],SYS$DISK:[.EVP],SYS$DISK:[.ASN1])" + -
+	   CCEXTRAFLAGS
 $!
 $!    Define The Linker Options File Name.
 $!
-$     OPT_FILE = "VAX_DECC_OPTIONS.OPT"
+$     OPT_FILE = "''EXE_DIR'VAX_DECC_OPTIONS.OPT"
 $!
 $!  End DECC Check.
 $!
@@ -1248,7 +1068,7 @@ $	EXIT
 $     ENDIF
 $     IF F$TRNLNM("DECC$CC_DEFAULT").EQS."/DECC" THEN CC = "CC/VAXC"
 $     CC = CC + "/''CC_OPTIMIZE'/''DEBUGGER'/NOLIST" + -
-       "/INCLUDE=(''CC_INCLUDES')"+ -
+	   "/INCLUDE=(SYS$DISK:[],SYS$DISK:[.''ARCH'],SYS$DISK:[-],SYS$DISK:[.ENGINE.VENDOR_DEFNS],SYS$DISK:[.EVP],SYS$DISK:[.ASN1])" + -
 	   CCEXTRAFLAGS
 $     CCDEFS = """VAXC""," + CCDEFS
 $!
@@ -1258,7 +1078,7 @@ $     DEFINE/NOLOG SYS SYS$COMMON:[SYSLIB]
 $!
 $!    Define The Linker Options File Name.
 $!
-$     OPT_FILE = "VAX_VAXC_OPTIONS.OPT"
+$     OPT_FILE = "''EXE_DIR'VAX_VAXC_OPTIONS.OPT"
 $!
 $!  End VAXC Check
 $!
@@ -1280,12 +1100,12 @@ $!
 $!    Use GNU C...
 $!
 $     CC = "GCC/NOCASE_HACK/''GCC_OPTIMIZE'/''DEBUGGER'/NOLIST" + -
-       "/INCLUDE=(''CC_INCLUDES')"+ -
+	   "/INCLUDE=(SYS$DISK:[],SYS$DISK:[.''ARCH'],SYS$DISK:[-],SYS$DISK:[.ENGINE.VENDOR_DEFNS],SYS$DISK:[.EVP],SYS$DISK:[.ASN1])" + -
 	   CCEXTRAFLAGS
 $!
 $!    Define The Linker Options File Name.
 $!
-$     OPT_FILE = "VAX_GNUC_OPTIONS.OPT"
+$     OPT_FILE = "''EXE_DIR'VAX_GNUC_OPTIONS.OPT"
 $!
 $!  End The GNU C Check.
 $!
@@ -1306,24 +1126,22 @@ $       CC6DISABLEWARNINGS = "MIXLINKAGE"
 $     ELSE
 $       CC4DISABLEWARNINGS = CCDISABLEWARNINGS + ",DOLLARID"
 $       CC6DISABLEWARNINGS = CCDISABLEWARNINGS + ",MIXLINKAGE"
-$       CCDISABLEWARNINGS = " /WARNING=(DISABLE=(" + CCDISABLEWARNINGS + "))"
+$       CCDISABLEWARNINGS = "/WARNING=(DISABLE=(" + CCDISABLEWARNINGS + "))"
 $     ENDIF
-$     CC4DISABLEWARNINGS = " /WARNING=(DISABLE=(" + CC4DISABLEWARNINGS + "))"
-$     CC6DISABLEWARNINGS = " /WARNING=(DISABLE=(" + CC6DISABLEWARNINGS + "))"
+$     CC4DISABLEWARNINGS = "/WARNING=(DISABLE=(" + CC4DISABLEWARNINGS + "))"
+$     CC6DISABLEWARNINGS = "/WARNING=(DISABLE=(" + CC6DISABLEWARNINGS + "))"
 $   ELSE
 $     CCDISABLEWARNINGS = ""
 $     CC4DISABLEWARNINGS = ""
 $     CC6DISABLEWARNINGS = ""
 $   ENDIF
-$   CC3 = CC + " /DEFINE=(" + CCDEFS + ISSEVEN + ")" + CCDISABLEWARNINGS
-$   CC = CC + " /DEFINE=(" + CCDEFS + ")" + CCDISABLEWARNINGS
+$   CC3 = CC + "/DEFINE=(" + CCDEFS + ISSEVEN + ")" + CCDISABLEWARNINGS
+$   CC = CC + "/DEFINE=(" + CCDEFS + ")" + CCDISABLEWARNINGS
 $   IF ARCH .EQS. "VAX" .AND. COMPILER .EQS. "DECC" .AND. P2 .NES. "DEBUG"
 $   THEN
-$     CC5 = CC + " /OPTIMIZE=NODISJOINT"
-$     CC5_DIFFERENT = 1
+$     CC5 = CC + "/OPTIMIZE=NODISJOINT"
 $   ELSE
-$     CC5 = CC
-$     CC5_DIFFERENT = 0
+$     CC5 = CC + "/NOOPTIMIZE"
 $   ENDIF
 $   CC4 = CC - CCDISABLEWARNINGS + CC4DISABLEWARNINGS
 $   CC6 = CC - CCDISABLEWARNINGS + CC6DISABLEWARNINGS
@@ -1332,7 +1150,7 @@ $!  Show user the result
 $!
 $   WRITE/SYMBOL SYS$OUTPUT "Main C Compiling Command: ",CC
 $!
-$!  Else The User Entered An Invalid Argument.
+$!  Else The User Entered An Invalid Arguement.
 $!
 $ ELSE
 $!
@@ -1350,7 +1168,7 @@ $!  Time To EXIT.
 $!
 $   EXIT
 $!
-$! End The Valid Argument Check.
+$! End The Valid Arguement Check.
 $!
 $ ENDIF
 $!
@@ -1376,7 +1194,7 @@ $   THEN
 $!
 $!    Set the library to use SOCKETSHR
 $!
-$     TCPIP_LIB = ",SYS$DISK:[-.VMS]SOCKETSHR_SHR.OPT /OPTIONS"
+$     TCPIP_LIB = "SYS$DISK:[-.VMS]SOCKETSHR_SHR.OPT/OPT"
 $!
 $!    Done with SOCKETSHR
 $!
@@ -1402,13 +1220,13 @@ $   THEN
 $!
 $!    Set the library to use UCX.
 $!
-$     TCPIP_LIB = ",SYS$DISK:[-.VMS]UCX_SHR_DECC.OPT /OPTIONS"
+$     TCPIP_LIB = "SYS$DISK:[-.VMS]UCX_SHR_DECC.OPT/OPT"
 $     IF F$TRNLNM("UCX$IPC_SHR") .NES. ""
 $     THEN
-$       TCPIP_LIB = ",SYS$DISK:[-.VMS]UCX_SHR_DECC_LOG.OPT /OPTIONS"
+$       TCPIP_LIB = "SYS$DISK:[-.VMS]UCX_SHR_DECC_LOG.OPT/OPT"
 $     ELSE
 $       IF COMPILER .NES. "DECC" .AND. ARCH .EQS. "VAX" THEN -
-	  TCPIP_LIB = ",SYS$DISK:[-.VMS]UCX_SHR_VAXC.OPT /OPTIONS"
+	  TCPIP_LIB = "SYS$DISK:[-.VMS]UCX_SHR_VAXC.OPT/OPT"
 $     ENDIF
 $!
 $!    Done with UCX
@@ -1422,7 +1240,7 @@ $   THEN
 $!
 $!    Set the library to use TCPIP (post UCX).
 $!
-$     TCPIP_LIB = ",SYS$DISK:[-.VMS]TCPIP_SHR_DECC.OPT /OPTIONS"
+$     TCPIP_LIB = "SYS$DISK:[-.VMS]TCPIP_SHR_DECC.OPT/OPT"
 $!
 $!    Done with TCPIP
 $!
@@ -1443,9 +1261,9 @@ $   ENDIF
 $!
 $!  Print info
 $!
-$   WRITE SYS$OUTPUT "TCP/IP library spec: ", TCPIP_LIB- ","
+$   WRITE SYS$OUTPUT "TCP/IP library spec: ", TCPIP_LIB
 $!
-$!  Else The User Entered An Invalid Argument.
+$!  Else The User Entered An Invalid Arguement.
 $!
 $ ELSE
 $!

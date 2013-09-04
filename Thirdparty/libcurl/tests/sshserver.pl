@@ -6,7 +6,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) 1998 - 2011, 2013, Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) 1998 - 2010, Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -19,6 +19,7 @@
 # This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 # KIND, either express or implied.
 #
+# $Id: sshserver.pl,v 1.51 2010-01-15 18:55:01 yangtse Exp $
 #***************************************************************************
 
 # Starts sshd for use in the SCP, SFTP and SOCKS curl test harness tests.
@@ -362,10 +363,8 @@ if((($sshid =~ /OpenSSH/) && ($sshvernum < 299)) ||
 #***************************************************************************
 # Generate host and client key files for curl's tests
 #
-if((! -e $hstprvkeyf) || (! -s $hstprvkeyf) ||
-   (! -e $hstpubkeyf) || (! -s $hstpubkeyf) ||
-   (! -e $cliprvkeyf) || (! -s $cliprvkeyf) ||
-   (! -e $clipubkeyf) || (! -s $clipubkeyf)) {
+if((! -e $hstprvkeyf) || (! -e $hstpubkeyf) ||
+   (! -e $cliprvkeyf) || (! -e $clipubkeyf)) {
     # Make sure all files are gone so ssh-keygen doesn't complain
     unlink($hstprvkeyf, $hstpubkeyf, $cliprvkeyf, $clipubkeyf);
     logmsg 'generating host keys...' if($verbose);
@@ -708,9 +707,8 @@ if(system "$sshd -t -f $sshdconfig > $sshdlog 2>&1") {
 #***************************************************************************
 # Generate ssh client host key database file for curl's tests
 #
-if((! -e $knownhosts) || (! -s $knownhosts)) {
+if(! -e $knownhosts) {
     logmsg 'generating ssh client known hosts file...' if($verbose);
-    unlink($knownhosts);
     if(open(DSAKEYFILE, "<$hstpubkeyf")) {
         my @dsahostkey = do { local $/ = ' '; <DSAKEYFILE> };
         if(close(DSAKEYFILE)) {
@@ -856,10 +854,7 @@ push @cfgarr, 'PreferredAuthentications publickey';
 push @cfgarr, 'PubkeyAuthentication yes';
 push @cfgarr, 'RhostsRSAAuthentication no';
 push @cfgarr, 'RSAAuthentication no';
-
-# Disabled StrictHostKeyChecking since it makes the tests fail on my
-# OpenSSH_6.0p1 on Debian Linux / Daniel
-push @cfgarr, 'StrictHostKeyChecking no';
+push @cfgarr, 'StrictHostKeyChecking yes';
 push @cfgarr, 'UsePrivilegedPort no';
 push @cfgarr, '#';
 

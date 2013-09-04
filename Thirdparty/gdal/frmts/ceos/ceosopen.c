@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ceosopen.c 25340 2012-12-21 20:30:21Z rouault $
+ * $Id: ceosopen.c 20996 2010-10-28 18:38:15Z rouault $
  *
  * Project:  CEOS Translator
  * Purpose:  Implementation of non-GDAL dependent CEOS support.
@@ -29,7 +29,7 @@
 
 #include "ceosopen.h"
 
-CPL_CVSID("$Id: ceosopen.c 25340 2012-12-21 20:30:21Z rouault $");
+CPL_CVSID("$Id: ceosopen.c 20996 2010-10-28 18:38:15Z rouault $");
 
 /************************************************************************/
 /*                            CEOSScanInt()                             */
@@ -172,8 +172,8 @@ void CEOSDestroyRecord( CEOSRecord * psRecord )
 /**
  * Open a CEOS transfer.
  *
- * @param pszFilename The name of the CEOS imagery file (ie. imag_01.dat).
- * @param pszAccess An fopen() style access string.  Should be either "rb" for
+ * @param Filename The name of the CEOS imagery file (ie. imag_01.dat).
+ * @param Access An fopen() style access string.  Should be either "rb" for
  * read-only access, or "r+b" for read, and update access.
  *
  * @return A CEOSImage pointer as a handle to the image.  The CEOSImage also

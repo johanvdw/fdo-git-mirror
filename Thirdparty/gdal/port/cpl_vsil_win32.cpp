@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_vsil_win32.cpp 23882 2012-02-02 19:50:45Z rouault $
+ * $Id: cpl_vsil_win32.cpp 23506 2011-12-10 13:43:59Z rouault $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Implement VSI large file api for Win32.
@@ -29,7 +29,7 @@
 
 #include "cpl_vsi_virtual.h"
 
-CPL_CVSID("$Id: cpl_vsil_win32.cpp 23882 2012-02-02 19:50:45Z rouault $");
+CPL_CVSID("$Id: cpl_vsil_win32.cpp 23506 2011-12-10 13:43:59Z rouault $");
 
 #if defined(WIN32)
 
@@ -378,8 +378,6 @@ VSIVirtualHandle *VSIWin32FilesystemHandler::Open( const char *pszFilename,
 
     if( strstr(pszAccess, "w") != NULL )
         dwCreationDisposition = CREATE_ALWAYS;
-    else if( strstr(pszAccess, "a") != NULL )
-        dwCreationDisposition = OPEN_ALWAYS;
     else
         dwCreationDisposition = OPEN_EXISTING;
 

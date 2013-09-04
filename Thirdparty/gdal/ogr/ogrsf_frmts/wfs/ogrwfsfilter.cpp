@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrwfsfilter.cpp 24791 2012-08-15 20:48:55Z rouault $
+ * $Id: ogrwfsfilter.cpp 23161 2011-10-02 15:14:07Z rouault $
  *
  * Project:  WFS Translator
  * Purpose:  Implements OGR SQL into OGC Filter translation.
@@ -31,7 +31,7 @@
 
 #include "cpl_list.h"
 
-CPL_CVSID("$Id: ogrwfsfilter.cpp 24791 2012-08-15 20:48:55Z rouault $");
+CPL_CVSID("$Id: ogrwfsfilter.cpp 23161 2011-10-02 15:14:07Z rouault $");
 
 typedef enum
 {
@@ -259,18 +259,16 @@ typedef struct
     int nVersion;
     int bPropertyIsNotEqualToSupported;
     int bOutNeedsNullCheck;
-    OGRFeatureDefn* poFDefn;
 } ExprDumpFilterOptions;
 
 static int WFS_ExprDumpAsOGCFilter(CPLString& osFilter,
-                                   const Expr* expr,
-                                   int bExpectBinary,
-                                   ExprDumpFilterOptions* psOptions)
+                          const Expr* expr,
+                          int bExpectBinary,
+                          ExprDumpFilterOptions* psOptions)
 {
     switch(expr->eType)
     {
         case TOKEN_VAR_NAME:
-        {
             if (bExpectBinary)
                 return FALSE;
 
@@ -281,67 +279,40 @@ static int WFS_ExprDumpAsOGCFilter(CPLString& osFilter,
                 EQUAL(expr->pszVal, "OGR_GEOM_WKT") ||
                 EQUAL(expr->pszVal, "OGR_GEOM_AREA") ||
                 EQUAL(expr->pszVal, "OGR_STYLE"))
-            {
-                CPLDebug("WFS", "Attribute refers to a OGR special field. Cannot use server-side filtering");
                 return FALSE;
-            }
-
-            const char* pszFieldname;
-            CPLString osVal;
-            if (expr->pszVal[0] == '\'' || expr->pszVal[0] == '"')
-            {
-                osVal = expr->pszVal + 1;
-                osVal.resize(osVal.size() - 1);
-                pszFieldname = osVal.c_str();
-            }
-            else
-                pszFieldname = expr->pszVal;
-
-            if (psOptions->poFDefn->GetFieldIndex(pszFieldname) == -1)
-            {
-                CPLDebug("WFS", "Field '%s' unknown. Cannot use server-side filtering",
-                         pszFieldname);
-                return FALSE;
-            }
 
             if (psOptions->nVersion >= 200)
                 osFilter += "<ValueReference>";
             else
                 osFilter += "<PropertyName>";
-            char* pszFieldnameXML = CPLEscapeString(pszFieldname, -1, CPLES_XML);
-            osFilter += pszFieldnameXML;
-            CPLFree(pszFieldnameXML);
+            if (expr->pszVal[0] == '\'' || expr->pszVal[0] == '"')
+            {
+                CPLString osVal(expr->pszVal + 1);
+                osVal.resize(osVal.size() - 1);
+                osFilter += osVal;
+            }
+            else
+                osFilter += expr->pszVal;
             if (psOptions->nVersion >= 200)
                 osFilter += "</ValueReference>";
             else
                 osFilter += "</PropertyName>";
             break;
-        }
 
         case TOKEN_LITERAL:
-        {
             if (bExpectBinary)
                 return FALSE;
-
-            const char* pszLiteral;
-            CPLString osVal;
+            osFilter += "<Literal>";
             if (expr->pszVal[0] == '\'' || expr->pszVal[0] == '"')
             {
-                osVal = expr->pszVal + 1;
+                CPLString osVal(expr->pszVal + 1);
                 osVal.resize(osVal.size() - 1);
-                pszLiteral = osVal.c_str();
+                osFilter += osVal;
             }
             else
-                pszLiteral = expr->pszVal;
-
-            osFilter += "<Literal>";
-            char* pszLiteralXML = CPLEscapeString(pszLiteral, -1, CPLES_XML);
-            osFilter += pszLiteralXML;
-            CPLFree(pszLiteralXML);
+                osFilter += expr->pszVal;
             osFilter += "</Literal>";
-
             break;
-        }
 
         case TOKEN_NOT:
             osFilter += "<Not>";
@@ -817,7 +788,6 @@ static char** WFS_ExprTokenize(const char* pszFilter)
 /************************************************************************/
 
 CPLString WFS_TurnSQLFilterToOGCFilter( const char * pszFilter,
-                                        OGRFeatureDefn* poFDefn,
                                         int nVersion,
                                         int bPropertyIsNotEqualToSupported,
                                         int bUseFeatureId,
@@ -853,7 +823,6 @@ CPLString WFS_TurnSQLFilterToOGCFilter( const char * pszFilter,
         sOptions.nVersion = nVersion;
         sOptions.bPropertyIsNotEqualToSupported = bPropertyIsNotEqualToSupported;
         sOptions.bOutNeedsNullCheck = FALSE;
-        sOptions.poFDefn = poFDefn;
         osFilter = "";
         if (!WFS_ExprDumpAsOGCFilter(osFilter, expr, TRUE, &sOptions))
             osFilter = "";

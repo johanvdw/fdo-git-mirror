@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ###############################################################################
-#  $Id: gdal_retile.py 24037 2012-02-28 17:21:35Z rouault $
+#  $Id: gdal_retile.py 21279 2010-12-16 21:25:08Z rouault $
 #
 # Purpose:  Module for retiling (merging) tiles and building tiled pyramids
 # Author:   Christian Meuller, christian.mueller@nvoe.at
@@ -440,7 +440,7 @@ def createPyramidTile(levelMosaicInfo, offsetX, offsetY, width, height,tileName,
     if MemDriver is None:
         t_fh = Driver.Create( tileName, width, height, bands,bt,CreateOptions)
     else:
-        t_fh = MemDriver.Create( tileName, width, height, bands,bt)
+        t_fh = MemDriver.Create( tileName, width, height, bands,bt,CreateOptions)
 
     if t_fh is None:
         print('Creation failed, terminating gdal_tile.')
@@ -511,7 +511,7 @@ def createTile( minfo, offsetX,offsetY,width,height, tilename,OGRDS):
     if MemDriver is None:
         t_fh = Driver.Create( tilename, width, height, bands,bt,CreateOptions)
     else:
-        t_fh = MemDriver.Create( tilename, width, height, bands,bt)
+        t_fh = MemDriver.Create( tilename, width, height, bands,bt,CreateOptions)
 
     if t_fh is None:
         print('Creation failed, terminating gdal_tile.')

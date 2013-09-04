@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: nitfdataset.h 25194 2012-10-30 22:33:21Z rouault $
+ * $Id: nitfdataset.h 22840 2011-07-30 21:33:22Z rouault $
  *
  * Project:  NITF Read/Write Translator
  * Purpose:  GDALDataset/GDALRasterBand declarations.
@@ -115,9 +115,6 @@ class NITFDataset : public GDALPamDataset
     char       **papszCgmMDToWrite;
     
     int          bInLoadXML;
-    
-    int          bExposeUnderlyingJPEGDatasetOverviews;
-    int          ExposeUnderlyingJPEGDatasetOverviews() const { return bExposeUnderlyingJPEGDatasetOverviews; }
 
   protected:
     virtual int         CloseDependentDatasets();
@@ -140,8 +137,6 @@ class NITFDataset : public GDALPamDataset
     virtual CPLErr SetProjection( const char * );
     virtual CPLErr GetGeoTransform( double * );
     virtual CPLErr SetGeoTransform( double * );
-    virtual CPLErr SetGCPs( int nGCPCount, const GDAL_GCP *pasGCPList,
-                            const char *pszGCPProjection );
 
     virtual int    GetGCPCount();
     virtual const char *GetGCPProjection();
@@ -324,7 +319,6 @@ class NITFWrapperRasterBand : public NITFProxyPamRasterBand
   GDALRasterBand* poBaseBand;
   GDALColorTable* poColorTable;
   GDALColorInterp eInterp;
-  int             bIsJPEG;
 
   protected:
     /* Pure virtual method of the NITFProxyPamRasterBand */
@@ -341,9 +335,6 @@ class NITFWrapperRasterBand : public NITFProxyPamRasterBand
     virtual CPLErr          SetColorInterpretation( GDALColorInterp );
     
     virtual GDALColorTable *GetColorTable();
-
-    virtual int             GetOverviewCount();
-    virtual GDALRasterBand *GetOverview(int);
 
     /* Specific method */
     void                    SetColorTableFromNITFBandInfo(); 

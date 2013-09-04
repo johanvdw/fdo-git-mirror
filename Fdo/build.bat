@@ -139,7 +139,7 @@ if "%TYPEACTION%"=="builddocsonly" goto generate_docs
 if "%TYPEACTION%"=="install" goto install_files
 
 echo %MSACTION% %TYPEBUILD% Fdo dlls
-msbuild FDO%VCBEXTENSION%.sln /t:%MSACTION% /p:Configuration=%TYPEBUILD% /p:Platform=%TYPEPLATFORM% %EXTRA_MSBUILD_PROPERTIES% /nologo /consoleloggerparameters:NoSummary /maxcpucount:4
+msbuild FDO%VCBEXTENSION%.sln /t:%MSACTION% /p:Configuration=%TYPEBUILD% /p:Platform=%TYPEPLATFORM% %EXTRA_MSBUILD_PROPERTIES% /nologo /consoleloggerparameters:NoSummary
 SET FDOERROR=%errorlevel%
 if "%FDOERROR%"=="1" goto error
 
@@ -194,19 +194,13 @@ echo Creating FDO Unmanaged and Managed html and chm API documentation
 if exist "Docs\HTML\FDO_API" rmdir /S /Q "Docs\HTML\FDO_API"
 if exist "Docs\HTML\FDO_API_managed" rmdir /S /Q "Docs\HTML\FDO_API_managed"
 if not exist "Docs\HTML\FDO_API" mkdir "Docs\HTML\FDO_API"
-copy ..\DocResources\geospatial.css Docs\HTML\FDO_API
 copy ..\DocResources\geospatial.js Docs\HTML\FDO_API
 copy ..\DocResources\osgeo.css Docs\HTML\FDO_API
 copy ..\DocResources\FDO_architecture.png Docs\HTML\FDO_API
-if exist ..\DocResources\comment.htm copy ..\DocResources\comment.htm Docs\HTML\FDO_API
-if exist ..\DocResources\comment.js copy ..\DocResources\comment.js Docs\HTML\FDO_API
 if not exist "Docs\HTML\FDO_API_managed" mkdir "Docs\HTML\FDO_API_managed"
-copy ..\DocResources\geospatial.css Docs\HTML\FDO_API_managed
 copy ..\DocResources\geospatial.js Docs\HTML\FDO_API_managed
 copy ..\DocResources\osgeo.css Docs\HTML\FDO_API_managed
 copy ..\DocResources\FDO_architecture.png Docs\HTML\FDO_API_managed
-if exist ..\DocResources\comment.htm copy ..\DocResources\comment.htm Docs\HTML\FDO_API_managed
-if exist ..\DocResources\comment.js copy ..\DocResources\comment.js Docs\HTML\FDO_API_managed
 if exist Docs\FDO_API.chm attrib -r Docs\FDO_API.chm
 if exist Docs\FDO_API_managed.chm attrib -r Docs\FDO_API_managed.chm
 pushd Docs\doc_src

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: typemaps_python.i 25663 2013-02-22 15:07:39Z rouault $
+ * $Id: typemaps_python.i 23329 2011-11-05 21:09:07Z rouault $
  *
  * Name:     typemaps_python.i
  * Project:  GDAL Python Interface
@@ -685,10 +685,7 @@ CreateTupleFromDoubleArray( int *first, unsigned int size ) {
 %typemap(typecheck,precedence=SWIG_TYPECHECK_POINTER) (char **dict)
 {
   /* %typecheck(SWIG_TYPECHECK_POINTER) (char **dict) */
-  /* Note: we exclude explicitely strings, because they can be considered as a sequence of characters, */
-  /* which is not desirable since it makes it impossible to define bindings such as SetMetadata(string) and SetMetadata(array_of_string) */
-  /* (see #4816) */
-  $1 = ((PyMapping_Check($input) || PySequence_Check($input) ) && !SWIG_CheckState(SWIG_AsCharPtrAndSize($input, 0, NULL, 0)) ) ? 1 : 0;
+  $1 = (PyMapping_Check($input) || PySequence_Check($input) ) ? 1 : 0;
 }
 %typemap(in) char **dict
 {
@@ -745,12 +742,8 @@ CreateTupleFromDoubleArray( int *first, unsigned int size ) {
 %typemap(in) char **options
 {
   /* %typemap(in) char **options */
-  /* Check if is a list (and reject strings, that are seen as sequence of characters)  */
-  if ( ! PySequence_Check($input) || PyUnicode_Check($input)
-%#if PY_VERSION_HEX < 0x03000000
-    || PyString_Check($input)
-%#endif
-    ) {
+  /* Check if is a list */
+  if ( ! PySequence_Check($input)) {
     PyErr_SetString(PyExc_TypeError,"not a sequence");
     SWIG_fail;
   }
@@ -1144,8 +1137,8 @@ static PyObject *XMLTreeToPyList( CPLXMLNode *psTree )
     if ($input && $input != Py_None ) {
         void* cbfunction = NULL;
         SWIG_ConvertPtr( $input, 
-                         (void**)&cbfunction,
-                         SWIGTYPE_p_f_double_p_q_const__char_p_void__int,
+                         (void**)&cbfunction, 
+                         SWIGTYPE_p_f_double_p_q_const__char_p_void__int, 
                          SWIG_POINTER_EXCEPTION | 0 );
 
         if ( cbfunction == GDALTermProgress ) {
@@ -1172,43 +1165,6 @@ static PyObject *XMLTreeToPyList( CPLXMLNode *psTree )
   
         CPLFree(psProgressInfo);
 
-}
-
-
-%typemap(in) ( CPLErrorHandler pfnErrorHandler = NULL, void* user_data = NULL ) 
-{
-    /* %typemap(in) (CPLErrorHandler pfnErrorHandler = NULL, void* user_data = NULL) */
-    int alloc = 0;
-    char* pszCallbackName = NULL;
-    $2 = NULL;
-    if( SWIG_IsOK(SWIG_AsCharPtrAndSize($input, &pszCallbackName, NULL, &alloc)) )
-    {
-        if( pszCallbackName == NULL || EQUAL(pszCallbackName,"CPLQuietErrorHandler") )
-            $1 = CPLQuietErrorHandler;
-        else if( EQUAL(pszCallbackName,"CPLDefaultErrorHandler") )
-            $1 = CPLDefaultErrorHandler;
-        else if( EQUAL(pszCallbackName,"CPLLoggingErrorHandler") )
-            $1 = CPLLoggingErrorHandler;
-        else
-        {
-            if (alloc == SWIG_NEWOBJ) delete[] pszCallbackName;
-            PyErr_SetString( PyExc_RuntimeError, "Unhandled value for passed string" );
-            SWIG_fail;
-        }
-
-        if (alloc == SWIG_NEWOBJ) delete[] pszCallbackName;
-    }
-    else if (!PyCallable_Check($input))
-    {
-        PyErr_SetString( PyExc_RuntimeError, 
-                         "Object given is not a String or a Python function" );
-        SWIG_fail;
-    }
-    else
-    {
-        $1 = PyCPLErrorHandler;
-        $2 = $input;
-    }
 }
 
 

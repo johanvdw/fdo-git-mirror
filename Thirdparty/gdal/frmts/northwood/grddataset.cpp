@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: grddataset.cpp 24355 2012-05-01 10:52:54Z rouault $
+ * $Id: grddataset.cpp 23597 2011-12-18 23:29:48Z rouault $
  *
  * Project:  GRD Reader
  * Purpose:  GDAL driver for Northwood Grid Format
@@ -180,7 +180,7 @@ CPLErr NWT_GRDRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff, void *pIma
     int i;
     unsigned short raw1;
 
-    VSIFSeekL( poGDS->fp, 1024 + nRecordSize * (vsi_l_offset)nBlockYOff, SEEK_SET );
+    VSIFSeekL( poGDS->fp, 1024 + nRecordSize * nBlockYOff, SEEK_SET );
 
     pszRecord = (char *) CPLMalloc( nRecordSize );
     VSIFReadL( pszRecord, 1, nRecordSize, poGDS->fp );

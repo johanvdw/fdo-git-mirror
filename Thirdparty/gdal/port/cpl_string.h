@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_string.h 25477 2013-01-10 00:27:30Z warmerdam $
+ * $Id: cpl_string.h 23431 2011-11-27 15:02:24Z rouault $
  *
  * Name:     cpl_string.h
  * Project:  CPL - Common Portability Library
@@ -124,10 +124,9 @@ void CPL_DLL CSLSetNameValueSeparator( char ** papszStrList,
 
 #define CPLES_BackslashQuotable 0
 #define CPLES_XML               1
-#define CPLES_URL               2
+#define CPLES_URL               2   /* unescape only for now */
 #define CPLES_SQL               3
 #define CPLES_CSV               4
-#define CPLES_XML_BUT_QUOTES    5
 
 char CPL_DLL *CPLEscapeString( const char *pszString, int nLength, 
                                int nScheme ) CPL_WARN_UNUSED_RESULT;
@@ -165,7 +164,6 @@ size_t CPL_DLL CPLStrnlen (const char *pszStr, size_t nMaxLen);
 #define CPL_ENC_ISO8859_1  "ISO-8859-1"
 
 int CPL_DLL  CPLEncodingCharSize( const char *pszEncoding );
-void CPL_DLL  CPLClearRecodeWarningFlags();
 char CPL_DLL *CPLRecode( const char *pszSource, 
                          const char *pszSrcEncoding, 
                          const char *pszDstEncoding ) CPL_WARN_UNUSED_RESULT;
@@ -253,18 +251,6 @@ public:
     }
 
     void Clear() { resize(0); }
-
-    // NULL safe assign and free.
-    void Seize(char *pszValue) 
-    {
-        if (pszValue == NULL )
-            Clear();
-        else
-        {
-            *this = pszValue;
-            CPLFree(pszValue);
-        }
-    }
 
     /* There seems to be a bug in the way the compiler count indices... Should be CPL_PRINT_FUNC_FORMAT (1, 2) */
     CPLString &Printf( const char *pszFormat, ... ) CPL_PRINT_FUNC_FORMAT (2, 3);

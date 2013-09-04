@@ -32,90 +32,32 @@
 
 #include "gdal_pam.h"
 #include "gdal_priv.h"
-#include "cpl_minixml.h"
-#include <map>
 
 CPL_C_START
 void CPL_DLL GDALRegister_KMLSUPEROVERLAY(void);
 CPL_C_END
 
 /************************************************************************/
-/*                    KmlSuperOverlayReadDataset                        */
+/*                        KmlSuperOverlayDataset                        */
 /************************************************************************/
-class KmlSuperOverlayRasterBand;
-class KmlSuperOverlayReadDataset;
+class OGRCoordinateTransformation;
 
-class LinkedDataset;
-class LinkedDataset
+class CPL_DLL KmlSuperOverlayDataset : public GDALDataset
 {
-    public:
-        KmlSuperOverlayReadDataset* poDS;
-        LinkedDataset* psPrev;
-        LinkedDataset* psNext;
-        CPLString      osSubFilename;
-};
+  private:
 
-class KmlSuperOverlayReadDataset : public GDALDataset
-{
-    friend class        KmlSuperOverlayRasterBand;
-
-    int                 nFactor;
-    CPLString           osFilename;
-    CPLXMLNode         *psRoot;
-    CPLXMLNode         *psDocument;
-    GDALDataset        *poDSIcon;
-    double              adfGeoTransform[6];
-
-    int                 nOverviewCount;
-    KmlSuperOverlayReadDataset** papoOverviewDS;
-    int                 bIsOvr;
-
-    KmlSuperOverlayReadDataset* poParent;
-
-    std::map<CPLString, LinkedDataset*> oMapChildren;
-    LinkedDataset      *psFirstLink;
-    LinkedDataset      *psLastLink;
-
-  protected:
-    virtual int         CloseDependentDatasets();
+    int         bGeoTransformSet;
 
   public:
-                  KmlSuperOverlayReadDataset();
-    virtual      ~KmlSuperOverlayReadDataset();
+                  KmlSuperOverlayDataset();
+    virtual      ~KmlSuperOverlayDataset();
 
-    static int          Identify(GDALOpenInfo *);
-    static GDALDataset *Open(const char* pszFilename, KmlSuperOverlayReadDataset* poParent = NULL, int nRec = 0);
-    static GDALDataset *Open(GDALOpenInfo *);
+    static GDALDataset *Open(GDALOpenInfo *);    
 
-    virtual CPLErr GetGeoTransform( double * );
-    virtual const char *GetProjectionRef();
-    
-    virtual CPLErr IRasterIO( GDALRWFlag eRWFlag,
-                               int nXOff, int nYOff, int nXSize, int nYSize,
-                               void * pData, int nBufXSize, int nBufYSize,
-                               GDALDataType eBufType, 
-                               int nBandCount, int *panBandMap,
-                               int nPixelSpace, int nLineSpace, int nBandSpace);
-};
+    static GDALDataset *CreateCopy( const char * pszFilename, GDALDataset *poSrcDS, 
+                                    int bStrict, char ** papszOptions, GDALProgressFunc pfnProgress, void * pProgressData );
 
-/************************************************************************/
-/*                     KmlSuperOverlayRasterBand                        */
-/************************************************************************/
-
-class KmlSuperOverlayRasterBand: public GDALRasterBand
-{
-    public:
-                    KmlSuperOverlayRasterBand(KmlSuperOverlayReadDataset* poDS, int nBand);
-  protected:
-
-    virtual CPLErr IReadBlock( int, int, void * );
-    virtual CPLErr IRasterIO( GDALRWFlag, int, int, int, int,
-                              void *, int, int, GDALDataType,
-                              int, int );
-    virtual GDALColorInterp GetColorInterpretation();
-
-    virtual int GetOverviewCount();
-    virtual GDALRasterBand *GetOverview(int);
+    const char *GetProjectionRef();
 };
 
 #endif /* ndef KMLSUPEROVERLAYDATASET_H_INCLUDED */

@@ -1,5 +1,5 @@
 /*****************************************************************************
- * $Id: IntergraphBand.cpp 25785 2013-03-23 11:34:53Z rouault $
+ * $Id: IntergraphBand.cpp 23117 2011-09-24 15:06:37Z rouault $
  *
  * Project:  Intergraph Raster Format support
  * Purpose:  Read/Write Intergraph Raster Format, band support
@@ -134,8 +134,9 @@ IntergraphRasterBand::IntergraphRasterBand( IntergraphDataset *poDS,
         // ----------------------------------------------------------------
         // Set blocks dimensions based on tiles
         // ----------------------------------------------------------------
-        nBlockXSize = hTileDir.TileSize;
-        nBlockYSize = hTileDir.TileSize;
+
+        nBlockXSize = MIN( hTileDir.TileSize, (uint32) nRasterXSize );
+        nBlockYSize = MIN( hTileDir.TileSize, (uint32) nRasterYSize );
     }
 
     if (nBlockXSize <= 0 || nBlockYSize <= 0)
@@ -164,18 +165,9 @@ IntergraphRasterBand::IntergraphRasterBand( IntergraphDataset *poDS,
 
     nBlockBufSize = nBlockXSize * nBlockYSize * 
                     GDALGetDataTypeSize( eDataType ) / 8;
-
-    if (eFormat == RunLengthEncoded)    
-    {
-        pabyBlockBuf = (GByte*) VSIMalloc3( nBlockXSize*4+2, nBlockYSize,
-                                            GDALGetDataTypeSize( eDataType ) / 8);
-    }
-    else
-    {
-        pabyBlockBuf = (GByte*) VSIMalloc3( nBlockXSize, nBlockYSize,
-                                            GDALGetDataTypeSize( eDataType ) / 8);
-    }
-
+        
+    pabyBlockBuf = (GByte*) VSIMalloc3( nBlockXSize, nBlockYSize,
+                                        GDALGetDataTypeSize( eDataType ) / 8);
     if (pabyBlockBuf == NULL)
     {
         CPLError(CE_Failure, CPLE_AppDefined, "Cannot allocate %d bytes", nBlockBufSize);
@@ -209,8 +201,6 @@ IntergraphRasterBand::IntergraphRasterBand( IntergraphDataset *poDS,
     {
         SetMetadataItem( "NBITS", "1", "IMAGE_STRUCTURE" );
     }
-
-    this->nRLEOffset = 0;
 }
 
 //  ----------------------------------------------------------------------------
@@ -624,16 +614,7 @@ CPLErr IntergraphRLEBand::IReadBlock( int nBlockXOff,
         if (HandleUninstantiatedTile( nBlockXOff, nBlockYOff, pImage ))
             return CE_None;
 
-        if (!bTiled)
-        {
-            // With RLE, we want to load all of the data.
-            // So load (0,0) since that's the only offset that will load everything.
-            nBytesRead = LoadBlockBuf( 0, 0, nRLESize, pabyRLEBlock );
-        }
-        else
-        {
-            nBytesRead = LoadBlockBuf( nBlockXOff, nBlockYOff, nRLESize, pabyRLEBlock );
-        }
+        nBytesRead = LoadBlockBuf( nBlockXOff, nBlockYOff, nRLESize, pabyRLEBlock );
         bRLEBlockLoaded = TRUE;
     }
     else
@@ -687,41 +668,28 @@ CPLErr IntergraphRLEBand::IReadBlock( int nBlockXOff,
 
     else
     {
-        uint32 nBytesConsumed;
-
         // If we are missing the offset to this line, process all
-        // preceding lines that are not initialized.
+        // preceding lines.
         if( nBlockYOff > 0 && panRLELineOffset[nBlockYOff] == 0 )
         {
-            int iLine = nBlockYOff - 1;
-            // Find the last line that is initialized (or line 0).
-            while ((iLine != 0) && (panRLELineOffset[iLine] == 0))
-                iLine--;
-            for( ; iLine < nBlockYOff; iLine++ )
-            {
-                // Pass NULL as destination so that no decompression 
-                // actually takes place.
-                INGR_Decode( eFormat,
-                             pabyRLEBlock + panRLELineOffset[iLine], 
-                             NULL,  nRLESize - panRLELineOffset[iLine], nBlockBufSize,
-                             &nBytesConsumed );
-
-                if( iLine < nRasterYSize-1 )
-                    panRLELineOffset[iLine+1] = 
-                        panRLELineOffset[iLine] + nBytesConsumed;
-            }
+            int iLine;
+            for( iLine = 0; iLine < nBlockYOff; iLine++ )
+                IReadBlock( 0, iLine, pImage );
         } 
-        
-        // Read the requested line.
-        nBytesRead = 
-            INGR_Decode( eFormat,
-                         pabyRLEBlock + panRLELineOffset[nBlockYOff], 
-                         pabyBlockBuf,  nRLESize - panRLELineOffset[nBlockYOff], nBlockBufSize,
-                         &nBytesConsumed );
+        if( nBlockYOff == 0 || panRLELineOffset[nBlockYOff] > 0 )
+        {
+            uint32 nBytesConsumed;
             
-        if( nBlockYOff < nRasterYSize-1 )
-            panRLELineOffset[nBlockYOff+1] = 
-                panRLELineOffset[nBlockYOff] + nBytesConsumed;
+            nBytesRead = 
+                INGR_Decode( eFormat,
+                             pabyRLEBlock + panRLELineOffset[nBlockYOff], 
+                             pabyBlockBuf,  nRLESize, nBlockBufSize,
+                             &nBytesConsumed );
+            
+            if( nBlockYOff < nRasterYSize-1 )
+                panRLELineOffset[nBlockYOff+1] = 
+                    panRLELineOffset[nBlockYOff] + nBytesConsumed;
+        }
     }
 
     // --------------------------------------------------------------------
@@ -998,15 +966,6 @@ int IntergraphRasterBand::LoadBlockBuf( int nBlockXOff,
 
         nSeekOffset   = pahTiles[nBlockId].Start + nDataOffset;
         nReadSize     = pahTiles[nBlockId].Used;
-
-        if( (int) nReadSize > nBlobkBytes ) 
-        {
-            CPLDebug( "INGR", 
-                      "LoadBlockBuf(%d,%d) - trimmed tile size from %d to %d.", 
-                      nBlockXOff, nBlockYOff,
-                      (int) nReadSize, (int) nBlobkBytes );
-            nReadSize = nBlobkBytes;
-        }
     }
     else
     {
@@ -1081,9 +1040,6 @@ CPLErr IntergraphRasterBand::IWriteBlock( int nBlockXOff,
                                           int nBlockYOff,
                                           void *pImage )
 {
-    uint32 nBlockSize = nBlockBufSize;
-    uint32 nBlockOffset = nBlockBufSize * nBlockYOff;
-
     IntergraphDataset *poGDS = ( IntergraphDataset * ) poDS;
 
     if( ( nBlockXOff == 0 ) && ( nBlockYOff == 0 ) )
@@ -1104,59 +1060,6 @@ CPLErr IntergraphRasterBand::IWriteBlock( int nBlockXOff,
             pabyBlockBuf[j] = ( ( GByte * ) pImage )[i];
         }
     }
-    else if (eFormat == RunLengthEncoded)
-    {
-        // Series of [OFF, ON,] OFF spans.
-        int nLastCount = 0;
-        GByte *pInput = ( GByte * ) pImage;
-        GInt16 *pOutput = ( GInt16 * ) pabyBlockBuf;
-
-        nBlockOffset = this->nRLEOffset * 2;
-        int nRLECount = 0;
-        GByte nValue = 0; // Start with OFF spans.
-
-        for(uint32 i=0; i<nBlockBufSize; i++)
-        {
-            if (((nValue == 0) && (pInput[i] == 0)) || ((nValue == 1) && pInput[i]))
-            {
-                nLastCount++;
-            }
-            else
-            {
-                // Change of span type.
-                while(nLastCount>32767)
-                {
-                    pOutput[nRLECount++] = CPL_LSBWORD16(32767);
-                    pOutput[nRLECount++] = CPL_LSBWORD16(0);
-                    nLastCount -= 32767;
-                }
-                pOutput[nRLECount++] = CPL_LSBWORD16(nLastCount);
-                nLastCount = 1;
-                nValue ^= 1;
-            }
-        }
-
-        // Output tail end of scanline
-        while(nLastCount>32767)
-        {
-            pOutput[nRLECount++] = CPL_LSBWORD16(32767);
-            pOutput[nRLECount++] = CPL_LSBWORD16(0);
-            nLastCount -= 32767;
-        }
-
-        if (nLastCount != 0)
-        {
-            pOutput[nRLECount++] = CPL_LSBWORD16(nLastCount);
-            nLastCount = 0;
-            nValue ^= 1;
-        }
-
-        if (nValue == 0)
-            pOutput[nRLECount++] = CPL_LSBWORD16(0);
-
-        this->nRLEOffset += nRLECount;
-        nBlockSize = nRLECount * 2;
-    }
     else
     {
         memcpy( pabyBlockBuf, pImage, nBlockBufSize );
@@ -1170,9 +1073,9 @@ CPLErr IntergraphRasterBand::IWriteBlock( int nBlockXOff,
 #endif
     }
 
-    VSIFSeekL( poGDS->fp, nDataOffset + nBlockOffset, SEEK_SET );
+    VSIFSeekL( poGDS->fp, nDataOffset + ( nBlockBufSize * nBlockYOff ), SEEK_SET );
 
-    if( ( uint32 ) VSIFWriteL( pabyBlockBuf, 1, nBlockSize, poGDS->fp ) < nBlockSize )
+    if( ( uint32 ) VSIFWriteL( pabyBlockBuf, 1, nBlockBufSize, poGDS->fp ) < nBlockBufSize )
     {
         CPLError( CE_Failure, CPLE_FileIO, 
             "Can't write (%s) block with X offset %d and Y offset %d.\n%s", 

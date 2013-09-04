@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: thinplatespline.cpp 24925 2012-09-16 10:07:00Z rouault $
+ * $Id: thinplatespline.cpp 22879 2011-08-07 01:00:45Z rouault $
  *
  * Project:  GDAL Warp API
  * Purpose:  Implemenentation of 2D Thin Plate Spline transformer. 
@@ -286,21 +286,9 @@ int VizGeorefSpline2D::solve(void)
         CPLFree(_Ainv);
 	
     _nof_eqs = _nof_points + 3;
-    
-    if( _nof_eqs > INT_MAX / _nof_eqs )
-    {
-        fprintf(stderr, "Too many coefficients. Computation aborted.\n");
-        return 0;
-    }
 	
-    _AA = ( double * )VSICalloc( _nof_eqs * _nof_eqs, sizeof( double ) );
-    _Ainv = ( double * )VSICalloc( _nof_eqs * _nof_eqs, sizeof( double ) );
-    
-    if( _AA == NULL || _Ainv == NULL )
-    {
-        fprintf(stderr, "Out-of-memory while allocating temporary arrays. Computation aborted.\n");
-        return 0;
-    }
+    _AA = ( double * )CPLCalloc( _nof_eqs * _nof_eqs, sizeof( double ) );
+    _Ainv = ( double * )CPLCalloc( _nof_eqs * _nof_eqs, sizeof( double ) );
 	
     // Calc the values of the matrix A
     for ( r = 0; r < 3; r++ )

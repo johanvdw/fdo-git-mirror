@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hf2dataset.cpp 24593 2012-06-16 18:58:42Z rouault $
+ * $Id: hf2dataset.cpp 21680 2011-02-11 21:12:07Z warmerdam $
  *
  * Project:  HF2 driver
  * Purpose:  GDALDataset driver for HF2/HFZ dataset.
@@ -31,7 +31,7 @@
 #include "gdal_pam.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: hf2dataset.cpp 24593 2012-06-16 18:58:42Z rouault $");
+CPL_CVSID("$Id: hf2dataset.cpp 21680 2011-02-11 21:12:07Z warmerdam $");
 
 CPL_C_START
 void    GDALRegister_HF2(void);
@@ -1060,9 +1060,6 @@ GDALDataset* HF2Dataset::CreateCopy( const char * pszFilename,
     CPLFree(pTileBuffer);
 
     VSIFCloseL(fp);
-
-    if (eErr != CE_None)
-        return NULL;
 
     return (GDALDataset*) GDALOpen(osFilename.c_str(), GA_ReadOnly);
 }

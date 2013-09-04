@@ -137,31 +137,6 @@ namespace boost { namespace program_options {
             return m_short_name;
     }
 
-    std::string 
-    option_description::canonical_display_name(int prefix_style) const
-    {
-        if (!m_long_name.empty()) 
-        {
-            if (prefix_style == command_line_style::allow_long)
-                return "--" + m_long_name;
-            if (prefix_style == command_line_style::allow_long_disguise)
-                return "-" + m_long_name;
-        }
-        // sanity check: m_short_name[0] should be '-' or '/'
-        if (m_short_name.length() == 2)
-        {
-            if (prefix_style == command_line_style::allow_slash_for_short)
-                return string("/") + m_short_name[1];
-            if (prefix_style == command_line_style::allow_dash_for_short)
-                return string("-") + m_short_name[1];
-        }
-        if (!m_long_name.empty()) 
-            return m_long_name;
-        else
-            return m_short_name;
-    }
-
-
     const std::string&
     option_description::long_name() const
     {
@@ -199,13 +174,10 @@ namespace boost { namespace program_options {
     option_description::format_name() const
     {
         if (!m_short_name.empty())
-        {
-            return m_long_name.empty() 
-                ? m_short_name 
-                : string(m_short_name).append(" [ --").
-                  append(m_long_name).append(" ]");
-        }
-        return string("--").append(m_long_name);
+            return string(m_short_name).append(" [ --").
+            append(m_long_name).append(" ]");
+        else
+            return string("--").append(m_long_name);
     }
 
     std::string 
@@ -317,7 +289,7 @@ namespace boost { namespace program_options {
         const option_description* d = find_nothrow(name, approx, 
                                        long_ignore_case, short_ignore_case);
         if (!d)
-            boost::throw_exception(unknown_option());
+            boost::throw_exception(unknown_option(name));
         return *d;
     }
 
@@ -334,7 +306,6 @@ namespace boost { namespace program_options {
                                       bool short_ignore_case) const
     {
         shared_ptr<option_description> found;
-        bool had_full_match = false;
         vector<string> approximate_matches;
         vector<string> full_matches;
         
@@ -352,20 +323,19 @@ namespace boost { namespace program_options {
             if (r == option_description::full_match)
             {                
                 full_matches.push_back(m_options[i]->key(name));
-                found = m_options[i];
-                had_full_match = true;
             } 
             else 
             {                        
                 // FIXME: the use of 'key' here might not
                 // be the best approach.
                 approximate_matches.push_back(m_options[i]->key(name));
-                if (!had_full_match)
-                    found = m_options[i];
             }
+
+            found = m_options[i];
         }
         if (full_matches.size() > 1) 
-            boost::throw_exception(ambiguous_option(full_matches));
+            boost::throw_exception(
+                ambiguous_option(name, full_matches));
         
         // If we have a full match, and an approximate match,
         // ignore approximate match instead of reporting error.
@@ -373,7 +343,8 @@ namespace boost { namespace program_options {
         // "--all" on the command line should select the first one,
         // without ambiguity.
         if (full_matches.empty() && approximate_matches.size() > 1)
-            boost::throw_exception(ambiguous_option(approximate_matches));
+            boost::throw_exception(
+                ambiguous_option(name, approximate_matches));
 
         return found.get();
     }
@@ -422,7 +393,7 @@ namespace boost { namespace program_options {
                 if (count(par.begin(), par.end(), '\t') > 1)
                 {
                     boost::throw_exception(program_options::error(
-                        "Only one tab per paragraph is allowed in the options description"));
+                        "Only one tab per paragraph is allowed"));
                 }
           
                 // erase tab from string
@@ -469,7 +440,7 @@ namespace boost { namespace program_options {
                     // Take care to never increment the iterator past
                     // the end, since MSVC 8.0 (brokenly), assumes that
                     // doing that, even if no access happens, is a bug.
-                    unsigned remaining = static_cast<unsigned>(std::distance(line_begin, par_end));
+                    unsigned remaining = distance(line_begin, par_end);
                     string::const_iterator line_end = line_begin + 
                         ((remaining < line_length) ? remaining : line_length);
             
@@ -489,7 +460,7 @@ namespace boost { namespace program_options {
                         {                 
                             // is last_space within the second half ot the 
                             // current line
-                            if (static_cast<unsigned>(std::distance(last_space, line_end)) < 
+                            if (static_cast<unsigned>(distance(last_space, line_end)) < 
                                 (line_length / 2))
                             {
                                 line_end = last_space;
@@ -502,8 +473,8 @@ namespace boost { namespace program_options {
               
                     if (first_line)
                     {
-                        indent += static_cast<unsigned>(par_indent);
-                        line_length -= static_cast<unsigned>(par_indent); // there's less to work with now
+                        indent += par_indent;
+                        line_length -= par_indent; // there's less to work with now
                         first_line = false;
                     }
 
@@ -592,7 +563,7 @@ namespace boost { namespace program_options {
                       os.put(' ');
                    }
                 } else {
-                   for(unsigned pad = first_column_width - static_cast<unsigned>(ss.str().size()); pad > 0; --pad)
+                   for(unsigned pad = first_column_width - ss.str().size(); pad > 0; --pad)
                    {
                       os.put(' ');
                    }

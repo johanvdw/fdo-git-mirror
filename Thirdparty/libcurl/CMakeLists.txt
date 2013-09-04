@@ -23,17 +23,18 @@ include(Utilities)
 
 project( CURL C )
 
+
 file (READ ${CURL_SOURCE_DIR}/include/curl/curlver.h CURL_VERSION_H_CONTENTS)
-string (REGEX MATCH "LIBCURL_VERSION_MAJOR[ \t]+([0-9]+)"
+string (REGEX MATCH "LIBCURL_VERSION_MAJOR[ \t]+([0-9]+)" 
   LIBCURL_VERSION_MJ ${CURL_VERSION_H_CONTENTS})
-string (REGEX MATCH "([0-9]+)"
+string (REGEX MATCH "([0-9]+)" 
   LIBCURL_VERSION_MJ ${LIBCURL_VERSION_MJ})
-string (REGEX MATCH
+string (REGEX MATCH 
   "LIBCURL_VERSION_MINOR[ \t]+([0-9]+)"
   LIBCURL_VERSION_MI ${CURL_VERSION_H_CONTENTS})
 string (REGEX MATCH "([0-9]+)" LIBCURL_VERSION_MI ${LIBCURL_VERSION_MI})
-string (REGEX MATCH
-  "LIBCURL_VERSION_PATCH[ \t]+([0-9]+)"
+string (REGEX MATCH 
+  "LIBCURL_VERSION_PATCH[ \t]+([0-9]+)" 
   LIBCURL_VERSION_PT ${CURL_VERSION_H_CONTENTS})
 string (REGEX MATCH "([0-9]+)" LIBCURL_VERSION_PT ${LIBCURL_VERSION_PT})
 set (CURL_MAJOR_VERSION ${LIBCURL_VERSION_MJ})
@@ -54,8 +55,15 @@ message(STATUS "curl version=[${CURL_VERSION}]")
 set(OPERATING_SYSTEM "${CMAKE_SYSTEM_NAME}")
 set(OS "\"${CMAKE_SYSTEM_NAME}\"")
 
-include_directories(${PROJECT_BINARY_DIR}/include/curl)
+# Make the base headers visible to everything
+# IF(NOT ${PROJECT_BINARY_DIR} EQUAL ${PROJECT_SOURCE_DIR})
+# INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/include)
+# ENDIF()
 include_directories( ${CURL_SOURCE_DIR}/include )
+
+if(WIN32)
+  set(NATIVE_WINDOWS ON)
+endif()
 
 option(BUILD_CURL_EXE "Set to ON to build cURL executable." ON)
 option(BUILD_CURL_TESTS "Set to ON to build cURL tests." ON)
@@ -66,7 +74,7 @@ set(CURL_LIBS "")
 
 if(CURL_USE_ARES)
   set(USE_ARES ${CURL_USE_ARES})
-  find_package(CARES REQUIRED)
+  find_package(CARES REQUIRED) 
   list(APPEND CURL_LIBS ${CARES_LIBRARY} )
   set(CURL_LIBS ${CURL_LIBS} ${CARES_LIBRARY})
 endif()
@@ -109,11 +117,27 @@ mark_as_advanced(CURL_DISABLE_HTTP)
 
 option(CURL_DISABLE_LDAPS "to disable LDAPS" OFF)
 mark_as_advanced(CURL_DISABLE_LDAPS)
+if(WIN32)
+  set(CURL_DEFAULT_DISABLE_LDAP OFF)
+  # some windows compilers do not have wldap32 
+  if( NOT HAVE_WLDAP32)
+    set(CURL_DISABLE_LDAP ON CACHE BOOL "" FORCE)
+    message(STATUS "wldap32 not found CURL_DISABLE_LDAP set ON")
+    option(CURL_LDAP_WIN "Use W$ LDAP implementation" OFF)
+  else()
+    option(CURL_LDAP_WIN "Use W$ LDAP implementation" ON)
+  endif()
+  mark_as_advanced(CURL_LDAP_WIN)
+  set(CURL_LDAP_HYBRID OFF)
+else()
+  option(CURL_LDAP_HYBRID "W$ LDAP with non-W$ compiler" OFF)
+  mark_as_advanced(CURL_LDAP_HYBRID)
+  set(CURL_LDAP_WIN OFF)
+endif()
 
 if(HTTP_ONLY)
   set(CURL_DISABLE_FTP ON)
   set(CURL_DISABLE_LDAP ON)
-  set(CURL_DISABLE_LDAPS ON)
   set(CURL_DISABLE_TELNET ON)
   set(CURL_DISABLE_DICT ON)
   set(CURL_DISABLE_FILE ON)
@@ -131,6 +155,20 @@ option(DISABLED_THREADSAFE "Set to explicitly specify we don't want to use threa
 mark_as_advanced(DISABLED_THREADSAFE)
 option(ENABLE_IPV6 "Define if you want to enable IPv6 support" OFF)
 mark_as_advanced(ENABLE_IPV6)
+
+if(WIN32)
+  list_spaces_append_once(CMAKE_C_STANDARD_LIBRARIES wsock32.lib ws2_32.lib)  # bufferoverflowu.lib
+  if(CURL_DISABLE_LDAP)
+    # Remove wldap32.lib from space-separated list
+    string(REPLACE " " ";" _LIST ${CMAKE_C_STANDARD_LIBRARIES})
+    list(REMOVE_ITEM _LIST "wldap32.lib")
+    to_list_spaces(_LIST CMAKE_C_STANDARD_LIBRARIES)
+  else()
+    # Append wldap32.lib
+    list_spaces_append_once(CMAKE_C_STANDARD_LIBRARIES wldap32.lib)
+  endif()
+  set(CMAKE_C_STANDARD_LIBRARIES "${CMAKE_C_STANDARD_LIBRARIES}"   CACHE STRING "" FORCE)
+endif()
 
 
 # We need ansi c-flags, especially on HP
@@ -153,7 +191,13 @@ include (CheckIncludeFile)
 include (CheckIncludeFiles)
 include (CheckLibraryExists)
 include (CheckSymbolExists)
-include (CheckTypeSize)
+# if crosscompiling is on, the CHECK_TYPE_SIZE macro coming with cmake uses
+# TRY_COMPILE instead of TRY_RUN which makes crosscompiling easier, Alex
+if(CMAKE_CROSSCOMPILING)  
+  include ("${CMAKE_MODULE_PATH}/CheckTypeSize.cmake")
+else(CMAKE_CROSSCOMPILING)
+  include (CheckTypeSize)
+endif(CMAKE_CROSSCOMPILING)
 
 # On windows preload settings
 if(WIN32)
@@ -161,17 +205,18 @@ if(WIN32)
 endif(WIN32)
 
 # This macro checks if the symbol exists in the library and if it
-# does, it prepends library to the list.
+# does, it appends library to the list.
 macro(CHECK_LIBRARY_EXISTS_CONCAT LIBRARY SYMBOL VARIABLE)
-  check_library_exists("${LIBRARY};${CURL_LIBS}" ${SYMBOL} "${CMAKE_LIBRARY_PATH}"
+  check_library_exists("${LIBRARY};${CURL_LIBS}" ${SYMBOL} "" 
     ${VARIABLE})
   if(${VARIABLE})
-    set(CURL_LIBS ${LIBRARY} ${CURL_LIBS})
+    set(CURL_LIBS ${CURL_LIBS} ${LIBRARY})
   endif(${VARIABLE})
 endmacro(CHECK_LIBRARY_EXISTS_CONCAT)
 
 # Check for all needed libraries
 check_library_exists_concat("dl"     dlopen       HAVE_LIBDL)
+#CHECK_LIBRARY_EXISTS_CONCAT("ucb"    gethostname  HAVE_LIBUCB)
 check_library_exists_concat("socket" connect      HAVE_LIBSOCKET)
 check_library_exists("c" gethostbyname "" NOT_NEED_LIBNSL)
 
@@ -190,23 +235,27 @@ check_library_exists_concat("ws2_32" getch        HAVE_LIBWS2_32)
 check_library_exists_concat("winmm"  getch        HAVE_LIBWINMM)
 check_library_exists("wldap32" cldap_open "" HAVE_WLDAP32)
 
-if(WIN32)
-  set(CURL_DEFAULT_DISABLE_LDAP OFF)
-  # some windows compilers do not have wldap32
-  if(NOT HAVE_WLDAP32)
-    set(CURL_DISABLE_LDAP ON CACHE BOOL "" FORCE)
-    message(STATUS "wldap32 not found CURL_DISABLE_LDAP set ON")
-    option(CURL_LDAP_WIN "Use Windows LDAP implementation" OFF)
-  else()
-    option(CURL_LDAP_WIN "Use Windows LDAP implementation" ON)
-  endif()
-  mark_as_advanced(CURL_LDAP_WIN)
-endif()
-
-
 # IF(NOT CURL_SPECIAL_LIBZ)
 #  CHECK_LIBRARY_EXISTS_CONCAT("z"      inflateEnd   HAVE_LIBZ)
 # ENDIF(NOT CURL_SPECIAL_LIBZ)
+
+option(CMAKE_USE_OPENSSL "Use OpenSSL code. Experimental" ON)
+mark_as_advanced(CMAKE_USE_OPENSSL)
+if(CMAKE_USE_OPENSSL)
+  if(WIN32)
+    find_package(OpenSSL)
+    if(OPENSSL_FOUND)
+      set(USE_SSLEAY TRUE)
+      set(USE_OPENSSL TRUE)
+      list(APPEND CURL_LIBS ${OPENSSL_LIBRARIES} )
+    endif()
+    #FIND_LIBRARY(LIBEAY NAMES libeay32)
+    #LIST(APPEND CURL_LIBS ${LIBEAY} )
+  else(WIN32)
+    check_library_exists_concat("crypto" CRYPTO_lock  HAVE_LIBCRYPTO)
+    check_library_exists_concat("ssl"    SSL_connect  HAVE_LIBSSL)
+  endif(WIN32)
+endif(CMAKE_USE_OPENSSL)
 
 # Check for idn
 check_library_exists_concat("idn" idna_to_ascii_lz HAVE_LIBIDN)
@@ -233,29 +282,8 @@ if(CURL_ZLIB)  # AND CURL_CONFIG_HAS_BEEN_RUN_BEFORE
     set(HAVE_ZLIB_H ON)
     set(HAVE_ZLIB ON)
     set(HAVE_LIBZ ON)
-    list(APPEND CURL_LIBS ${ZLIB_LIBRARIES})
   endif()
 endif()
-
-option(CMAKE_USE_OPENSSL "Use OpenSSL code. Experimental" ON)
-mark_as_advanced(CMAKE_USE_OPENSSL)
-if(CMAKE_USE_OPENSSL)
-
-  set(USE_SSLEAY OFF)
-  set(USE_OPENSSL OFF)
-  set(HAVE_LIBCRYPTO OFF)
-  set(HAVE_LIBSSL OFF)
-
-  find_package(OpenSSL)
-  if(OPENSSL_FOUND)
-    list(APPEND CURL_LIBS ${OPENSSL_LIBRARIES})
-    list(APPEND CMAKE_REQUIRED_INCLUDES ${OPENSSL_INCLUDE_DIR})
-    set(USE_SSLEAY ON)
-    set(USE_OPENSSL ON)
-    set(HAVE_LIBCRYPTO ON)
-    set(HAVE_LIBSSL ON)
-  endif(OPENSSL_FOUND)
-endif(CMAKE_USE_OPENSSL)
 
 # If we have features.h, then do the _BSD_SOURCE magic
 check_include_file("features.h"       HAVE_FEATURES_H)
@@ -320,17 +348,14 @@ check_include_file_concat("net/if.h"         HAVE_NET_IF_H)
 check_include_file_concat("netdb.h"          HAVE_NETDB_H)
 check_include_file_concat("netinet/in.h"     HAVE_NETINET_IN_H)
 check_include_file_concat("netinet/tcp.h"    HAVE_NETINET_TCP_H)
-if(CMAKE_USE_OPENSSL AND OPENSSL_FOUND)
-  check_include_file_concat("openssl/crypto.h" HAVE_OPENSSL_CRYPTO_H)
-  check_include_file_concat("openssl/engine.h" HAVE_OPENSSL_ENGINE_H)
-  check_include_file_concat("openssl/err.h"    HAVE_OPENSSL_ERR_H)
-  check_include_file_concat("openssl/pem.h"    HAVE_OPENSSL_PEM_H)
-  check_include_file_concat("openssl/pkcs12.h" HAVE_OPENSSL_PKCS12_H)
-  check_include_file_concat("openssl/rsa.h"    HAVE_OPENSSL_RSA_H)
-  check_include_file_concat("openssl/ssl.h"    HAVE_OPENSSL_SSL_H)
-  check_include_file_concat("openssl/x509.h"   HAVE_OPENSSL_X509_H)
-  check_include_file_concat("openssl/rand.h"   HAVE_OPENSSL_RAND_H)
-endif(CMAKE_USE_OPENSSL AND OPENSSL_FOUND)
+check_include_file_concat("openssl/crypto.h" HAVE_OPENSSL_CRYPTO_H)
+check_include_file_concat("openssl/engine.h" HAVE_OPENSSL_ENGINE_H)
+check_include_file_concat("openssl/err.h"    HAVE_OPENSSL_ERR_H)
+check_include_file_concat("openssl/pem.h"    HAVE_OPENSSL_PEM_H)
+check_include_file_concat("openssl/pkcs12.h" HAVE_OPENSSL_PKCS12_H)
+check_include_file_concat("openssl/rsa.h"    HAVE_OPENSSL_RSA_H)
+check_include_file_concat("openssl/ssl.h"    HAVE_OPENSSL_SSL_H)
+check_include_file_concat("openssl/x509.h"   HAVE_OPENSSL_X509_H)
 check_include_file_concat("pem.h"            HAVE_PEM_H)
 check_include_file_concat("poll.h"           HAVE_POLL_H)
 check_include_file_concat("pwd.h"            HAVE_PWD_H)
@@ -366,24 +391,15 @@ check_include_file_concat("sockio.h"        HAVE_SOCKIO_H)
 check_include_file_concat("sys/utsname.h"   HAVE_SYS_UTSNAME_H)
 check_include_file_concat("idna.h"          HAVE_IDNA_H)
 
-if(NOT HAVE_LDAP_H)
-  message(STATUS "LDAP_H not found CURL_DISABLE_LDAP set ON")
-  set(CURL_DISABLE_LDAP ON CACHE BOOL "" FORCE)
-endif()
+if(CMAKE_USE_OPENSSL)
+  check_include_file_concat("openssl/rand.h"   HAVE_OPENSSL_RAND_H)
+endif(CMAKE_USE_OPENSSL)
 
-# No ldap, no ldaps.
-if(CURL_DISABLE_LDAP)
-  if(NOT CURL_DISABLE_LDAPS)
-    message(STATUS "LDAP needs to be enabled to support LDAPS")
-    set(CURL_DISABLE_LDAPS ON CACHE BOOL "" FORCE)
-  endif()
-endif()
 
 check_type_size(size_t  SIZEOF_SIZE_T)
 check_type_size(ssize_t  SIZEOF_SSIZE_T)
 check_type_size("long long"  SIZEOF_LONG_LONG)
 check_type_size("long"  SIZEOF_LONG)
-check_type_size("short"  SIZEOF_SHORT)
 check_type_size("int"  SIZEOF_INT)
 check_type_size("__int64"  SIZEOF___INT64)
 check_type_size("long double"  SIZEOF_LONG_DOUBLE)
@@ -417,7 +433,7 @@ if(SIZEOF_LONG EQUAL 8)
   set(CURL_FORMAT_CURL_OFF_TU "lu")
   set(CURL_FORMAT_OFF_T "%ld")
   set(CURL_SUFFIX_CURL_OFF_T L)
-  set(CURL_SUFFIX_CURL_OFF_TU UL)
+  set(CURL_SUFFIX_CURL_OFF_TU LU)
 endif(SIZEOF_LONG EQUAL 8)
 
 if(SIZEOF_LONG_LONG EQUAL 8)
@@ -427,7 +443,7 @@ if(SIZEOF_LONG_LONG EQUAL 8)
   set(CURL_FORMAT_CURL_OFF_TU "llu")
   set(CURL_FORMAT_OFF_T "%lld")
   set(CURL_SUFFIX_CURL_OFF_T LL)
-  set(CURL_SUFFIX_CURL_OFF_TU ULL)
+  set(CURL_SUFFIX_CURL_OFF_TU LLU)
 endif(SIZEOF_LONG_LONG EQUAL 8)
 
 if(NOT CURL_TYPEOF_CURL_OFF_T)
@@ -488,7 +504,7 @@ if(CMAKE_USE_OPENSSL)
   check_symbol_exists(RAND_status   "${CURL_INCLUDES}" HAVE_RAND_STATUS)
   check_symbol_exists(RAND_screen   "${CURL_INCLUDES}" HAVE_RAND_SCREEN)
   check_symbol_exists(RAND_egd      "${CURL_INCLUDES}" HAVE_RAND_EGD)
-  check_symbol_exists(CRYPTO_cleanup_all_ex_data "${CURL_INCLUDES}"
+  check_symbol_exists(CRYPTO_cleanup_all_ex_data "${CURL_INCLUDES}" 
     HAVE_CRYPTO_CLEANUP_ALL_EX_DATA)
   if(HAVE_LIBCRYPTO AND HAVE_LIBSSL)
     set(USE_OPENSSL 1)
@@ -554,7 +570,7 @@ endif(NOT HAVE_STRICMP)
 # For other curl specific tests, use this macro.
 macro(CURL_INTERNAL_TEST CURL_TEST)
   if("${CURL_TEST}" MATCHES "^${CURL_TEST}$")
-    set(MACRO_CHECK_FUNCTION_DEFINITIONS
+    set(MACRO_CHECK_FUNCTION_DEFINITIONS 
       "-D${CURL_TEST} ${CURL_TEST_DEFINES} ${CMAKE_REQUIRED_FLAGS}")
     if(CMAKE_REQUIRED_LIBRARIES)
       set(CURL_TEST_ADD_LIBRARIES
@@ -571,22 +587,22 @@ macro(CURL_INTERNAL_TEST CURL_TEST)
     if(${CURL_TEST})
       set(${CURL_TEST} 1 CACHE INTERNAL "Curl test ${FUNCTION}")
       message(STATUS "Performing Curl Test ${CURL_TEST} - Success")
-      file(APPEND ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeOutput.log
+      file(APPEND ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeOutput.log 
         "Performing Curl Test ${CURL_TEST} passed with the following output:\n"
         "${OUTPUT}\n")
     else(${CURL_TEST})
       message(STATUS "Performing Curl Test ${CURL_TEST} - Failed")
       set(${CURL_TEST} "" CACHE INTERNAL "Curl test ${FUNCTION}")
-      file(APPEND ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeError.log
+      file(APPEND ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeError.log 
         "Performing Curl Test ${CURL_TEST} failed with the following output:\n"
         "${OUTPUT}\n")
     endif(${CURL_TEST})
   endif("${CURL_TEST}" MATCHES "^${CURL_TEST}$")
-endmacro(CURL_INTERNAL_TEST)
+endmacro(CURL_INTERNAL_TEST) 
 
 macro(CURL_INTERNAL_TEST_RUN CURL_TEST)
   if("${CURL_TEST}_COMPILE" MATCHES "^${CURL_TEST}_COMPILE$")
-    set(MACRO_CHECK_FUNCTION_DEFINITIONS
+    set(MACRO_CHECK_FUNCTION_DEFINITIONS 
       "-D${CURL_TEST} ${CMAKE_REQUIRED_FLAGS}")
     if(CMAKE_REQUIRED_LIBRARIES)
       set(CURL_TEST_ADD_LIBRARIES
@@ -610,18 +626,18 @@ macro(CURL_INTERNAL_TEST_RUN CURL_TEST)
         "Performing Curl Test ${CURL_TEST} failed with the following output:\n"
         "${OUTPUT}")
       if(${CURL_TEST}_COMPILE)
-        file(APPEND
-          "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeError.log"
+        file(APPEND 
+          "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeError.log" 
           "There was a problem running this test\n")
       endif(${CURL_TEST}_COMPILE)
-      file(APPEND "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeError.log"
+      file(APPEND "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeError.log" 
         "\n\n")
     endif(${CURL_TEST}_COMPILE AND NOT ${CURL_TEST})
   endif("${CURL_TEST}_COMPILE" MATCHES "^${CURL_TEST}_COMPILE$")
-endmacro(CURL_INTERNAL_TEST_RUN)
+endmacro(CURL_INTERNAL_TEST_RUN) 
 
 # Do curl specific tests
-foreach(CURL_TEST
+foreach(CURL_TEST 
     HAVE_FCNTL_O_NONBLOCK
     HAVE_IOCTLSOCKET
     HAVE_IOCTLSOCKET_CAMEL
@@ -660,7 +676,7 @@ endforeach(CURL_TEST)
 if(HAVE_FILE_OFFSET_BITS)
   set(_FILE_OFFSET_BITS 64)
 endif(HAVE_FILE_OFFSET_BITS)
-foreach(CURL_TEST
+foreach(CURL_TEST 
     HAVE_GLIBC_STRERROR_R
     HAVE_POSIX_STRERROR_R
     )
@@ -733,12 +749,12 @@ set(CMAKE_REQUIRED_FLAGS)
 
 # Check for nonblocking
 set(HAVE_DISABLED_NONBLOCKING 1)
-if(HAVE_FIONBIO OR
+if(HAVE_FIONBIO OR 
     HAVE_IOCTLSOCKET OR
     HAVE_IOCTLSOCKET_CASE OR
     HAVE_O_NONBLOCK)
   set(HAVE_DISABLED_NONBLOCKING)
-endif(HAVE_FIONBIO OR
+endif(HAVE_FIONBIO OR 
   HAVE_IOCTLSOCKET OR
   HAVE_IOCTLSOCKET_CASE OR
   HAVE_O_NONBLOCK)
@@ -767,17 +783,7 @@ endif(CMAKE_COMPILER_IS_GNUCC AND APPLE)
 
 if(HAVE_SOCKLEN_T)
   set(CURL_TYPEOF_CURL_SOCKLEN_T "socklen_t")
-  if(WIN32)
-    set(CMAKE_EXTRA_INCLUDE_FILES "winsock2.h;ws2tcpip.h")
-  elseif(HAVE_SYS_SOCKET_H)
-    set(CMAKE_EXTRA_INCLUDE_FILES "sys/socket.h")
-  endif()
   check_type_size("socklen_t" CURL_SIZEOF_CURL_SOCKLEN_T)
-  set(CMAKE_EXTRA_INCLUDE_FILES)
-  if(NOT HAVE_CURL_SIZEOF_CURL_SOCKLEN_T)
-    message(FATAL_ERROR
-     "Check for sizeof socklen_t failed, see CMakeFiles/CMakerror.log")
-  endif()
 else()
   set(CURL_TYPEOF_CURL_SOCKLEN_T int)
   set(CURL_SIZEOF_CURL_SOCKLEN_T ${SIZEOF_INT})
@@ -801,6 +807,9 @@ endif(MSVC)
 function(SETUP_CURL_DEPENDENCIES TARGET_NAME)
   if(CURL_ZLIB AND ZLIB_FOUND)
     include_directories(${ZLIB_INCLUDE_DIR})
+  endif()
+  if(CURL_ZLIB AND ZLIB_FOUND)
+    target_link_libraries(${TARGET_NAME} ${ZLIB_LIBRARIES})
     #ADD_DEFINITIONS( -DHAVE_ZLIB_H -DHAVE_ZLIB -DHAVE_LIBZ )
   endif()
 
@@ -808,10 +817,9 @@ function(SETUP_CURL_DEPENDENCIES TARGET_NAME)
     include_directories(${OPENSSL_INCLUDE_DIR})
   endif()
   if(CMAKE_USE_OPENSSL AND CURL_CONFIG_HAS_BEEN_RUN_BEFORE)
+    target_link_libraries(${TARGET_NAME} ${OPENSSL_LIBRARIES})
     #ADD_DEFINITIONS( -DUSE_SSLEAY )
   endif()
-
-  target_link_libraries(${TARGET_NAME} ${CURL_LIBS})
 endfunction()
 
 # Ugly (but functional) way to include "Makefile.inc" by transforming it (= regenerate it).
@@ -821,13 +829,45 @@ function(TRANSFORM_MAKEFILE_INC INPUT_FILE OUTPUT_FILE)
   string(REPLACE "$(top_builddir)" "\${CURL_BINARY_DIR}" MAKEFILE_INC_TEXT ${MAKEFILE_INC_TEXT})
 
   string(REGEX REPLACE "\\\\\n" "§!§" MAKEFILE_INC_TEXT ${MAKEFILE_INC_TEXT})
-  string(REGEX REPLACE "([a-zA-Z_][a-zA-Z0-9_]*)[\t ]*=[\t ]*([^\n]*)" "SET(\\1 \\2)" MAKEFILE_INC_TEXT ${MAKEFILE_INC_TEXT})
+  string(REGEX REPLACE "([a-zA-Z_][a-zA-Z0-9_]*)[\t ]*=[\t ]*([^\n]*\n)" "SET(\\1 \\2)\n" MAKEFILE_INC_TEXT ${MAKEFILE_INC_TEXT})
   string(REPLACE "§!§" "\n" MAKEFILE_INC_TEXT ${MAKEFILE_INC_TEXT})
 
   string(REGEX REPLACE "\\$\\(([a-zA-Z_][a-zA-Z0-9_]*)\\)" "\${\\1}" MAKEFILE_INC_TEXT ${MAKEFILE_INC_TEXT})    # Replace $() with ${}
   string(REGEX REPLACE "@([a-zA-Z_][a-zA-Z0-9_]*)@" "\${\\1}" MAKEFILE_INC_TEXT ${MAKEFILE_INC_TEXT})    # Replace @@ with ${}, even if that may not be read by CMake scripts.
   file(WRITE ${OUTPUT_FILE} ${MAKEFILE_INC_TEXT})
 
+  ### BUGGY METHOD 1
+  # FILE(STRINGS Makefile.inc MAKEFILE_INC_TEXT)
+  # STRING(REPLACE "# ./lib/Makefile.inc" "" MAKEFILE_INC_TEXT ${MAKEFILE_INC_TEXT})
+  # STRING(REPLACE "  " " " MAKEFILE_INC_TEXT ${MAKEFILE_INC_TEXT})    # Replace tabs with spaces
+
+  # #STRING(REGEX MATCH "CSOURCES *=" AAA ${MAKEFILE_INC_TEXT})
+  # #MESSAGE(STATUS ${AAA})
+
+  # STRING(REPLACE "CSOURCES =" "" MAKEFILE_INC_TEXT ${MAKEFILE_INC_TEXT})
+  # STRING(REPLACE "HHEADERS =" "" MAKEFILE_INC_TEXT ${MAKEFILE_INC_TEXT})
+
+  # STRING(REGEX REPLACE "[^ ]+\\.c" "" ${HEADERS_VAR} ${MAKEFILE_INC_TEXT})    # Remove source files and store into headers var
+  # STRING(REGEX REPLACE "  +" " " ${HEADERS_VAR} ${${HEADERS_VAR}})
+  # STRING(REGEX REPLACE " " ";" ${HEADERS_VAR} ${${HEADERS_VAR}})
+
+  # STRING(REGEX REPLACE "[^ ]+\\.h" "" ${SOURCES_VAR} ${MAKEFILE_INC_TEXT})    # Remove headers and store into source files var
+  # STRING(REGEX REPLACE "  +" " " ${SOURCES_VAR} ${${SOURCES_VAR}})
+  # STRING(REGEX REPLACE " " ";" ${SOURCES_VAR} ${${SOURCES_VAR}})
+
+  # SET(${HEADERS_VAR} ${${HEADERS_VAR}} PARENT_SCOPE)
+  # SET(${SOURCES_VAR} ${${SOURCES_VAR}} PARENT_SCOPE)
+
+  ### BUGGY METHOD 2
+  # FILE(READ Makefile.inc MAKEFILE_INC_TEXT)
+  # #STRING(REPLACE "\t" " " MAKEFILE_INC_TEXT ${MAKEFILE_INC_TEXT})    # Replace tabs with spaces
+  # #STRING(REGEX REPLACE "\n+" "\n" MAKEFILE_INC_TEXT ${MAKEFILE_INC_TEXT})    # Remove empty lines (allow a simplification in the script)
+  # STRING(REGEX REPLACE "([A-Z]+)[\t ]*=[\t ]*" "SET(\\1 " MAKEFILE_INC_TEXT ${MAKEFILE_INC_TEXT})
+  # #STRING(REGEX REPLACE "^(.*)[\t ]*[^\\]$" ")" MAKEFILE_INC_TEXT ${MAKEFILE_INC_TEXT})
+  # STRING(REGEX REPLACE "([^\\])\n" "\\1)\n" MAKEFILE_INC_TEXT ${MAKEFILE_INC_TEXT})
+  # # STRING(REGEX REPLACE "CSOURCES *=" "SET(libCurl_SRCS " MAKEFILE_INC_TEXT ${MAKEFILE_INC_TEXT})
+  # # STRING(REGEX REPLACE "HHEADERS *=" "SET(libCurl_HEADERS " MAKEFILE_INC_TEXT ${MAKEFILE_INC_TEXT})
+  # FILE(WRITE Makefile.inc.cmake ${MAKEFILE_INC_TEXT})
 endfunction()
 
 add_subdirectory(lib)
@@ -841,24 +881,4 @@ endif()
 # This needs to be run very last so other parts of the scripts can take advantage of this.
 if(NOT CURL_CONFIG_HAS_BEEN_RUN_BEFORE)
   set(CURL_CONFIG_HAS_BEEN_RUN_BEFORE 1 CACHE INTERNAL "Flag to track whether this is the first time running CMake or if CMake has been configured before")
-endif()
-
-# Installation.
-# First, install generated curlbuild.h
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/include/curl/curlbuild.h"
-    DESTINATION include/curl )
-# Next, install other headers excluding curlbuild.h
-install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/curl"
-    DESTINATION include
-    FILES_MATCHING PATTERN "*.h"
-    PATTERN "curlbuild.h" EXCLUDE)
-
-
-# Workaround for MSVS10 to avoid the Dialog Hell
-# FIXME: This could be removed with future version of CMake.
-if(MSVC_VERSION EQUAL 1600)
-  set(CURL_SLN_FILENAME "${CMAKE_CURRENT_BINARY_DIR}/CURL.sln")
-  if(EXISTS "${CURL_SLN_FILENAME}")
-    file(APPEND "${CURL_SLN_FILENAME}" "\n# This should be regenerated!\n")
-  endif()
 endif()

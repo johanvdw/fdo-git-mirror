@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: nitffile.c 25541 2013-01-21 21:26:40Z rouault $
+ * $Id: nitffile.c 23492 2011-12-07 20:50:52Z rouault $
  *
  * Project:  NITF Read/Write Library
  * Purpose:  Module responsible for opening NITF file, populating NITFFile
@@ -33,14 +33,15 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: nitffile.c 25541 2013-01-21 21:26:40Z rouault $");
+CPL_CVSID("$Id: nitffile.c 23492 2011-12-07 20:50:52Z rouault $");
 
 static int NITFWriteBLOCKA( VSILFILE* fp, vsi_l_offset nOffsetUDIDL,
+                            vsi_l_offset nOffsetTRE, 
                             int *pnOffset,
                             char **papszOptions );
 static int NITFWriteTREsFromOptions(
     VSILFILE* fp,
-    vsi_l_offset nOffsetUDIDL,
+    vsi_l_offset nOffsetUDIDL, vsi_l_offset nOffsetTRE,
     int *pnOffset,
     char **papszOptions,
     const char* pszTREPrefix);
@@ -520,7 +521,7 @@ int NITFCreate( const char *pszFilename,
     int nCLevel;
     const char *pszNUMT;
     int nHL, nNUMT = 0;
-    vsi_l_offset nOffsetUDIDL;
+    int nUDIDLOffset;
     const char *pszVersion;
     int iIM, nIM = 1;
     const char *pszNUMI;
@@ -847,6 +848,7 @@ int NITFCreate( const char *pszFilename,
         NITFWriteTREsFromOptions(
             fp,
             nHL - 10,
+            nHL,
             &nHL,
             papszOptions, "FILE_TRE=" );
     }
@@ -1101,7 +1103,7 @@ int NITFCreate( const char *pszFilename,
     PLACE(nCur+nOffset+ 40, UDIDL , "00000"                        );
     PLACE(nCur+nOffset+ 45, IXSHDL, "00000"                        );
 
-    nOffsetUDIDL = nCur + nOffset + 40;
+    nUDIDLOffset = nOffset + 40;
     nOffset += 50;
 
 /* -------------------------------------------------------------------- */
@@ -1110,7 +1112,8 @@ int NITFCreate( const char *pszFilename,
     if( CSLFetchNameValue(papszOptions,"BLOCKA_BLOCK_COUNT") != NULL )
     {
         NITFWriteBLOCKA( fp,
-                         nOffsetUDIDL, 
+                         nCur + (GUIntBig)nUDIDLOffset, 
+                         nCur + (GUIntBig)nOffset, 
                          &nOffset, 
                          papszOptions );
     }
@@ -1119,7 +1122,8 @@ int NITFCreate( const char *pszFilename,
     {
         NITFWriteTREsFromOptions(
             fp,
-            nOffsetUDIDL, 
+            nCur + (GUIntBig)nUDIDLOffset, 
+            nCur + (GUIntBig)nOffset, 
             &nOffset, 
             papszOptions, "TRE=" );
     }
@@ -1203,6 +1207,7 @@ int NITFCreate( const char *pszFilename,
 
 static int NITFWriteTRE( VSILFILE* fp,
                          vsi_l_offset nOffsetUDIDL, 
+                         vsi_l_offset nOffsetTREInHeader, 
                          int  *pnOffset,
                          const char *pszTREName, char *pabyTREData, int nTREDataSize )
 
@@ -1239,7 +1244,7 @@ static int NITFWriteTRE( VSILFILE* fp,
 /* -------------------------------------------------------------------- */
     sprintf( szTemp, "%-6s%05d", 
              pszTREName, nTREDataSize );
-    VSIFSeekL(fp, nOffsetUDIDL + 10 + nOldOffset, SEEK_SET);
+    VSIFSeekL(fp, nOffsetTREInHeader + nOldOffset, SEEK_SET);
     VSIFWriteL(szTemp, 11, 1, fp);
     VSIFWriteL(pabyTREData, nTREDataSize, 1, fp);
 
@@ -1257,7 +1262,7 @@ static int NITFWriteTRE( VSILFILE* fp,
 
 static int NITFWriteTREsFromOptions(
     VSILFILE* fp,
-    vsi_l_offset nOffsetUDIDL,
+    vsi_l_offset nOffsetUDIDL, vsi_l_offset nOffsetTRE,
     int *pnOffset,
     char **papszOptions, const char* pszTREPrefix )    
 
@@ -1304,7 +1309,7 @@ static int NITFWriteTREsFromOptions(
                                CPLES_BackslashQuotable );
 
         if( !NITFWriteTRE( fp,
-                           nOffsetUDIDL,
+                           nOffsetUDIDL, nOffsetTRE,
                            pnOffset,
                            pszTREName, pszUnescapedContents, 
                            nContentLength ) )
@@ -1327,6 +1332,7 @@ static int NITFWriteTREsFromOptions(
 /************************************************************************/
 
 static int NITFWriteBLOCKA( VSILFILE* fp, vsi_l_offset nOffsetUDIDL,
+                            vsi_l_offset nOffsetTRE, 
                             int *pnOffset,
                             char **papszOptions )
 
@@ -1390,7 +1396,7 @@ static int NITFWriteBLOCKA( VSILFILE* fp, vsi_l_offset nOffsetUDIDL,
         memcpy( szBLOCKA + 118, "010.0", 5);
 
         if( !NITFWriteTRE( fp,
-                           nOffsetUDIDL,
+                           nOffsetUDIDL, nOffsetTRE, 
                            pnOffset,
                            "BLOCKA", szBLOCKA, 123 ) )
             return FALSE;
@@ -1713,23 +1719,22 @@ static const NITFSeries nitfSeries[] =
     { "OW", "WAC", "1:1M", "High Flying Chart - Host Nation", "CADRG"},
     { "TP", "TPC", "1:500K", "Tactical Pilotage Chart", "CADRG"},
     { "LF", "LFC-FR (Day)", "1:500K", "Low Flying Chart (Day) - Host Nation", "CADRG"},
-    { "L1", "LFC-1", "1:500K", "Low Flying Chart (TBD #1)", "CADRG"},
-    { "L2", "LFC-2", "1:500K", "Low Flying Chart (TBD #2)", "CADRG"},
-    { "L3", "LFC-3", "1:500K", "Low Flying Chart (TBD #3)", "CADRG"},
-    { "L4", "LFC-4", "1:500K", "Low Flying Chart (TBD #4)", "CADRG"},
-    { "L5", "LFC-5", "1:500K", "Low Flying Chart (TBD #5)", "CADRG"},
+    { "L1", "LFC-1", "1:500K", "Low Flying Chart (TED #1)", "CADRG"},
+    { "L2", "LFC-2", "1:500K", "Low Flying Chart (TED #2)", "CADRG"},
+    { "L3", "LFC-3", "1:500K", "Low Flying Chart (TED #3)", "CADRG"},
+    { "L4", "LFC-4", "1:500K", "Low Flying Chart (TED #4)", "CADRG"},
+    { "L5", "LFC-5", "1:500K", "Low Flying Chart (TED #5)", "CADRG"},
     { "LN", "LN (Night)", "1:500K", "Low Flying Chart (Night) - Host Nation", "CADRG"},
     { "JG", "JOG", "1:250K", "Joint Operation Graphic", "CADRG"},
     { "JA", "JOG-A", "1:250K", "Joint Operation Graphic - Air", "CADRG"},
     { "JR", "JOG-R", "1:250K", "Joint Operation Graphic - Radar", "CADRG"},
     { "JO", "OPG", "1:250K", "Operational Planning Graphic", "CADRG"},
     { "VT", "VTAC", "1:250K", "VFR Terminal Area Chart", "CADRG"},
-    { "F1", "TFC-1", "1:250K", "Transit Flying Chart (TBD #1)", "CADRG"},
-    { "F2", "TFC-2", "1:250K", "Transit Flying Chart (TBD #2)", "CADRG"},
-    { "F3", "TFC-3", "1:250K", "Transit Flying Chart (TBD #3)", "CADRG"},
-    { "F4", "TFC-4", "1:250K", "Transit Flying Chart (TBD #4)", "CADRG"},
-    { "F5", "TFC-5", "1:250K", "Transit Flying Chart (TBD #5)", "CADRG"},
-    { "TF", "TFC", "1:250K", "Transit Flying Chart (UK)", "CADRG"}, /* Not mentionned in 24111CN1.pdf paragraph 5.1.4 */
+    { "F1", "TFC-1", "1:250K", "Transit Flying Chart (TED #1)", "CADRG"},
+    { "F2", "TFC-2", "1:250K", "Transit Flying Chart (TED #2)", "CADRG"},
+    { "F3", "TFC-3", "1:250K", "Transit Flying Chart (TED #3)", "CADRG"},
+    { "F4", "TFC-4", "1:250K", "Transit Flying Chart (TED #4)", "CADRG"},
+    { "F5", "TFC-5", "1:250K", "Transit Flying Chart (TED #5)", "CADRG"},
     { "AT", "ATC", "1:200K", "Series 200 Air Target Chart", "CADRG"},
     { "VH", "HRC", "1:125K", "Helicopter Route Chart", "CADRG"},
     { "TN", "TFC (Night)", "1:250K", "Transit Flying Charget (Night) - Host Nation", "CADRG"},
@@ -1775,8 +1780,8 @@ static const NITFSeries nitfSeries[] =
     { "A3", "CM", "1:50K", "Combat Charts (1:50K)", "CADRG"},
     { "A4", "CM", "1:100K", "Combat Charts (1:100K)", "CADRG"},
     { "MI", "MIM", "1:50K", "Military Installation Maps", "CADRG"},
-    { "M1", "MIM", "Various", "Military Installation Maps (TBD #1)", "CADRG"},
-    { "M2", "MIM", "Various", "Military Installation Maps (TBD #2)", "CADRG"},
+    { "M1", "MIM", "Various", "Military Installation Maps (TED #1)", "CADRG"},
+    { "M2", "MIM", "Various", "Military Installation Maps (TED #2)", "CADRG"},
     { "VN", "VNC", "1:500K", "Visual Navigation Charts", "CADRG"},
     { "MM", "", "Various", "(Miscellaneous Maps & Charts)", "CADRG"},
     

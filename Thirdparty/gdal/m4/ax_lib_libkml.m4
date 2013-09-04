@@ -1,4 +1,4 @@
-dnl $Id: ax_lib_libkml.m4 23867 2012-02-02 00:00:19Z winkey $
+dnl $Id: ax_lib_libkml.m4 21505 2011-01-15 19:34:14Z rouault $
 dnl
 dnl @synopsis AX_LIB_LIBKML([MINIMUM-VERSION])
 dnl
@@ -31,7 +31,7 @@ dnl
 dnl @category InstalledPackages
 dnl @category Cxx
 dnl @author Mateusz Loskot <mateusz@loskot.net>
-dnl @version $Date: 2012-02-01 16:00:19 -0800 (Wed, 01 Feb 2012) $
+dnl @version $Date: 2011-01-15 11:34:14 -0800 (Sat, 15 Jan 2011) $
 dnl @license AllPermissive
 dnl          Copying and distribution of this file, with or without modification,
 dnl          are permitted in any medium without royalty provided the copyright notice and
@@ -102,9 +102,9 @@ AC_DEFUN([AX_LIB_LIBKML],
         libkml_include_dir2="$libkml_prefix/include/kml"
         libkml_include_dir3="$libkml_prefix/include/kml/third_party/boost_1_34_1"
         if test "$libkml_prefix" = "/usr"; then
-            libkml_lib_flags="-lkmldom -lkmlbase -lkmlengine -lkmlconvenience -lminizip -luriparser"
+            libkml_lib_flags="-lkmlengine -lkmldom -lkmlbase -lkmlconvenience -lminizip -luriparser"
         else
-            libkml_lib_flags="-L$libkml_prefix/lib -lkmldom -lkmlbase -lkmlengine -lkmlconvenience -lminizip -luriparser"
+            libkml_lib_flags="-L$libkml_prefix/lib -lkmlengine -lkmldom -lkmlbase -lkmlconvenience -lminizip -luriparser"
         fi
         run_libkml_test="yes"
     elif test "$libkml_requested" = "yes"; then

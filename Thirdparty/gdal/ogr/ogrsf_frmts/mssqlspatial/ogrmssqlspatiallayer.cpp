@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrmssqlspatiallayer.cpp 25860 2013-04-05 07:20:37Z tamas $
+ * $Id: ogrmssqlspatiallayer.cpp 22660 2011-07-07 14:15:31Z tamas $
  *
  * Project:  MSSQL Spatial driver
  * Purpose:  Definition of classes for OGR MSSQL Spatial driver.
@@ -29,7 +29,7 @@
 
 #include "ogr_mssqlspatial.h"
 
-CPL_CVSID("$Id: ogrmssqlspatiallayer.cpp 25860 2013-04-05 07:20:37Z tamas $");
+CPL_CVSID("$Id: ogrmssqlspatiallayer.cpp 22660 2011-07-07 14:15:31Z tamas $");
 /************************************************************************/
 /*                        OGRMSSQLSpatialLayer()                        */
 /************************************************************************/
@@ -42,7 +42,6 @@ OGRMSSQLSpatialLayer::OGRMSSQLSpatialLayer()
     nGeomColumnType = -1;
     pszGeomColumn = NULL;
     pszFIDColumn = NULL;
-    bIsIdentityFid = FALSE;
     panFieldOrdinals = NULL;
 
     poStmt = NULL;
@@ -140,9 +139,6 @@ CPLErr OGRMSSQLSpatialLayer::BuildFeatureDefn( const char *pszLayerName,
         if( pszFIDColumn != NULL &&
 		    EQUAL(poStmt->GetColName(iCol), pszFIDColumn) )
         {
-            if ( EQUAL(poStmt->GetColTypeName( iCol ), "int identity") ||
-                 EQUAL(poStmt->GetColTypeName( iCol ), "bigint identity"))
-                bIsIdentityFid = TRUE;
             /* skip FID */
             continue;
         }
@@ -291,9 +287,6 @@ OGRFeature *OGRMSSQLSpatialLayer::GetNextRawFeature()
 /* -------------------------------------------------------------------- */
     for( iField = 0; iField < poFeatureDefn->GetFieldCount(); iField++ )
     {
-        if ( poFeatureDefn->GetFieldDefn(iField)->IsIgnored() )
-            continue;
-        
         int iSrcField = panFieldOrdinals[iField];
         const char *pszValue = poStmt->GetColData( iSrcField );
 
@@ -310,7 +303,7 @@ OGRFeature *OGRMSSQLSpatialLayer::GetNextRawFeature()
 /* -------------------------------------------------------------------- */
 /*      Try to extract a geometry.                                      */
 /* -------------------------------------------------------------------- */
-    if( pszGeomColumn != NULL && !poFeatureDefn->IsGeometryIgnored())
+    if( pszGeomColumn != NULL )
     {
         int iField = poStmt->GetColId( pszGeomColumn );
         const char *pszGeomText = poStmt->GetColData( iField );
@@ -329,14 +322,13 @@ OGRFeature *OGRMSSQLSpatialLayer::GetNextRawFeature()
                 {
                 case MSSQLGEOMETRY_NATIVE:
                     {
-                        OGRMSSQLGeometryParser oParser( nGeomColumnType ); 
+                        OGRMSSQLGeometryParser oParser; 
                         eErr = oParser.ParseSqlGeometry( 
                             (unsigned char *) pszGeomText, nLength, &poGeom );
                         nSRSId = oParser.GetSRSId();
                     }
                     break;
                 case MSSQLGEOMETRY_WKB:
-                case MSSQLGEOMETRY_WKBZM:
                     eErr = OGRGeometryFactory::createFromWkb((unsigned char *) pszGeomText,
                                                       NULL, &poGeom, nLength);
                     break;

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdaltindex.c 25582 2013-01-29 21:13:43Z rouault $
+ * $Id: gdaltindex.c 19806 2010-06-06 11:56:19Z rouault $
  *
  * Project:  MapServer
  * Purpose:  Commandline App to build tile index for raster files.
@@ -34,20 +34,19 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: gdaltindex.c 25582 2013-01-29 21:13:43Z rouault $");
+CPL_CVSID("$Id: gdaltindex.c 19806 2010-06-06 11:56:19Z rouault $");
 
 /************************************************************************/
 /*                               Usage()                                */
 /************************************************************************/
 
-static void Usage(const char* pszErrorMsg)
+static void Usage()
 
 {
     fprintf(stdout, "%s", 
             "\n"
             "Usage: gdaltindex [-tileindex field_name] [-write_absolute_path] \n"
-            "                  [-skip_different_projection] [-t_srs target_srs]\n"
-            "                  index_file [gdal_file]*\n"
+            "                  [-skip_different_projection] index_file [gdal_file]*\n"
             "\n"
             "eg.\n"
             "  % gdaltindex doq_index.shp doq/*.tif\n" 
@@ -58,26 +57,15 @@ static void Usage(const char* pszErrorMsg)
             "  o Raster filenames will be put in the file exactly as they are specified\n"
             "    on the commandline unless the option -write_absolute_path is used.\n"
             "  o If -skip_different_projection is specified, only files with same projection ref\n"
-            "    as files already inserted in the tileindex will be inserted (unless t_srs is specified).\n"
-            "  o If -t_srs is specified, geometries of input files will be transformed to the desired\n"
-            "    target coordinate reference system.\n"
-            "    Note that using this option generates files that are NOT compatible with MapServer.\n"
-            "  o Simple rectangular polygons are generated in the same coordinate reference system\n"
-            "    as the rasters, or in target reference system if the -t_srs option is used.\n");
-
-    if( pszErrorMsg != NULL )
-        fprintf(stderr, "\nFAILURE: %s\n", pszErrorMsg);
-
+            "    as files already inserted in the tileindex will be inserted.\n"
+            "  o Simple rectangular polygons are generated in the same\n"
+            "    coordinate system as the rasters.\n" );
     exit(1);
 }
 
 /************************************************************************/
 /*                                main()                                */
 /************************************************************************/
-
-#define CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(nExtraArg) \
-    do { if (i_arg + nExtraArg >= argc) \
-        Usage(CPLSPrintf("%s option requires %d argument(s)", argv[i_arg], nExtraArg)); } while(0)
 
 int main(int argc, char *argv[])
 {
@@ -98,9 +86,6 @@ int main(int argc, char *argv[])
     char* index_filename_mod;
     int bExists;
     VSIStatBuf sStatBuf;
-    const char *pszTargetSRS = "";
-    int bSetTargetSRS = FALSE;
-    OGRSpatialReferenceH hTargetSRS = NULL;
 
     /* Check that we are running against at least GDAL 1.4 */
     /* Note to developers : if we use newer API, please change the requirement */
@@ -129,18 +114,9 @@ int main(int argc, char *argv[])
                    argv[0], GDAL_RELEASE_NAME, GDALVersionInfo("RELEASE_NAME"));
             return 0;
         }
-        else if( EQUAL(argv[i_arg],"--help") )
-            Usage(NULL);
         else if( strcmp(argv[i_arg],"-tileindex") == 0 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             tile_index = argv[++i_arg];
-        }
-        else if( strcmp(argv[i_arg],"-t_srs") == 0 )
-        {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
-            pszTargetSRS = argv[++i_arg];
-            bSetTargetSRS = TRUE;
         }
         else if ( strcmp(argv[i_arg],"-write_absolute_path") == 0 )
         {
@@ -151,7 +127,7 @@ int main(int argc, char *argv[])
             skip_different_projection = TRUE;
         }
         else if( argv[i_arg][0] == '-' )
-            Usage(CPLSPrintf("Unkown option name '%s'", argv[i_arg]));
+            Usage();
         else if( index_filename == NULL )
         {
             index_filename = argv[i_arg];
@@ -159,32 +135,9 @@ int main(int argc, char *argv[])
             break;
         }
     }
- 
-    if( index_filename == NULL )
-        Usage("No index filename specified.");
-    if( i_arg == argc )
-        Usage("No file to index specified.");
 
-/* -------------------------------------------------------------------- */
-/*      Create and validate target SRS if given.                        */
-/* -------------------------------------------------------------------- */
-   if( bSetTargetSRS )
-   {  
-       if ( skip_different_projection )
-       {
-           fprintf( stderr, 
-                    "Warning : -skip_different_projection does not apply "
-                    "when -t_srs is requested.\n" );
-       }
-       hTargetSRS = OSRNewSpatialReference("");
-       if( OSRSetFromUserInput( hTargetSRS, pszTargetSRS ) != CE_None )
-       {
-           OSRDestroySpatialReference( hTargetSRS );
-           fprintf( stderr, "Invalid target SRS `%s'.\n", 
-                    pszTargetSRS );
-           exit(1);
-       }
-   }
+    if( index_filename == NULL || i_arg == argc )
+        Usage();
 
 /* -------------------------------------------------------------------- */
 /*      Open or create the target shapefile and DBF file.               */
@@ -225,26 +178,16 @@ int main(int argc, char *argv[])
         if (hTileIndexDS)
         {
             char* pszLayerName = CPLStrdup(CPLGetBasename(index_filename));
-
-            /* get spatial reference for output file from target SRS (if set) */
-            /* or from first input file */
             OGRSpatialReferenceH hSpatialRef = NULL;
-            if( bSetTargetSRS )
+            GDALDatasetH hDS = GDALOpen( argv[i_arg], GA_ReadOnly );
+            if (hDS)
             {
-                hSpatialRef = OSRClone( hTargetSRS );
-            }
-            else
-            {
-                GDALDatasetH hDS = GDALOpen( argv[i_arg], GA_ReadOnly );
-                if (hDS)
+                const char* pszWKT = GDALGetProjectionRef(hDS);
+                if (pszWKT != NULL && pszWKT[0] != '\0')
                 {
-                    const char* pszWKT = GDALGetProjectionRef(hDS);
-                    if (pszWKT != NULL && pszWKT[0] != '\0')
-                    {
-                        hSpatialRef = OSRNewSpatialReference(pszWKT);
-                    }
-                    GDALClose(hDS);
+                    hSpatialRef = OSRNewSpatialReference(pszWKT);
                 }
+                GDALClose(hDS);
             }
 
             hLayer = OGR_DS_CreateLayer( hTileIndexDS, pszLayerName, hSpatialRef, wkbPolygon, NULL );
@@ -388,39 +331,32 @@ int main(int argc, char *argv[])
         }
 
         projectionRef = GDALGetProjectionRef(hDS);
-
-        /* if not set target srs, test that the current file uses same projection as others */
-        if( !bSetTargetSRS )
-        { 
-            if (alreadyExistingProjectionRefValid)
+        if (alreadyExistingProjectionRefValid)
+        {
+            int projectionRefNotNull, alreadyExistingProjectionRefNotNull;
+            projectionRefNotNull = projectionRef && projectionRef[0];
+            alreadyExistingProjectionRefNotNull = alreadyExistingProjectionRef && alreadyExistingProjectionRef[0];
+            if ((projectionRefNotNull &&
+                 alreadyExistingProjectionRefNotNull &&
+                 EQUAL(projectionRef, alreadyExistingProjectionRef) == 0) ||
+                (projectionRefNotNull != alreadyExistingProjectionRefNotNull))
             {
-                int projectionRefNotNull, alreadyExistingProjectionRefNotNull;
-                projectionRefNotNull = projectionRef && projectionRef[0];
-                alreadyExistingProjectionRefNotNull = alreadyExistingProjectionRef && alreadyExistingProjectionRef[0];
-                if ((projectionRefNotNull &&
-                     alreadyExistingProjectionRefNotNull &&
-                     EQUAL(projectionRef, alreadyExistingProjectionRef) == 0) ||
-                    (projectionRefNotNull != alreadyExistingProjectionRefNotNull))
+                fprintf(stderr, "Warning : %s is not using the same projection system as "
+                                "other files in the tileindex. This may cause problems when "
+                                "using it in MapServer for example.%s\n", argv[i_arg],
+                                (skip_different_projection) ? " Skipping it" : "");
+                if (skip_different_projection)
                 {
-                    fprintf(stderr, "Warning : %s is not using the same projection system as "
-                            "other files in the tileindex.\n"
-			    "This may cause problems when using it in MapServer for example.\n"
-                            "Use -t_srs option to set target projection system (not supported by MapServer).\n"
-                            "%s\n", argv[i_arg],
-                            (skip_different_projection) ? "Skipping this file." : "");
-                    if (skip_different_projection)
-                    {
-                        CPLFree(fileNameToWrite);
-                        GDALClose( hDS );
-                        continue;
-                    }
+                    CPLFree(fileNameToWrite);
+                    GDALClose( hDS );
+                    continue;
                 }
             }
-            else
-            {
-                alreadyExistingProjectionRefValid = TRUE;
-                alreadyExistingProjectionRef = CPLStrdup(projectionRef);
-            }
+        }
+        else
+        {
+            alreadyExistingProjectionRefValid = TRUE;
+            alreadyExistingProjectionRef = CPLStrdup(projectionRef);
         }
 
         nXSize = GDALGetRasterXSize( hDS );
@@ -461,34 +397,6 @@ int main(int argc, char *argv[])
             + 0 * adfGeoTransform[4] 
             + 0 * adfGeoTransform[5];
 
-        /* if set target srs, do the forward transformation of all points */
-        if( bSetTargetSRS )
-        {
-            OGRSpatialReferenceH hSourceSRS = NULL;
-            OGRCoordinateTransformationH hCT = NULL;
-            hSourceSRS = OSRNewSpatialReference( projectionRef );
-            if( hSourceSRS && !OSRIsSame( hSourceSRS, hTargetSRS ) )
-            {
-                hCT = OCTNewCoordinateTransformation( hSourceSRS, hTargetSRS );
-                if( hCT == NULL || !OCTTransform( hCT, 5, adfX, adfY, NULL ) )
-                {
-                    fprintf( stderr, 
-                             "Warning : unable to transform points from source SRS `%s' to target SRS `%s'\n"
-                             "for file `%s' - file skipped\n", 
-                             projectionRef, pszTargetSRS, fileNameToWrite );
-                    if ( hCT ) 
-                        OCTDestroyCoordinateTransformation( hCT );
-                    if ( hSourceSRS )
-                        OSRDestroySpatialReference( hSourceSRS );
-                    continue;
-                }
-                if ( hCT ) 
-                    OCTDestroyCoordinateTransformation( hCT );
-            }
-            if ( hSourceSRS )
-                OSRDestroySpatialReference( hSourceSRS );
-        }
-
         hFeature = OGR_F_Create( OGR_L_GetLayerDefn( hLayer ) );
         OGR_F_SetFieldString( hFeature, ti_field, fileNameToWrite );
 
@@ -524,9 +432,6 @@ int main(int argc, char *argv[])
         CPLFree(existingFilesTab);
     }
     CPLFree(alreadyExistingProjectionRef);
-
-    if ( hTargetSRS )
-        OSRDestroySpatialReference( hTargetSRS );
 
     OGR_DS_Destroy( hTileIndexDS );
     

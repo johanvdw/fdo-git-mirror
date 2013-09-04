@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalrasterband.cpp 25924 2013-04-18 18:16:41Z rouault $
+ * $Id: gdalrasterband.cpp 23425 2011-11-26 19:14:25Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Base class for format specific band class implementation.  This
@@ -36,7 +36,11 @@
 #define TO_SUBBLOCK(x) ((x) >> 6)
 #define WITHIN_SUBBLOCK(x) ((x) & 0x3f)
 
-CPL_CVSID("$Id: gdalrasterband.cpp 25924 2013-04-18 18:16:41Z rouault $");
+// Number of data samples that will be used to compute approximate statistics
+// (minimum value, maximum value, etc.)
+#define GDALSTAT_APPROX_NUMSAMPLES 2500
+
+CPL_CVSID("$Id: gdalrasterband.cpp 23425 2011-11-26 19:14:25Z rouault $");
 
 /************************************************************************/
 /*                           GDALRasterBand()                           */
@@ -704,9 +708,24 @@ int GDALRasterBand::InitBlockInfo()
         }
     }
 
-    nBlocksPerRow = DIV_ROUND_UP(nRasterXSize, nBlockXSize);
-    nBlocksPerColumn = DIV_ROUND_UP(nRasterYSize, nBlockYSize);
+    /* Check for overflows in computation of nBlocksPerRow and nBlocksPerColumn */
+    if (nRasterXSize > INT_MAX - (nBlockXSize-1))
+    {
+        ReportError( CE_Failure, CPLE_NotSupported, "Inappropriate raster width (%d) for block width (%d)",
+                    nRasterXSize, nBlockXSize );
+        return FALSE;
+    }
 
+    if (nRasterYSize > INT_MAX - (nBlockYSize-1))
+    {
+        ReportError( CE_Failure, CPLE_NotSupported, "Inappropriate raster height (%d) for block height (%d)",
+                    nRasterYSize, nBlockYSize );
+        return FALSE;
+    }
+
+    nBlocksPerRow = (nRasterXSize+nBlockXSize-1) / nBlockXSize;
+    nBlocksPerColumn = (nRasterYSize+nBlockYSize-1) / nBlockYSize;
+    
     if( nBlocksPerRow < SUBBLOCK_SIZE/2 )
     {
         bSubBlockingActive = FALSE;
@@ -725,10 +744,25 @@ int GDALRasterBand::InitBlockInfo()
     }
     else
     {
+        /* Check for overflows in computation of nSubBlocksPerRow and nSubBlocksPerColumn */
+        if (nBlocksPerRow > INT_MAX - (SUBBLOCK_SIZE+1))
+        {
+            ReportError( CE_Failure, CPLE_NotSupported, "Inappropriate raster width (%d) for block width (%d)",
+                        nRasterXSize, nBlockXSize );
+            return FALSE;
+        }
+
+        if (nBlocksPerColumn > INT_MAX - (SUBBLOCK_SIZE+1))
+        {
+            ReportError( CE_Failure, CPLE_NotSupported, "Inappropriate raster height (%d) for block height (%d)",
+                        nRasterYSize, nBlockYSize );
+            return FALSE;
+        }
+
         bSubBlockingActive = TRUE;
 
-        nSubBlocksPerRow = DIV_ROUND_UP(nBlocksPerRow, SUBBLOCK_SIZE);
-        nSubBlocksPerColumn = DIV_ROUND_UP(nBlocksPerColumn, SUBBLOCK_SIZE);
+        nSubBlocksPerRow = (nBlocksPerRow + SUBBLOCK_SIZE + 1)/SUBBLOCK_SIZE;
+        nSubBlocksPerColumn = (nBlocksPerColumn + SUBBLOCK_SIZE + 1)/SUBBLOCK_SIZE;
 
         if (nSubBlocksPerRow < INT_MAX / nSubBlocksPerColumn)
         {
@@ -3158,7 +3192,7 @@ CPLErr
         double dfHalfBucket = 0;
 
         eErr = GetStatistics( TRUE, TRUE, pdfMin, pdfMax, NULL, NULL );
-        dfHalfBucket = (*pdfMax - *pdfMin) / (2 * (nBuckets - 1));
+        dfHalfBucket = (*pdfMax - *pdfMin) / (2 * nBuckets);
         *pdfMin -= dfHalfBucket;
         *pdfMax += dfHalfBucket;
 
@@ -4372,6 +4406,7 @@ CPLErr CPL_STDCALL GDALSetDefaultRAT( GDALRasterBandH hBand,
 
 {
     VALIDATE_POINTER1( hBand, "GDALSetDefaultRAT", CE_Failure );
+    VALIDATE_POINTER1( hRAT, "GDALSetDefaultRAT", CE_Failure );
 
     GDALRasterBand *poBand = static_cast<GDALRasterBand*>(hBand);
 

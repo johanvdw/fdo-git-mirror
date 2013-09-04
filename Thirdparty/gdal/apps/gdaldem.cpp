@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdaldem.cpp 25924 2013-04-18 18:16:41Z rouault $
+ * $Id: gdaldem.cpp 22857 2011-08-02 18:17:45Z rouault $
  *
  * Project:  GDAL DEM Utilities
  * Purpose:  
@@ -91,7 +91,7 @@
 #include "gdal_priv.h"
 #include "commonutils.h"
 
-CPL_CVSID("$Id: gdaldem.cpp 25924 2013-04-18 18:16:41Z rouault $");
+CPL_CVSID("$Id: gdaldem.cpp 22857 2011-08-02 18:17:45Z rouault $");
 
 #ifndef M_PI
 # define M_PI  3.1415926535897932384626433832795
@@ -103,7 +103,7 @@ CPL_CVSID("$Id: gdaldem.cpp 25924 2013-04-18 18:16:41Z rouault $");
 /*                               Usage()                                */
 /************************************************************************/
 
-static void Usage(const char* pszErrorMsg = NULL)
+static void Usage()
 
 {
     printf( " Usage: \n"
@@ -111,7 +111,7 @@ static void Usage(const char* pszErrorMsg = NULL)
             "     gdaldem hillshade input_dem output_hillshade \n"
             "                 [-z ZFactor (default=1)] [-s scale* (default=1)] \n"
             "                 [-az Azimuth (default=315)] [-alt Altitude (default=45)]\n"
-            "                 [-alg ZevenbergenThorne] [-combined]\n"
+            "                 [-alg ZevenbergenThorne]\n"
             "                 [-compute_edges] [-b Band (default=1)] [-of format] [-co \"NAME=VALUE\"]* [-q]\n"
             "\n"
             " - To generates a slope map from any GDAL-supported elevation raster :\n\n"
@@ -148,10 +148,6 @@ static void Usage(const char* pszErrorMsg = NULL)
             " Notes : \n"
             "   Scale is the ratio of vertical units to horizontal\n"
             "    for Feet:Latlong use scale=370400, for Meters:LatLong use scale=111120 \n\n");
-
-    if( pszErrorMsg != NULL )
-        fprintf(stderr, "\nFAILURE: %s\n", pszErrorMsg);
-
     exit( 1 );
 }
 
@@ -446,7 +442,6 @@ typedef struct
     double cos_altRadians_mul_z_scale_factor;
     double azRadians;
     double square_z_scale_factor;
-    double square_M_PI_2;
 } GDALHillshadeAlgData;
 
 /* Unoptimized formulas are :
@@ -498,41 +493,6 @@ float GDALHillshadeAlg (float* afWin, float fDstNoDataValue, void* pData)
     return (float) cang;
 }
 
-float GDALHillshadeCombinedAlg (float* afWin, float fDstNoDataValue, void* pData)
-{
-    GDALHillshadeAlgData* psData = (GDALHillshadeAlgData*)pData;
-    double x, y, aspect, xx_plus_yy, cang;
-    
-    // First Slope ...
-    x = ((afWin[0] + afWin[3] + afWin[3] + afWin[6]) -
-        (afWin[2] + afWin[5] + afWin[5] + afWin[8])) / psData->ewres;
-
-    y = ((afWin[6] + afWin[7] + afWin[7] + afWin[8]) -
-        (afWin[0] + afWin[1] + afWin[1] + afWin[2])) / psData->nsres;
-
-    xx_plus_yy = x * x + y * y;
-
-    // ... then aspect...
-    aspect = atan2(y,x);
-    double slope = xx_plus_yy * psData->square_z_scale_factor;
-
-    // ... then the shade value
-    cang = acos((psData->sin_altRadians -
-           psData->cos_altRadians_mul_z_scale_factor * sqrt(xx_plus_yy) *
-           sin(aspect - psData->azRadians)) /
-           sqrt(1 + slope));
-
-    // combined shading
-    cang = 1 - cang * atan(sqrt(slope)) / psData->square_M_PI_2;
-
-    if (cang <= 0.0) 
-        cang = 1.0;
-    else
-        cang = 1.0 + (254.0 * cang);
-        
-    return (float) cang;
-}
-
 float GDALHillshadeZevenbergenThorneAlg (float* afWin, float fDstNoDataValue, void* pData)
 {
     GDALHillshadeAlgData* psData = (GDALHillshadeAlgData*)pData;
@@ -562,39 +522,6 @@ float GDALHillshadeZevenbergenThorneAlg (float* afWin, float fDstNoDataValue, vo
     return (float) cang;
 }
 
-float GDALHillshadeZevenbergenThorneCombinedAlg (float* afWin, float fDstNoDataValue, void* pData)
-{
-    GDALHillshadeAlgData* psData = (GDALHillshadeAlgData*)pData;
-    double x, y, aspect, xx_plus_yy, cang;
-    
-    // First Slope ...
-    x = (afWin[3] - afWin[5]) / psData->ewres;
-
-    y = (afWin[7] - afWin[1]) / psData->nsres;
-
-    xx_plus_yy = x * x + y * y;
-
-    // ... then aspect...
-    aspect = atan2(y,x);
-    double slope = xx_plus_yy * psData->square_z_scale_factor;
-
-    // ... then the shade value
-    cang = acos((psData->sin_altRadians -
-           psData->cos_altRadians_mul_z_scale_factor * sqrt(xx_plus_yy) *
-           sin(aspect - psData->azRadians)) /
-           sqrt(1 + slope));
-
-    // combined shading
-    cang = 1 - cang * atan(sqrt(slope)) / psData->square_M_PI_2;
-
-    if (cang <= 0.0) 
-        cang = 1.0;
-    else
-        cang = 1.0 + (254.0 * cang);
-        
-    return (float) cang;
-}
-
 void*  GDALCreateHillshadeData(double* adfGeoTransform,
                                double z,
                                double scale,
@@ -614,7 +541,6 @@ void*  GDALCreateHillshadeData(double* adfGeoTransform,
     pData->cos_altRadians_mul_z_scale_factor =
         cos(alt * degreesToRadians) * z_scale_factor;
     pData->square_z_scale_factor = z_scale_factor * z_scale_factor;
-    pData->square_M_PI_2 = (M_PI*M_PI)/4;
     return pData;
 }
 
@@ -1337,6 +1263,7 @@ CPLErr GDALColorReliefRasterBand::IReadBlock( int nBlockXOff,
     else
         nReqYSize = nBlockYSize;
 
+    int nCount = nReqXSize * nReqYSize;
     if ( poGDS->nCurBlockXOff != nBlockXOff ||
          poGDS->nCurBlockYOff != nBlockYOff )
     {
@@ -1356,42 +1283,34 @@ CPLErr GDALColorReliefRasterBand::IReadBlock( int nBlockXOff,
                             0, 0);
         if (eErr != CE_None)
         {
-            memset(pImage, 0, nBlockXSize * nBlockYSize);
+            memset(pImage, 0, nCount);
             return eErr;
         }
     }
 
-    int x, y, j = 0;
+    int j;
     if (poGDS->panSourceBuf)
     {
-        for( y = 0; y < nReqYSize; y++ )
+        for ( j = 0; j < nCount; j++)
         {
-            for( x = 0; x < nReqXSize; x++ )
-            {
-                int nIndex = poGDS->panSourceBuf[j] + poGDS->nIndexOffset;
-                ((GByte*)pImage)[y * nBlockXSize + x] = poGDS->pabyPrecomputed[4*nIndex + nBand-1];
-                j++;
-            }
+            int nIndex = poGDS->panSourceBuf[j] + poGDS->nIndexOffset;
+            ((GByte*)pImage)[j] = poGDS->pabyPrecomputed[4*nIndex + nBand-1];
         }
     }
     else
     {
         int anComponents[4];
-        for( y = 0; y < nReqYSize; y++ )
+        for ( j = 0; j < nCount; j++)
         {
-            for( x = 0; x < nReqXSize; x++ )
-            {
-                GDALColorReliefGetRGBA  (poGDS->pasColorAssociation,
-                                        poGDS->nColorAssociation,
-                                        poGDS->pafSourceBuf[j],
-                                        poGDS->eColorSelectionMode,
-                                        &anComponents[0],
-                                        &anComponents[1],
-                                        &anComponents[2],
-                                        &anComponents[3]);
-                ((GByte*)pImage)[y * nBlockXSize + x] = (GByte) anComponents[nBand-1];
-                j++;
-            }
+            GDALColorReliefGetRGBA  (poGDS->pasColorAssociation,
+                                     poGDS->nColorAssociation,
+                                     poGDS->pafSourceBuf[j],
+                                     poGDS->eColorSelectionMode,
+                                     &anComponents[0],
+                                     &anComponents[1],
+                                     &anComponents[2],
+                                     &anComponents[3]);
+            ((GByte*)pImage)[j] = (GByte) anComponents[nBand-1];
         }
     }
     
@@ -2198,10 +2117,6 @@ typedef enum
     ROUGHNESS
 } Algorithm;
 
-#define CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(nExtraArg) \
-    do { if (i + nExtraArg >= argc) \
-        Usage(CPLSPrintf("%s option requires %d argument(s)", argv[i], nExtraArg)); } while(0)
-
 int main( int argc, char ** argv )
 
 {
@@ -2240,7 +2155,7 @@ int main( int argc, char ** argv )
     
     int bComputeAtEdges = FALSE;
     int bZevenbergenThorne = FALSE;
-    int bCombined = FALSE;
+
     int bQuiet = FALSE;
     
     /* Check strict compilation and runtime library version as we use C++ API */
@@ -2250,7 +2165,8 @@ int main( int argc, char ** argv )
     argc = GDALGeneralCmdLineProcessor( argc, &argv, 0 );
     if( argc < 2 )
     {
-        Usage("Not enough arguments.");
+        fprintf(stderr, "Not enough arguments\n");
+        Usage();
     }
 
     if( EQUAL(argv[1], "--utility_version") || EQUAL(argv[1], "--utility-version") )
@@ -2259,8 +2175,6 @@ int main( int argc, char ** argv )
                 argv[0], GDAL_RELEASE_NAME, GDALVersionInfo("RELEASE_NAME"));
         return 0;
     }
-    else if( EQUAL(argv[1],"--help") )
-        Usage();
     else if ( EQUAL(argv[1], "shade") || EQUAL(argv[1], "hillshade") )
     {
         eUtilityMode = HILL_SHADE;
@@ -2291,7 +2205,8 @@ int main( int argc, char ** argv )
     }
     else
     {
-        Usage("Missing valid sub-utility mention.");
+        fprintf(stderr, "Missing valid sub-utility mention\n");
+        Usage();
     }
 
 /* -------------------------------------------------------------------- */
@@ -2299,10 +2214,9 @@ int main( int argc, char ** argv )
 /* -------------------------------------------------------------------- */
     for(int i = 2; i < argc; i++ )
     {
-        if( eUtilityMode == HILL_SHADE &&
+        if( eUtilityMode == HILL_SHADE && i + 1 < argc &&
             (EQUAL(argv[i], "--z") || EQUAL(argv[i], "-z")))
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             z = atof(argv[++i]);
         }
         else if ( eUtilityMode == SLOPE && EQUAL(argv[i], "-p"))
@@ -2310,15 +2224,15 @@ int main( int argc, char ** argv )
             slopeFormat = 0;
         }
         else if ( (eUtilityMode == HILL_SHADE || eUtilityMode == SLOPE ||
-                   eUtilityMode == ASPECT) && EQUAL(argv[i], "-alg") )
+                   eUtilityMode == ASPECT) && EQUAL(argv[i], "-alg") && i + 1 < argc)
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             i ++;
             if (EQUAL(argv[i], "ZevenbergenThorne"))
                 bZevenbergenThorne = TRUE;
             else if (!EQUAL(argv[i], "Horn"))
             {
-                Usage(CPLSPrintf("Wrong value for alg : %s.", argv[i]));
+                fprintf(stderr, "Wrong value for alg : %s\n", argv[i]);
+                Usage();
             }
         }
         else if ( eUtilityMode == ASPECT && EQUAL(argv[i], "-trigonometric"))
@@ -2337,42 +2251,32 @@ int main( int argc, char ** argv )
         {
             eColorSelectionMode = COLOR_SELECTION_NEAREST_ENTRY;
         }
-        else if( 
+        else if( i + 1 < argc &&
             (EQUAL(argv[i], "--s") || 
              EQUAL(argv[i], "-s") ||
              EQUAL(argv[i], "--scale") ||
              EQUAL(argv[i], "-scale"))
           )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             scale = atof(argv[++i]);
         }
-        else if( eUtilityMode == HILL_SHADE &&
+        else if( eUtilityMode == HILL_SHADE && i + 1 < argc &&
             (EQUAL(argv[i], "--az") || 
              EQUAL(argv[i], "-az") ||
              EQUAL(argv[i], "--azimuth") ||
              EQUAL(argv[i], "-azimuth"))
           )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             az = atof(argv[++i]);
         }
-        else if( eUtilityMode == HILL_SHADE &&
+        else if( eUtilityMode == HILL_SHADE && i + 1 < argc &&
             (EQUAL(argv[i], "--alt") || 
              EQUAL(argv[i], "-alt") ||
              EQUAL(argv[i], "--alt") ||
              EQUAL(argv[i], "-alt"))
           )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             alt = atof(argv[++i]);
-        }
-        else if( eUtilityMode == HILL_SHADE &&
-            (EQUAL(argv[i], "-combined") || 
-             EQUAL(argv[i], "--combined"))
-          )
-        {
-            bCombined = TRUE;
         }
         else if( eUtilityMode == COLOR_RELIEF &&
                  EQUAL(argv[i], "-alpha"))
@@ -2396,20 +2300,20 @@ int main( int argc, char ** argv )
             pfnProgress = GDALDummyProgress;
             bQuiet = TRUE;
         }
-        else if( EQUAL(argv[i],"-co") )
+        else if( EQUAL(argv[i],"-co") && i < argc-1 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             papszCreateOptions = CSLAddString( papszCreateOptions, argv[++i] );
         }
-        else if( EQUAL(argv[i],"-of") )
+        else if( EQUAL(argv[i],"-of") && i < argc-1 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             pszFormat = argv[++i];
             bFormatExplicitelySet = TRUE;
         }
         else if( argv[i][0] == '-' )
         {
-            Usage(CPLSPrintf("Unkown option name '%s'", argv[i]));
+            fprintf( stderr, "Option %s incomplete, or not recognised.\n\n", 
+                    argv[i] );
+            Usage();
         }
         else if( pszSrcFilename == NULL )
         {
@@ -2424,20 +2328,23 @@ int main( int argc, char ** argv )
             pszDstFilename = argv[i];
         }
         else
-            Usage("Too many command options.");
+            Usage();
     }
 
     if( pszSrcFilename == NULL )
     {
-        Usage("Missing source.");
+        fprintf( stderr, "Missing source.\n\n" );
+        Usage();
     }
     if ( eUtilityMode == COLOR_RELIEF && pszColorFilename == NULL )
     {
-        Usage("Missing color file.");
+        fprintf( stderr, "Missing color file.\n\n" );
+        Usage();
     }
     if( pszDstFilename == NULL )
     {
-        Usage("Missing destination.");
+        fprintf( stderr, "Missing destination.\n\n" );
+        Usage();
     }
 
     GDALAllRegister();
@@ -2515,19 +2422,9 @@ int main( int argc, char ** argv )
                                            az,
                                            bZevenbergenThorne);
         if (bZevenbergenThorne)
-        {
-            if(!bCombined)
-                pfnAlg = GDALHillshadeZevenbergenThorneAlg;
-            else
-                pfnAlg = GDALHillshadeZevenbergenThorneCombinedAlg;
-        }
+            pfnAlg = GDALHillshadeZevenbergenThorneAlg;
         else
-        {
-            if(!bCombined)
-                pfnAlg = GDALHillshadeAlg;
-            else
-                pfnAlg = GDALHillshadeCombinedAlg;
-        }
+            pfnAlg = GDALHillshadeAlg;
     }
     else if (eUtilityMode == SLOPE)
     {

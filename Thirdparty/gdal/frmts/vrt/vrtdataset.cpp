@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: vrtdataset.cpp 25769 2013-03-19 07:50:17Z antonio $
+ * $Id: vrtdataset.cpp 22809 2011-07-24 21:51:09Z rouault $
  *
  * Project:  Virtual GDAL Datasets
  * Purpose:  Implementation of VRTDataset
@@ -32,7 +32,7 @@
 #include "cpl_minixml.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: vrtdataset.cpp 25769 2013-03-19 07:50:17Z antonio $");
+CPL_CVSID("$Id: vrtdataset.cpp 22809 2011-07-24 21:51:09Z rouault $");
 
 /************************************************************************/
 /*                            VRTDataset()                             */
@@ -739,53 +739,7 @@ GDALDataset *VRTDataset::Open( GDALOpenInfo * poOpenInfo )
         }
         
         pszXML[nLength] = '\0';
-
-        char* pszCurDir = CPLGetCurrentDir();
-        const char *currentVrtFilename = CPLProjectRelativeFilename(pszCurDir, poOpenInfo->pszFilename);
-        CPLFree(pszCurDir);
-#if defined(HAVE_READLINK) && defined(HAVE_LSTAT)
-        VSIStatBuf statBuffer;
-        char filenameBuffer[2048];
-
-        while( true ) {
-            int lstatCode = lstat( currentVrtFilename, &statBuffer );
-            if ( lstatCode == -1 ) {
-                if (errno == ENOENT) {
-                    // The file could be a virtual file, let later checks handle it.
-                    break;
-                } else {
-                    VSIFCloseL(fp);
-                    CPLFree( pszXML );
-                    CPLError( CE_Failure, CPLE_FileIO,
-                              "Failed to lstat %s: %s",
-                              currentVrtFilename,
-                              VSIStrerror(errno) );
-                    return NULL;
-                }
-            }
-
-            if ( !VSI_ISLNK(statBuffer.st_mode) ) {
-                break;
-            }
-
-            int bufferSize = readlink(currentVrtFilename, filenameBuffer, sizeof(filenameBuffer));
-            if (bufferSize != -1) {
-                filenameBuffer[MIN(bufferSize, (int) sizeof(filenameBuffer) - 1)] = 0;
-                // The filename in filenameBuffer might be a relative path from the linkfile resolve it before looping
-                currentVrtFilename = CPLProjectRelativeFilename(CPLGetDirname(currentVrtFilename), filenameBuffer);
-            } else {
-                VSIFCloseL(fp);
-                CPLFree( pszXML );
-                CPLError( CE_Failure, CPLE_FileIO,
-                          "Failed to read filename from symlink %s: %s",
-                          currentVrtFilename,
-                          VSIStrerror(errno) );
-                return NULL;
-            }
-        }
-#endif
-
-        pszVRTPath = CPLStrdup(CPLGetPath(currentVrtFilename));
+        pszVRTPath = CPLStrdup(CPLGetPath(poOpenInfo->pszFilename));
 
         VSIFCloseL(fp);
     }
@@ -955,7 +909,7 @@ CPLErr VRTDataset::AddBand( GDALDataType eType, char **papszOptions )
             new VRTRawRasterBand( this, GetRasterCount() + 1, eType );
 
         eErr = 
-            poBand->SetRawLink( pszFilename, NULL, bRelativeToVRT,
+            poBand->SetRawLink( pszFilename, NULL, FALSE, 
                                 nImageOffset, nPixelOffset, nLineOffset, 
                                 pszByteOrder );
         if( eErr != CE_None )
@@ -1296,53 +1250,6 @@ int VRTDataset::CheckCompatibleForDatasetIO()
     }
 
     return nSources != 0;
-}
-
-/************************************************************************/
-/*                         GetSingleSimpleSource()                      */
-/*                                                                      */
-/* Returns a non-NULL dataset if the VRT is made of a single source     */
-/* that is a simple source, in its full extent, and with all of its     */
-/* bands. Basically something produced by :                             */
-/*   gdal_translate src dst.vrt -of VRT (-a_srs / -a_ullr)              */
-/************************************************************************/
-
-GDALDataset* VRTDataset::GetSingleSimpleSource()
-{
-    if (!CheckCompatibleForDatasetIO())
-        return NULL;
-
-    VRTSourcedRasterBand* poVRTBand = (VRTSourcedRasterBand* )papoBands[0];
-    VRTSimpleSource* poSource = (VRTSimpleSource* )poVRTBand->papoSources[0];
-    GDALRasterBand* poBand = poSource->GetBand();
-    if (poBand == NULL)
-        return NULL;
-    GDALDataset* poSrcDS = poBand->GetDataset();
-    if (poSrcDS == NULL)
-        return NULL;
-
-    /* Check that it uses the full source dataset */
-    int nReqXOff, nReqYOff, nReqXSize, nReqYSize;
-    int nOutXOff, nOutYOff, nOutXSize, nOutYSize;
-    poSource->GetSrcDstWindow( 0, 0,
-                               poSrcDS->GetRasterXSize(), poSrcDS->GetRasterYSize(),
-                               poSrcDS->GetRasterXSize(), poSrcDS->GetRasterYSize(),
-                               &nReqXOff, &nReqYOff,
-                               &nReqXSize, &nReqYSize,
-                               &nOutXOff, &nOutYOff,
-                               &nOutXSize, &nOutYSize );
-
-    if (nReqXOff != 0 || nReqYOff != 0 ||
-        nReqXSize != poSrcDS->GetRasterXSize() ||
-        nReqYSize != poSrcDS->GetRasterYSize())
-        return NULL;
-
-    if (nOutXOff != 0 || nOutYOff != 0 ||
-        nOutXSize != poSrcDS->GetRasterXSize() ||
-        nOutYSize != poSrcDS->GetRasterYSize())
-        return NULL;
-
-    return poSrcDS;
 }
 
 /************************************************************************/

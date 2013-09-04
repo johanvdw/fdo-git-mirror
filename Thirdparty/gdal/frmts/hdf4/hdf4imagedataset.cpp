@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hdf4imagedataset.cpp 25848 2013-04-03 11:35:16Z dron $
+ * $Id: hdf4imagedataset.cpp 22765 2011-07-23 09:56:53Z rouault $
  *
  * Project:  Hierarchical Data Format Release 4 (HDF4)
  * Purpose:  Read subdatasets of HDF4 file.
@@ -30,7 +30,6 @@
 
 #include <string.h>
 #include <math.h>
-#include "cpl_multiproc.h"
 
 #include "hdf.h"
 #include "mfhdf.h"
@@ -46,7 +45,7 @@
 
 #include "nasakeywordhandler.h"
 
-CPL_CVSID("$Id: hdf4imagedataset.cpp 25848 2013-04-03 11:35:16Z dron $");
+CPL_CVSID("$Id: hdf4imagedataset.cpp 22765 2011-07-23 09:56:53Z rouault $");
 
 CPL_C_START
 void    GDALRegister_HDF4(void);
@@ -57,8 +56,6 @@ CPL_C_END
 // Signature to recognize files written by GDAL
 const char      *pszGDALSignature =
         "Created with GDAL (http://www.remotesensing.org/gdal/)";
-
-extern void *hHDF4Mutex;
 
 /************************************************************************/
 /* ==================================================================== */
@@ -241,16 +238,6 @@ HDF4ImageRasterBand::HDF4ImageRasterBand( HDF4ImageDataset *poDS, int nBand,
             nBlockYSize = poDS->nBlockPreferredYSize;
         }
     }
-
-/* -------------------------------------------------------------------- */
-/*      We need to avoid using the tile based api if we aren't          */
-/*      matching the tile size. (#4672)                                 */
-/* -------------------------------------------------------------------- */
-    if( nBlockXSize != poDS->nBlockPreferredXSize
-        || nBlockYSize != poDS->nBlockPreferredYSize ) 
-    {
-        poDS->bReadTile = FALSE;
-    }
 }
 
 /************************************************************************/
@@ -263,8 +250,6 @@ CPLErr HDF4ImageRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
     HDF4ImageDataset    *poGDS = (HDF4ImageDataset *) poDS;
     int32               aiStart[H4_MAX_NC_DIMS], aiEdges[H4_MAX_NC_DIMS];
     CPLErr              eErr = CE_None;
-
-    CPLMutexHolderD(&hHDF4Mutex);
 
     if( poGDS->eAccess == GA_Update )
     {
@@ -534,8 +519,6 @@ CPLErr HDF4ImageRasterBand::IWriteBlock( int nBlockXOff, int nBlockYOff,
     HDF4ImageDataset    *poGDS = (HDF4ImageDataset *)poDS;
     int32               aiStart[H4_MAX_NC_DIMS], aiEdges[H4_MAX_NC_DIMS];
     CPLErr              eErr = CE_None;
-    
-    CPLMutexHolderD(&hHDF4Mutex);
 
     CPLAssert( poGDS != NULL
                && nBlockXOff == 0
@@ -782,8 +765,6 @@ HDF4ImageDataset::HDF4ImageDataset()
 
 HDF4ImageDataset::~HDF4ImageDataset()
 {
-    CPLMutexHolderD(&hHDF4Mutex);
-
     FlushCache();
 
     if ( pszFilename )
@@ -941,8 +922,6 @@ void HDF4ImageDataset::FlushCache()
     int         iBand;
     char        *pszName;
     const char  *pszValue;
-    
-    CPLMutexHolderD(&hHDF4Mutex);
 
     GDALDataset::FlushCache();
 
@@ -979,9 +958,8 @@ void HDF4ImageDataset::FlushCache()
 
         while ( *papszMeta )
         {
-            pszName = NULL;
             pszValue = CPLParseNameValue( *papszMeta++, &pszName );
-            if ( pszName != NULL && (SDsetattr( hSD, pszName, DFNT_CHAR8,
+            if ( (SDsetattr( hSD, pszName, DFNT_CHAR8,
                              strlen(pszValue) + 1, pszValue )) < 0 )
             {
                 CPLDebug( "HDF4Image",
@@ -2055,12 +2033,7 @@ int HDF4ImageDataset::ProcessSwathGeolocation( int32 hSW, char **papszDimList )
     }
 #endif
 
-    CPLFree( paiRank );
-    CPLFree( paiNumType );
-
-/* -------------------------------------------------------------------- */
-/*      Read geolocation data.                                          */
-/* -------------------------------------------------------------------- */
+    // Read geolocation data
     int32   nDimMaps = SWnentries( hSW, HDFE_NENTMAP, &nStrBufSize );
     if ( nDimMaps <= 0 )
     {
@@ -2165,26 +2138,29 @@ int HDF4ImageDataset::ProcessSwathGeolocation( int32 hSW, char **papszDimList )
                           aiDimSizes, &iWrkNumType, szGeoDimList ) < 0 )
         {
 
-            CPLDebug( "HDF4Image",
-                      "Can't read attributes of geolocation field \"%s\"",
-                      papszGeolocations[i] );
+#ifdef DEBUG
+        CPLDebug( "HDF4Image",
+                  "Can't read attributes of geolocation field \"%s\"",
+                  papszGeolocations[i] );
+#endif
+
             return FALSE;
         }
-
-        CPLDebug( "HDF4Image",
-                  "List of dimensions in geolocation field \"%s\": %s",
-                  papszGeolocations[i], szGeoDimList );
 
         papszGeoDimList = CSLTokenizeString2( szGeoDimList,
                                               ",", CSLT_HONOURSTRINGS );
 
-        if( CSLCount(papszGeoDimList) > H4_MAX_VAR_DIMS 
-            || CSLFindString( papszGeoDimList, szXGeo ) == -1
-            || CSLFindString( papszGeoDimList, szYGeo ) == -1 )
+        if ( CSLCount(papszGeoDimList) > H4_MAX_VAR_DIMS )
         {
             CSLDestroy( papszGeoDimList );
             return FALSE;
         }
+
+#ifdef DEBUG
+        CPLDebug( "HDF4Image",
+                  "List of dimensions in geolocation field \"%s\": %s",
+                  papszGeolocations[i], szGeoDimList );
+#endif
 
         nXPoints = aiDimSizes[CSLFindString( papszGeoDimList, szXGeo )];
         nYPoints = aiDimSizes[CSLFindString( papszGeoDimList, szYGeo )];
@@ -2440,137 +2416,137 @@ int HDF4ImageDataset::ProcessSwathGeolocation( int32 hSW, char **papszDimList )
         {
             pszGCPProjection = CPLStrdup( SRS_WKT_WGS84 );
         }
+    }
 
 /* -------------------------------------------------------------------- */
 /*  Fill the GCPs list.                                                 */
 /* -------------------------------------------------------------------- */
-        if( iGCPStepX > 0 )
+    if( iGCPStepX > 0 )
+    {
+        nGCPCount = (((nXPoints-1) / iGCPStepX) + 1)
+            * (((nYPoints-1) / iGCPStepY) + 1);
+
+        pasGCPList = (GDAL_GCP *) CPLCalloc( nGCPCount, sizeof( GDAL_GCP ) );
+        GDALInitGCPs( nGCPCount, pasGCPList );
+
+        int iGCP = 0;
+        for ( i = 0; i < nYPoints; i += iGCPStepY )
         {
-            nGCPCount = (((nXPoints-1) / iGCPStepX) + 1)
-                * (((nYPoints-1) / iGCPStepY) + 1);
-
-            pasGCPList = (GDAL_GCP *) CPLCalloc( nGCPCount, sizeof( GDAL_GCP ) );
-            GDALInitGCPs( nGCPCount, pasGCPList );
-
-            int iGCP = 0;
-            for ( i = 0; i < nYPoints; i += iGCPStepY )
+            for ( j = 0; j < nXPoints; j += iGCPStepX )
             {
-                for ( j = 0; j < nXPoints; j += iGCPStepX )
+                int iGeoOff =  i * nXPoints + j;
+
+                pasGCPList[iGCP].dfGCPX =
+                    AnyTypeToDouble(iWrkNumType,
+                                    (void *)((char*)pLong+ iGeoOff*iDataSize));
+                pasGCPList[iGCP].dfGCPY =
+                    AnyTypeToDouble(iWrkNumType,
+                                    (void *)((char*)pLat + iGeoOff*iDataSize));
+
+                // GCPs in Level 1A/1B dataset are in geocentric
+                // coordinates. Convert them in geodetic (we
+                // will convert latitudes only, longitudes
+                // do not need to be converted, because
+                // they are the same).
+                // This calculation valid for WGS84 datum only.
+                if ( eProduct == PROD_ASTER_L1A
+                     || eProduct == PROD_ASTER_L1B )
                 {
-                    int iGeoOff =  i * nXPoints + j;
-
-                    pasGCPList[iGCP].dfGCPX =
-                        AnyTypeToDouble(iWrkNumType,
-                                        (void *)((char*)pLong+ iGeoOff*iDataSize));
                     pasGCPList[iGCP].dfGCPY =
-                        AnyTypeToDouble(iWrkNumType,
-                                        (void *)((char*)pLat + iGeoOff*iDataSize));
-
-                    // GCPs in Level 1A/1B dataset are in geocentric
-                    // coordinates. Convert them in geodetic (we
-                    // will convert latitudes only, longitudes
-                    // do not need to be converted, because
-                    // they are the same).
-                    // This calculation valid for WGS84 datum only.
-                    if ( eProduct == PROD_ASTER_L1A
-                         || eProduct == PROD_ASTER_L1B )
-                    {
-                        pasGCPList[iGCP].dfGCPY =
-                            atan(tan(pasGCPList[iGCP].dfGCPY
-                                     *PI/180)/0.99330562)*180/PI;
-                    }
-
-                    ToGeoref(&pasGCPList[iGCP].dfGCPX,
-                             &pasGCPList[iGCP].dfGCPY);
-
-                    pasGCPList[iGCP].dfGCPZ = 0.0;
-
-                    if ( pLatticeX && pLatticeY )
-                    {
-                        pasGCPList[iGCP].dfGCPPixel =
-                            AnyTypeToDouble(iLatticeType,
-                                            (void *)((char *)pLatticeX
-                                                     + iGeoOff*iLatticeDataSize))+0.5;
-                        pasGCPList[iGCP].dfGCPLine =
-                            AnyTypeToDouble(iLatticeType,
-                                            (void *)((char *)pLatticeY
-                                                     + iGeoOff*iLatticeDataSize))+0.5;
-                    }
-                    else if ( paiOffset && paiIncrement )
-                    {
-                        pasGCPList[iGCP].dfGCPPixel =
-                            paiOffset[iPixelDim] +
-                            j * paiIncrement[iPixelDim] + 0.5;
-                        pasGCPList[iGCP].dfGCPLine =
-                            paiOffset[iLineDim] +
-                            i * paiIncrement[iLineDim] + 0.5;
-                    }
-
-                    iGCP++;
+                        atan(tan(pasGCPList[iGCP].dfGCPY
+                                 *PI/180)/0.99330562)*180/PI;
                 }
+
+                ToGeoref(&pasGCPList[iGCP].dfGCPX,
+                         &pasGCPList[iGCP].dfGCPY);
+
+                pasGCPList[iGCP].dfGCPZ = 0.0;
+
+                if ( pLatticeX && pLatticeY )
+                {
+                    pasGCPList[iGCP].dfGCPPixel =
+                        AnyTypeToDouble(iLatticeType,
+                                        (void *)((char *)pLatticeX
+                                                 + iGeoOff*iLatticeDataSize))+0.5;
+                    pasGCPList[iGCP].dfGCPLine =
+                        AnyTypeToDouble(iLatticeType,
+                                        (void *)((char *)pLatticeY
+                                                 + iGeoOff*iLatticeDataSize))+0.5;
+                }
+                else if ( paiOffset && paiIncrement )
+                {
+                    pasGCPList[iGCP].dfGCPPixel =
+                        paiOffset[iPixelDim] +
+                        j * paiIncrement[iPixelDim] + 0.5;
+                    pasGCPList[iGCP].dfGCPLine =
+                        paiOffset[iLineDim] +
+                        i * paiIncrement[iLineDim] + 0.5;
+                }
+
+                iGCP++;
             }
         }
+    }
 
 /* -------------------------------------------------------------------- */
 /*      Establish geolocation metadata, but only if there is no         */
 /*      lattice.  The lattice destroys the regularity of the grid.      */
 /* -------------------------------------------------------------------- */
-        if( pLatticeX == NULL
-            && iLatDim != -1 && iLongDim != -1
-            && iPixelDim != -1 && iLineDim != -1 )
+    if( pLatticeX == NULL
+        && iLatDim != -1 && iLongDim != -1
+        && iPixelDim != -1 && iLineDim != -1 )
+    {
+        CPLString  osWrk;
+
+        SetMetadataItem( "SRS", pszGCPProjection, "GEOLOCATION" );
+
+        osWrk.Printf( "HDF4_EOS:EOS_SWATH_GEOL:\"%s\":%s:%s",
+                      pszFilename, pszSubdatasetName,
+                      papszGeolocations[iLongDim] );
+        SetMetadataItem( "X_DATASET", osWrk, "GEOLOCATION" );
+        SetMetadataItem( "X_BAND", "1" , "GEOLOCATION" );
+
+        osWrk.Printf( "HDF4_EOS:EOS_SWATH_GEOL:\"%s\":%s:%s",
+                      pszFilename, pszSubdatasetName,
+                      papszGeolocations[iLatDim] );
+        SetMetadataItem( "Y_DATASET", osWrk, "GEOLOCATION" );
+        SetMetadataItem( "Y_BAND", "1" , "GEOLOCATION" );
+
+        if ( paiOffset && paiIncrement )
         {
-            CPLString  osWrk;
+            osWrk.Printf( "%ld", (long)paiOffset[iPixelDim] );
+            SetMetadataItem( "PIXEL_OFFSET", osWrk, "GEOLOCATION" );
+            osWrk.Printf( "%ld", (long)paiIncrement[iPixelDim] );
+            SetMetadataItem( "PIXEL_STEP", osWrk, "GEOLOCATION" );
 
-            SetMetadataItem( "SRS", pszGCPProjection, "GEOLOCATION" );
-
-            osWrk.Printf( "HDF4_EOS:EOS_SWATH_GEOL:\"%s\":%s:%s",
-                          pszFilename, pszSubdatasetName,
-                          papszGeolocations[iLongDim] );
-            SetMetadataItem( "X_DATASET", osWrk, "GEOLOCATION" );
-            SetMetadataItem( "X_BAND", "1" , "GEOLOCATION" );
-
-            osWrk.Printf( "HDF4_EOS:EOS_SWATH_GEOL:\"%s\":%s:%s",
-                          pszFilename, pszSubdatasetName,
-                          papszGeolocations[iLatDim] );
-            SetMetadataItem( "Y_DATASET", osWrk, "GEOLOCATION" );
-            SetMetadataItem( "Y_BAND", "1" , "GEOLOCATION" );
-
-            if ( paiOffset && paiIncrement )
-            {
-                osWrk.Printf( "%ld", (long)paiOffset[iPixelDim] );
-                SetMetadataItem( "PIXEL_OFFSET", osWrk, "GEOLOCATION" );
-                osWrk.Printf( "%ld", (long)paiIncrement[iPixelDim] );
-                SetMetadataItem( "PIXEL_STEP", osWrk, "GEOLOCATION" );
-
-                osWrk.Printf( "%ld", (long)paiOffset[iLineDim] );
-                SetMetadataItem( "LINE_OFFSET", osWrk, "GEOLOCATION" );
-                osWrk.Printf( "%ld", (long)paiIncrement[iLineDim] );
-                SetMetadataItem( "LINE_STEP", osWrk, "GEOLOCATION" );
-            }
-        }
-
-/* -------------------------------------------------------------------- */
-/*      Cleanup                                                         */
-/* -------------------------------------------------------------------- */
-        CPLFree( pLatticeX );
-        CPLFree( pLatticeY );
-        CPLFree( pLat );
-        CPLFree( pLong );
-
-        if( iGCPStepX == 0 )
-        {
-            CPLFree( pszGCPProjection );
-            pszGCPProjection = NULL;
+            osWrk.Printf( "%ld", (long)paiOffset[iLineDim] );
+            SetMetadataItem( "LINE_OFFSET", osWrk, "GEOLOCATION" );
+            osWrk.Printf( "%ld", (long)paiIncrement[iLineDim] );
+            SetMetadataItem( "LINE_STEP", osWrk, "GEOLOCATION" );
         }
     }
 
 /* -------------------------------------------------------------------- */
 /*      Cleanup                                                         */
 /* -------------------------------------------------------------------- */
+    CPLFree( pLatticeX );
+    CPLFree( pLatticeY );
+    CPLFree( pLat );
+    CPLFree( pLong );
+
     CPLFree( paiOffset );
     CPLFree( paiIncrement );
-    CPLFree( pszGeoList );
+    CPLFree( paiNumType );
+    CPLFree( paiRank );
+
     CSLDestroy( papszGeolocations );
+    CPLFree( pszGeoList );
+
+    if( iGCPStepX == 0 )
+    {
+        CPLFree( pszGCPProjection );
+        pszGCPProjection = NULL;
+    }
 
     return TRUE;
 }
@@ -2598,8 +2574,6 @@ GDALDataset *HDF4ImageDataset::Open( GDALOpenInfo * poOpenInfo )
     poDS = new HDF4ImageDataset( );
     poDS->fp = poOpenInfo->fp;
     poOpenInfo->fp = NULL;
-    
-    CPLMutexHolderD(&hHDF4Mutex);
 
     papszSubdatasetName = CSLTokenizeString2( poOpenInfo->pszFilename,
                                               ":", CSLT_HONOURSTRINGS | CSLT_PRESERVEESCAPES);
@@ -2608,9 +2582,7 @@ GDALDataset *HDF4ImageDataset::Open( GDALOpenInfo * poOpenInfo )
          && CSLCount( papszSubdatasetName ) != 6 )
     {
         CSLDestroy( papszSubdatasetName );
-        CPLReleaseMutex(hHDF4Mutex); // Release mutex otherwise we'll deadlock with GDALDataset own mutex
         delete poDS;
-        CPLAcquireMutex(hHDF4Mutex, 1000.0);
         return NULL;
     }
 
@@ -2660,15 +2632,11 @@ GDALDataset *HDF4ImageDataset::Open( GDALOpenInfo * poOpenInfo )
     else
         poDS->iSubdatasetType = H4ST_UNKNOWN;
 
-/* -------------------------------------------------------------------- */
-/*      Is our file still here?                                         */
-/* -------------------------------------------------------------------- */
+    // Is our file still here?
     if ( !Hishdf( poDS->pszFilename ) )
     {
         CSLDestroy( papszSubdatasetName );
-        CPLReleaseMutex(hHDF4Mutex); // Release mutex otherwise we'll deadlock with GDALDataset own mutex
         delete poDS;
-        CPLAcquireMutex(hHDF4Mutex, 1000.0);
         return NULL;
     }
 
@@ -2701,9 +2669,7 @@ GDALDataset *HDF4ImageDataset::Open( GDALOpenInfo * poOpenInfo )
         poDS->pszSubdatasetName = CPLStrdup( papszSubdatasetName[3] );
         if (papszSubdatasetName[4] == NULL)
         {
-            CPLReleaseMutex(hHDF4Mutex); // Release mutex otherwise we'll deadlock with GDALDataset own mutex
             delete poDS;
-            CPLAcquireMutex(hHDF4Mutex, 1000.0);
             return NULL;
         }
         poDS->pszFieldName = CPLStrdup( papszSubdatasetName[4] );
@@ -2737,11 +2703,9 @@ GDALDataset *HDF4ImageDataset::Open( GDALOpenInfo * poOpenInfo )
 
                 if( poDS->hHDF4 <= 0 )
                 {
-                    CPLDebug( "HDF4Image", "Can't open file \"%s\" for swath reading",
+                    CPLDebug( "HDF4Image", "Can't open HDF4 file %s",
                               poDS->pszFilename );
-                    CPLReleaseMutex(hHDF4Mutex); // Release mutex otherwise we'll deadlock with GDALDataset own mutex
                     delete poDS;
-                    CPLAcquireMutex(hHDF4Mutex, 1000.0);
                     return( NULL );
                 }
 
@@ -2750,9 +2714,7 @@ GDALDataset *HDF4ImageDataset::Open( GDALOpenInfo * poOpenInfo )
                 {
                     CPLDebug( "HDF4Image", "Can't attach to subdataset %s",
                               poDS->pszSubdatasetName );
-                    CPLReleaseMutex(hHDF4Mutex); // Release mutex otherwise we'll deadlock with GDALDataset own mutex
                     delete poDS;
-                    CPLAcquireMutex(hHDF4Mutex, 1000.0);
                     return( NULL );
                 }
 
@@ -2766,9 +2728,7 @@ GDALDataset *HDF4ImageDataset::Open( GDALOpenInfo * poOpenInfo )
                 {
                     CPLDebug( "HDF4Image",
                               "Can't read a number of dimension maps." );
-                    CPLReleaseMutex(hHDF4Mutex); // Release mutex otherwise we'll deadlock with GDALDataset own mutex
                     delete poDS;
-                    CPLAcquireMutex(hHDF4Mutex, 1000.0);
                     return NULL;
                 }
 
@@ -2779,9 +2739,7 @@ GDALDataset *HDF4ImageDataset::Open( GDALOpenInfo * poOpenInfo )
                 {
                     CPLDebug( "HDF4Image", "Can't read dimension maps." );
                     CPLFree( pszDimList );
-                    CPLReleaseMutex(hHDF4Mutex); // Release mutex otherwise we'll deadlock with GDALDataset own mutex
                     delete poDS;
-                    CPLAcquireMutex(hHDF4Mutex, 1000.0);
                     return NULL;
                 }
                 pszDimList[nStrBufSize] = '\0';
@@ -2870,11 +2828,7 @@ GDALDataset *HDF4ImageDataset::Open( GDALOpenInfo * poOpenInfo )
 
                 if( poDS->hHDF4 <= 0 )
                 {
-                    CPLDebug( "HDF4Image", "Can't open file \"%s\" for grid reading",
-                              poDS->pszFilename );
-                    CPLReleaseMutex(hHDF4Mutex); // Release mutex otherwise we'll deadlock with GDALDataset own mutex
                     delete poDS;
-                    CPLAcquireMutex(hHDF4Mutex, 1000.0);
                     return( NULL );
                 }
 
@@ -2952,8 +2906,7 @@ GDALDataset *HDF4ImageDataset::Open( GDALOpenInfo * poOpenInfo )
                               (long)iSphereCode );
 #endif
                     poDS->oSRS.importFromUSGS( iProjCode, iZoneCode,
-                                               adfProjParms, iSphereCode,
-                                               USGS_ANGLE_RADIANS );
+                                               adfProjParms, iSphereCode );
 
                     if ( poDS->pszProjection )
                         CPLFree( poDS->pszProjection );
@@ -3054,13 +3007,7 @@ GDALDataset *HDF4ImageDataset::Open( GDALOpenInfo * poOpenInfo )
               if ( pszTmp )
               {
                   dfScale = CPLAtof( pszTmp );
-                  // some producers (ie. lndcsm from LEDAPS) emit
-                  // files with scale_factor=0 which is crazy to carry
-                  // through.
-                  if( dfScale == 0.0 )
-                    dfScale = 1.0;
-
-                  bHaveScale = (dfScale != 0.0);
+                  bHaveScale = TRUE;
               }
 
               pszTmp =
@@ -3084,18 +3031,7 @@ GDALDataset *HDF4ImageDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
       case HDF4_SDS:
       {
-          int32 iSDS;
-
-          // Attempt to increase maximum number of opened HDF files
-#ifdef HDF4_HAS_MAXOPENFILES
-          intn  nCurrMax, nSysLimit;
-
-          if ( SDget_maxopenfiles(&nCurrMax, &nSysLimit) >= 0
-               && nCurrMax < nSysLimit )
-          {
-              SDreset_maxopenfiles( nSysLimit );
-          }
-#endif /* HDF4_HAS_MAXOPENFILES */
+          int32   iSDS;
 
           if( poOpenInfo->eAccess == GA_ReadOnly )
               poDS->hHDF4 = Hopen( poDS->pszFilename, DFACC_READ, 0 );
@@ -3104,26 +3040,20 @@ GDALDataset *HDF4ImageDataset::Open( GDALOpenInfo * poOpenInfo )
 
           if( poDS->hHDF4 <= 0 )
           {
-              CPLReleaseMutex(hHDF4Mutex); // Release mutex otherwise we'll deadlock with GDALDataset own mutex
               delete poDS;
-              CPLAcquireMutex(hHDF4Mutex, 1000.0);
               return( NULL );
           }
 
           poDS->hSD = SDstart( poDS->pszFilename, DFACC_READ );
           if ( poDS->hSD == -1 )
           {
-              CPLReleaseMutex(hHDF4Mutex); // Release mutex otherwise we'll deadlock with GDALDataset own mutex
               delete poDS;
-              CPLAcquireMutex(hHDF4Mutex, 1000.0);
               return NULL;
           }
 
           if ( poDS->ReadGlobalAttributes( poDS->hSD ) != CE_None )
           {
-              CPLReleaseMutex(hHDF4Mutex); // Release mutex otherwise we'll deadlock with GDALDataset own mutex
               delete poDS;
-              CPLAcquireMutex(hHDF4Mutex, 1000.0);
               return NULL;
           }
 
@@ -3131,9 +3061,7 @@ GDALDataset *HDF4ImageDataset::Open( GDALOpenInfo * poOpenInfo )
 
           if ( SDfileinfo( poDS->hSD, &nDatasets, &nAttrs ) != 0 )
           {
-              CPLReleaseMutex(hHDF4Mutex); // Release mutex otherwise we'll deadlock with GDALDataset own mutex
               delete poDS;
-              CPLAcquireMutex(hHDF4Mutex, 1000.0);
               return NULL;
           }
 
@@ -3142,9 +3070,7 @@ GDALDataset *HDF4ImageDataset::Open( GDALOpenInfo * poOpenInfo )
               CPLError(CE_Failure, CPLE_AppDefined,
                        "Subdataset index should be between 0 and %ld",
                        (long int)nDatasets - 1);
-              CPLReleaseMutex(hHDF4Mutex); // Release mutex otherwise we'll deadlock with GDALDataset own mutex
               delete poDS;
-              CPLAcquireMutex(hHDF4Mutex, 1000.0);
               return NULL;
           }
 
@@ -3266,18 +3192,6 @@ GDALDataset *HDF4ImageDataset::Open( GDALOpenInfo * poOpenInfo )
 /*  'Plain' HDF rasters.                                                */
 /* -------------------------------------------------------------------- */
       case HDF4_GR:
-
-        // Attempt to increase maximum number of opened HDF files
-#ifdef HDF4_HAS_MAXOPENFILES
-        intn    nCurrMax, nSysLimit;
-
-        if ( SDget_maxopenfiles(&nCurrMax, &nSysLimit) >= 0
-             && nCurrMax < nSysLimit )
-        {
-            SDreset_maxopenfiles( nSysLimit );
-        }
-#endif /* HDF4_HAS_MAXOPENFILES */
-
         if( poOpenInfo->eAccess == GA_ReadOnly )
             poDS->hHDF4 = Hopen( poDS->pszFilename, DFACC_READ, 0 );
         else
@@ -3285,18 +3199,14 @@ GDALDataset *HDF4ImageDataset::Open( GDALOpenInfo * poOpenInfo )
 
         if( poDS->hHDF4 <= 0 )
         {
-            CPLReleaseMutex(hHDF4Mutex); // Release mutex otherwise we'll deadlock with GDALDataset own mutex
             delete poDS;
-            CPLAcquireMutex(hHDF4Mutex, 1000.0);
             return( NULL );
         }
 
         poDS->hGR = GRstart( poDS->hHDF4 );
         if ( poDS->hGR == -1 )
         {
-            CPLReleaseMutex(hHDF4Mutex); // Release mutex otherwise we'll deadlock with GDALDataset own mutex
             delete poDS;
-            CPLAcquireMutex(hHDF4Mutex, 1000.0);
             return NULL;
         }
 
@@ -3306,9 +3216,7 @@ GDALDataset *HDF4ImageDataset::Open( GDALOpenInfo * poOpenInfo )
                           &poDS->iInterlaceMode, poDS->aiDimSizes,
                           &poDS->nAttrs ) != 0 )
         {
-            CPLReleaseMutex(hHDF4Mutex); // Release mutex otherwise we'll deadlock with GDALDataset own mutex
             delete poDS;
-            CPLAcquireMutex(hHDF4Mutex, 1000.0);
             return NULL;
         }
 
@@ -3353,9 +3261,7 @@ GDALDataset *HDF4ImageDataset::Open( GDALOpenInfo * poOpenInfo )
         poDS->nBandCount = poDS->iRank;
         break;
       default:
-        CPLReleaseMutex(hHDF4Mutex); // Release mutex otherwise we'll deadlock with GDALDataset own mutex
         delete poDS;
-        CPLAcquireMutex(hHDF4Mutex, 1000.0);
         return NULL;
     }
 
@@ -3550,11 +3456,7 @@ GDALDataset *HDF4ImageDataset::Open( GDALOpenInfo * poOpenInfo )
                   poBand->dfScale =
                       CPLAtof( CSLFetchNameValue( poDS->papszLocalMetadata,
                                                   "scale_factor" ) );
-                  // See #4891 regarding offset interpretation.
-                  //poBand->dfOffset = -1 * poBand->dfScale *
-                  //  CPLAtof( CSLFetchNameValue( poDS->papszLocalMetadata,
-                  //                              "add_offset" ) );
-                  poBand->dfOffset = 
+                  poBand->dfOffset = -1 * poBand->dfScale *
                       CPLAtof( CSLFetchNameValue( poDS->papszLocalMetadata,
                                                   "add_offset" ) );
               }
@@ -3616,11 +3518,9 @@ GDALDataset *HDF4ImageDataset::Open( GDALOpenInfo * poOpenInfo )
     poDS->SetPhysicalFilename( poDS->pszFilename );
     poDS->SetSubdatasetName( osSubdatasetName );
 
-    CPLReleaseMutex(hHDF4Mutex); // Release mutex otherwise we'll deadlock with GDALDataset own mutex
     poDS->TryLoadXML();
 
     poDS->oOvManager.Initialize( poDS, ":::VIRTUAL:::" );
-    CPLAcquireMutex(hHDF4Mutex, 1000.0);
 
     return( poDS );
 }
@@ -3652,8 +3552,6 @@ GDALDataset *HDF4ImageDataset::Create( const char * pszFilename,
     }
 
     poDS = new HDF4ImageDataset();
-    
-    CPLMutexHolderD(&hHDF4Mutex);
 
 /* -------------------------------------------------------------------- */
 /*      Choose rank for the created dataset.                            */
@@ -3668,9 +3566,7 @@ GDALDataset *HDF4ImageDataset::Create( const char * pszFilename,
     {
         CPLError( CE_Failure, CPLE_OpenFailed,
                   "Can't create HDF4 file %s", pszFilename );
-        CPLReleaseMutex(hHDF4Mutex); // Release mutex otherwise we'll deadlock with GDALDataset own mutex
         delete poDS;
-        CPLAcquireMutex(hHDF4Mutex, 1000.0);
         return NULL;
     }
     poDS->iXDim = 1;
@@ -3818,3 +3714,4 @@ void GDALRegister_HDF4Image()
         GetGDALDriverManager()->RegisterDriver( poDriver );
     }
 }
+

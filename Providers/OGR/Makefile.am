@@ -17,8 +17,6 @@
 
 AUTOMAKE_OPTIONS = foreign
 
-ACLOCAL_AMFLAGS = -I m4
-
 EXTRA_DIST = \
   build.bat \
   build_linux.sh

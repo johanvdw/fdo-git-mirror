@@ -752,6 +752,7 @@ class DataSource(_object):
     ] would return the first layer on the datasource.
     aname'] would return the layer named "aname".
     :4] would return a list of the first four layers."""
+        import types
         if isinstance(value, slice):
             output = []
             for i in xrange(value.start,value.stop,value.step):
@@ -771,6 +772,7 @@ class DataSource(_object):
 
     def GetLayer(self,iLayer=0):
         """Return the layer given an index or a name"""
+        import types
         if isinstance(iLayer, str):
             return self.GetLayerByName(str(iLayer))
         elif isinstance(iLayer, int):
@@ -780,6 +782,7 @@ class DataSource(_object):
 
     def DeleteLayer(self, value):
         """Deletes the layer given an index or layer name"""
+        import types
         if isinstance(value, str):
             for i in range(self.GetLayerCount()):
                 name = self.GetLayer(i).GetName()
@@ -789,7 +792,7 @@ class DataSource(_object):
         elif isinstance(value, int):
             return _ogr.DataSource_DeleteLayer(self, value)
         else:
-            raise TypeError("Input %s is not of String or Int type" % type(value))
+            raise TypeError("Input %s is not of String or Int type" % type(iLayer))
 
 DataSource_swigregister = _ogr.DataSource_swigregister
 DataSource_swigregister(DataSource)
@@ -1869,55 +1872,6 @@ class Layer(_object):
         """
         return _ogr.Layer_SetIgnoredFields(self, *args)
 
-    def Intersection(self, *args, **kwargs):
-        """
-        Intersection(self, Layer method_layer, Layer result_layer, char options = None, 
-            GDALProgressFunc callback = None, void callback_data = None) -> OGRErr
-        """
-        return _ogr.Layer_Intersection(self, *args, **kwargs)
-
-    def Union(self, *args, **kwargs):
-        """
-        Union(self, Layer method_layer, Layer result_layer, char options = None, 
-            GDALProgressFunc callback = None, void callback_data = None) -> OGRErr
-        """
-        return _ogr.Layer_Union(self, *args, **kwargs)
-
-    def SymDifference(self, *args, **kwargs):
-        """
-        SymDifference(self, Layer method_layer, Layer result_layer, char options = None, 
-            GDALProgressFunc callback = None, void callback_data = None) -> OGRErr
-        """
-        return _ogr.Layer_SymDifference(self, *args, **kwargs)
-
-    def Identity(self, *args, **kwargs):
-        """
-        Identity(self, Layer method_layer, Layer result_layer, char options = None, 
-            GDALProgressFunc callback = None, void callback_data = None) -> OGRErr
-        """
-        return _ogr.Layer_Identity(self, *args, **kwargs)
-
-    def Update(self, *args, **kwargs):
-        """
-        Update(self, Layer method_layer, Layer result_layer, char options = None, 
-            GDALProgressFunc callback = None, void callback_data = None) -> OGRErr
-        """
-        return _ogr.Layer_Update(self, *args, **kwargs)
-
-    def Clip(self, *args, **kwargs):
-        """
-        Clip(self, Layer method_layer, Layer result_layer, char options = None, 
-            GDALProgressFunc callback = None, void callback_data = None) -> OGRErr
-        """
-        return _ogr.Layer_Clip(self, *args, **kwargs)
-
-    def Erase(self, *args, **kwargs):
-        """
-        Erase(self, Layer method_layer, Layer result_layer, char options = None, 
-            GDALProgressFunc callback = None, void callback_data = None) -> OGRErr
-        """
-        return _ogr.Layer_Erase(self, *args, **kwargs)
-
     def Reference(self):
       "For backwards compatibility only."
       pass
@@ -1930,20 +1884,12 @@ class Layer(_object):
         """Returns the number of features in the layer"""
         return self.GetFeatureCount()
 
-
-
-    def __nonzero__(self):
-        return True
-
-
-    __bool__ = __nonzero__
-
     def __getitem__(self, value):
         """Support list and slice -like access to the layer.
     r[0] would return the first feature on the layer.
     r[0:4] would return a list of the first four features."""
+        import types
         if isinstance(value, slice):
-            import sys
             output = []
             if value.stop == sys.maxint:
                 
@@ -1966,7 +1912,7 @@ class Layer(_object):
         else:
             raise TypeError("Input %s is not of IntType or SliceType" % type(value))
 
-    def CreateFields(self, fields):
+    def CreateFields(fields):
         """Create a list of fields on the Layer"""
         for i in fields:
             self.CreateField(i)
@@ -2810,8 +2756,6 @@ class Feature(_object):
 
     def __getattr__(self, key):
         """Returns the values of fields by the given name"""
-        if key == 'this':
-            return self.__dict__[key]
         try:
             return self.GetField(key)
         except:
@@ -2837,6 +2781,7 @@ class Feature(_object):
         self.SetField2( key, value )    
 
     def GetField(self, fld_index):
+        import types
         if isinstance(fld_index, str):
             fld_index = self.GetFieldIndex(fld_index)
         if (fld_index < 0) or (fld_index > self.GetFieldCount()):
@@ -2934,7 +2879,7 @@ class Feature(_object):
                   } 
         
         fid = self.GetFID()
-        if fid != NullFID:
+        if fid:
             output['id'] = fid
             
         for key in self.keys():
@@ -3583,10 +3528,6 @@ def ApproximateArcAngles(*args, **kwargs):
 def ForceToPolygon(*args):
   """ForceToPolygon(Geometry geom_in) -> Geometry"""
   return _ogr.ForceToPolygon(*args)
-
-def ForceToLineString(*args):
-  """ForceToLineString(Geometry geom_in) -> Geometry"""
-  return _ogr.ForceToLineString(*args)
 
 def ForceToMultiPolygon(*args):
   """ForceToMultiPolygon(Geometry geom_in) -> Geometry"""
@@ -4822,10 +4763,6 @@ class Geometry(_object):
         """
         return _ogr.Geometry_Centroid(self, *args)
 
-    def PointOnSurface(self, *args):
-        """PointOnSurface(self) -> Geometry"""
-        return _ogr.Geometry_PointOnSurface(self, *args)
-
     def WkbSize(self, *args):
         """
         WkbSize(self) -> int
@@ -5006,10 +4943,5 @@ def GetDriver(*args):
 def GeneralCmdLineProcessor(*args):
   """GeneralCmdLineProcessor(char papszArgv, int nOptions = 0) -> char"""
   return _ogr.GeneralCmdLineProcessor(*args)
-
-def TermProgress_nocb(*args, **kwargs):
-  """TermProgress_nocb(double dfProgress, char pszMessage = None, void pData = None) -> int"""
-  return _ogr.TermProgress_nocb(*args, **kwargs)
-TermProgress = _ogr.TermProgress
 
 

@@ -9,7 +9,7 @@
 
 This driver implements support for access to spatial tables in 
 PostgreSQL extended with the 
-<a href="http://postgis.net/">PostGIS</a> spatial data support. 
+<a href="http://www.postgis.org/">PostGIS</a> spatial data support. 
 Some support exists in the driver for use with PostgreSQL without PostGIS
 but with less functionalities.<p>
 
@@ -121,9 +121,6 @@ a regular table is created and not recorded in the PostGIS geometry_columns tabl
 <li> <b>FID</b>: (From GDAL 1.9.0) Name of the FID column to create. Defaults to 'ogc_fid'.<p>
 <li> <b>EXTRACT_SCHEMA_FROM_LAYER_NAME</b>: (From GDAL 1.9.0) Can be set to NO to avoid considering the dot character
 as the separator between the schema and the table name. Defaults to YES.<p>
-<li> <b>COLUMN_TYPES</b>: (From GDAL 1.10) A list of strings of format field_name=pg_field_type (separated by comma)
-that should be use when CreateField() is invoked on them. This will override the default choice that OGR would have made.
-This can for example be used to create a column of type <a href="http://www.postgresql.org/docs/9.0/static/hstore.html">HSTORE</a>.<p>
 </ul>
 
 <h3>Configuration Options</h3>
@@ -223,7 +220,7 @@ by setting the configuration option PG_LIST_ALL_TABLES to YES. (e.g. ogrinfo --c
 <li> <a href="drv_pg_advanced.html">Advanced OGR PostgreSQL driver Information</a><p>
 <li> <a href="drv_pgdump.html">OGR PostgreSQL SQL Dump driver Page</a><p>
 <li> <a href="http://www.postgresql.org/">PostgreSQL Home Page</a><p>
-<li> <a href="http://postgis.net/">PostGIS</a><p>
+<li> <a href="http://www.postgis.org/">PostGIS</a><p>
 <li> <a href="http://trac.osgeo.org/postgis/wiki/UsersWikiOGR">PostGIS / OGR Wiki Examples Page</a><p>
 </ul>
 

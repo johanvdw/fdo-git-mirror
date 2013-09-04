@@ -346,14 +346,7 @@ char *swq_expr_node::Unparse( swq_field_list *field_list, char chColumnQuote )
         if( field_type == SWQ_INTEGER || field_type == SWQ_BOOLEAN )
             osExpr.Printf( "%d", int_value );
         else if( field_type == SWQ_FLOAT )
-        {
             osExpr.Printf( "%.15g", float_value );
-            /* Make sure this is interpreted as a floating point value */
-            /* and not as an integer later */
-            if (strchr(osExpr, '.') == NULL && strchr(osExpr, 'e') == NULL  &&
-                strchr(osExpr, 'E') == NULL)
-                osExpr += '.';
-        }
         else 
         {
             osExpr = string_value;
@@ -496,33 +489,6 @@ char *swq_expr_node::Unparse( swq_field_list *field_list, char chColumnQuote )
                        poOp->osName.c_str(),
                        apszSubExpr[1],
                        apszSubExpr[2] );
-        break;
-
-      case SWQ_CAST:
-        osExpr = "CAST(";
-        for( i = 0; i < nSubExprCount; i++ )
-        {
-            if( i == 1 )
-                osExpr += " AS ";
-            else if( i > 2 )
-                osExpr += ", ";
-
-            int nLen = (int)strlen(apszSubExpr[i]);
-            if( i != 1 ||
-                !(apszSubExpr[i][0] == '\'' && nLen > 2 && apszSubExpr[i][nLen-1] == '\'') )
-                osExpr += apszSubExpr[i];
-            else
-            {
-                apszSubExpr[i][nLen-1] = '\0';
-                osExpr += apszSubExpr[i] + 1;
-            }
-
-            if( i == 1 && nSubExprCount > 2)
-                osExpr += "(";
-            else if (i > 1 && i == nSubExprCount - 1)
-                osExpr += ")";
-        }
-        osExpr += ")";
         break;
 
       default: // function style.

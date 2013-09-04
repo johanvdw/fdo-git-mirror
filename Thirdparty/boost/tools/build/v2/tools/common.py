@@ -14,7 +14,6 @@ import re
 import bjam
 import os
 import os.path
-import sys
 
 from b2.build import feature
 from b2.util.utility import *
@@ -47,30 +46,8 @@ def reset ():
 
     __debug_configuration = '--debug-configuration' in bjam.variable('ARGV')
     __show_configuration = '--show-configuration' in bjam.variable('ARGV')
-
-    global __executable_path_variable
-    OS = bjam.call("peek", [], "OS")[0]
-    if OS == "NT":
-        # On Windows the case and capitalization of PATH is not always predictable, so
-        # let's find out what variable name was really set.
-        for n in os.environ:
-            if n.lower() == "path":
-                __executable_path_variable = n
-                break
-    else:
-        __executable_path_variable = "PATH"
-
-    m = {"NT": __executable_path_variable,
-         "CYGWIN": "PATH",
-         "MACOSX": "DYLD_LIBRARY_PATH",
-         "AIX": "LIBPATH"}
-    global __shared_library_path_variable
-    __shared_library_path_variable = m.get(OS, "LD_LIBRARY_PATH")
-                            
+    
 reset()
-
-def shared_library_path_variable():
-    return __shared_library_path_variable
 
 # ported from trunk@47174
 class Configurations(object):
@@ -99,7 +76,7 @@ class Configurations(object):
     def __init__(self):
         self.used_ = set()
         self.all_ = set()
-        self.params_ = {}
+        self.params = {}
 
     def register(self, id):
         """
@@ -113,7 +90,7 @@ class Configurations(object):
             errors.error("common: the configuration '$(id)' is in use")
 
         if id not in self.all_:
-            self.all_.add(id)
+            self.all_ += [id]
 
             # Indicate that a new configuration has been added.
             return True
@@ -133,7 +110,7 @@ class Configurations(object):
             errors.error("common: the configuration '$(id)' is not known")
 
         if id not in self.used_:
-            self.used_.add(id)
+            self.used_ += [id]
 
             # indicate that the configuration has been marked as 'used'
             return True
@@ -150,7 +127,7 @@ class Configurations(object):
 
     def get(self, id, param):
         """ Returns the value of a configuration parameter. """
-        return self.params_.get(param, {}).get(id)
+        self.params_.getdefault(param, {}).getdefault(id, None)
 
     def set (self, id, param, value):
         """ Sets the value of a configuration parameter. """
@@ -294,8 +271,6 @@ def get_invocation_command_nodefault(
             #print "warning: initialized from" [ errors.nearest-user-location ] ;
     else:
         command = check_tool(user_provided_command)
-        assert(isinstance(command, list))
-        command=' '.join(command)
         if not command and __debug_configuration:
             print "warning: toolset", toolset, "initialization:"
             print "warning: can't find user-provided command", user_provided_command
@@ -349,9 +324,7 @@ def get_absolute_tool_path(command):
         programs = path.programs_path()
         m = path.glob(programs, [command, command + '.exe' ])
         if not len(m):
-            if __debug_configuration:
-                print "Could not find:", command, "in", programs
-            return None
+            print "Could not find:", command, "in", programs
         return os.path.dirname(m[0])
 
 # ported from trunk@47174
@@ -529,9 +502,9 @@ def prepend_path_variable_command(variable, paths):
     """
         Returns a command that prepends the given paths to the named path variable on
         the current platform.
-    """    
+    """
     return path_variable_setting_command(variable,
-        paths + os.environ.get(variable, "").split(os.pathsep))
+        paths + os.environ(variable).split(os.pathsep))
 
 def file_creation_command():
     """
@@ -562,9 +535,9 @@ def mkdir(engine, target):
 
         # Schedule the mkdir build action.
         if os_name() == 'NT':
-            engine.set_update_action("common.MkDir1-quick-fix-for-windows", target, [])
+            engine.set_update_action("common.MkDir1-quick-fix-for-windows", target, [], None)
         else:
-            engine.set_update_action("common.MkDir1-quick-fix-for-unix", target, [])
+            engine.set_update_action("common.MkDir1-quick-fix-for-unix", target, [], None)
 
         # Prepare a Jam 'dirs' target that can be used to make the build only
         # construct all the target directories.

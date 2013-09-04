@@ -182,7 +182,7 @@ GDALDataset* GeoRasterDataset::Open( GDALOpenInfo* poOpenInfo )
     }
 
     //  -------------------------------------------------------------------
-    //  Assign GeoRaster informationf
+    //  Assign GeoRaster information
     //  -------------------------------------------------------------------
 
     poGRD->poGeoRaster   = poGRW;
@@ -198,36 +198,6 @@ GDALDataset* GeoRasterDataset::Open( GDALOpenInfo* poOpenInfo )
         poGRD->adfGeoTransform[4] = poGRW->dfYCoefficient[0];
         poGRD->adfGeoTransform[5] = poGRW->dfYCoefficient[1];
         poGRD->adfGeoTransform[3] = poGRW->dfYCoefficient[2];
-    }
-
-    //  -------------------------------------------------------------------
-    //  Copy RPC values to RPC metadata domain
-    //  -------------------------------------------------------------------
-
-    if( poGRW->phRPC )
-    {
-        char **papszRPC_MD = RPCInfoToMD( poGRW->phRPC );
-        char **papszSanitazed = NULL;
-
-        int i = 0;
-        int n = CSLCount( papszRPC_MD );
-
-        for( i = 0; i < n; i++ )
-        {
-            if ( EQUALN( papszRPC_MD[i], "MIN_LAT", 7 )  ||
-                 EQUALN( papszRPC_MD[i], "MIN_LONG", 8 ) ||
-                 EQUALN( papszRPC_MD[i], "MAX_LAT", 7 )  ||
-                 EQUALN( papszRPC_MD[i], "MAX_LONG", 8 ) )
-            {
-                continue;
-            }
-            papszSanitazed = CSLAddString( papszSanitazed, papszRPC_MD[i] );
-        }
-
-        poGRD->SetMetadata( papszSanitazed, "RPC" );
-
-        CSLDestroy( papszRPC_MD );
-        CSLDestroy( papszSanitazed );
     }
 
     //  -------------------------------------------------------------------
@@ -424,7 +394,7 @@ GDALDataset *GeoRasterDataset::Create( const char *pszFilename,
     const char* pszFetched  = "";
     char* pszDescription    = NULL;
     char* pszInsert         = NULL;
-    int   nQuality          = -1;
+    int   nQuality          = 75;
 
     if( ! poGRW->sTable.empty() )
     {
@@ -725,16 +695,6 @@ GDALDataset *GeoRasterDataset::Create( const char *pszFilename,
         poGRD->poGeoRaster->SetGeoReference( atoi( pszFetched ) );
     }
 
-    poGRD->poGeoRaster->bGenSpatialIndex = 
-        CSLFetchBoolean( papszOptions, "SPATIALEXTENT", TRUE );
-
-    pszFetched = CSLFetchNameValue( papszOptions, "EXTENTSRID" );
-
-    if( pszFetched )
-    {
-        poGRD->poGeoRaster->nExtentSRID = atoi( pszFetched );
-    }
-
     pszFetched = CSLFetchNameValue( papszOptions, "COORDLOCATION" );
 
     if( pszFetched )
@@ -752,11 +712,6 @@ GDALDataset *GeoRasterDataset::Create( const char *pszFilename,
             CPLError( CE_Warning, CPLE_IllegalArg, 
                 "Incorrect COORDLOCATION (%s)", pszFetched );
         }
-    }
-
-    if ( nQuality > 0 )
-    {
-        poGRD->poGeoRaster->nCompressQuality = nQuality;
     }
 
     //  -------------------------------------------------------------------
@@ -820,18 +775,6 @@ GDALDataset *GeoRasterDataset::CreateCopy( const char* pszFilename,
     if( ! poDstDS->bForcedSRID ) /* forced by create option SRID */
     {
         poDstDS->SetProjection( poSrcDS->GetProjectionRef() );
-    }
-
-    // --------------------------------------------------------------------
-    //      Copy RPC 
-    // --------------------------------------------------------------------
-
-    char **papszRPCMetadata = GDALGetMetadata( poSrcDS, "RPC" );
-
-    if ( papszRPCMetadata != NULL )
-    {
-        poDstDS->poGeoRaster->phRPC = (GDALRPCInfo*) VSIMalloc( sizeof(GDALRPCInfo) );
-        GDALExtractRPCInfo( papszRPCMetadata, poDstDS->poGeoRaster->phRPC );
     }
 
     // --------------------------------------------------------------------
@@ -1037,7 +980,7 @@ GDALDataset *GeoRasterDataset::CreateCopy( const char* pszFilename,
 
     if( pfnProgress )
     {
-        printf( "Ouput dataset: (georaster:%s/%s@%s,%s,%d) on %s%s,%s\n",
+        printf( "Ouput dataset: (geor:%s/%s@%s,%s,%d) on %s%s,%s\n",
             poDstDS->poGeoRaster->poConnection->GetUser(),
             poDstDS->poGeoRaster->poConnection->GetPassword(),
             poDstDS->poGeoRaster->poConnection->GetServer(),
@@ -1096,11 +1039,6 @@ void GeoRasterDataset::FlushCache()
 
 CPLErr GeoRasterDataset::GetGeoTransform( double *padfTransform )
 {
-    if( poGeoRaster->phRPC )
-    {
-        return CE_Failure;
-    }
-
     memcpy( padfTransform, adfGeoTransform, sizeof(double) * 6 );
     
     if( bGeoTransform )
@@ -1126,17 +1064,12 @@ CPLErr GeoRasterDataset::GetGeoTransform( double *padfTransform )
 
 const char* GeoRasterDataset::GetProjectionRef( void )
 {
-    if( poGeoRaster->phRPC )
-    {
-        return "";
-    }
-
     if( ! poGeoRaster->bIsReferenced )
     {
         return "";
     }
 
-    if( poGeoRaster->nSRID == UNKNOWN_CRS || poGeoRaster->nSRID == 0 )
+    if( poGeoRaster->nSRID == UNKNOWN_CRS )
     {
         return "";
     }
@@ -1327,7 +1260,7 @@ CPLErr GeoRasterDataset::SetProjection( const char *pszProjString )
 
     if( eOGRErr != OGRERR_NONE )
     {
-        poGeoRaster->SetGeoReference( UNKNOWN_CRS );
+        CPLDebug( "GEOR", "Not recongnized" );
 
         return CE_Failure;
     }
@@ -1916,7 +1849,6 @@ void CPL_DLL GDALRegister_GEOR()
         poDriver->SetMetadataItem( GDAL_DMD_LONGNAME,
                                    "Oracle Spatial GeoRaster" );
         poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, "frmt_georaster.html" );
-        poDriver->SetMetadataItem( GDAL_DMD_SUBDATASETS, "YES" );
         poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES,
                                    "Byte UInt16 Int16 UInt32 Int32 Float32 "
                                    "Float64 CFloat32 CFloat64" );
@@ -1933,11 +1865,6 @@ void CPL_DLL GDALRegister_GEOR()
 "  <Option name='BLOCKBSIZE'  type='int'    description='Band Block Size' "
                                            "default='1'/>"
 "  <Option name='SRID'        type='int'    description='Overwrite EPSG code' "
-                                           "default='0'/>"
-"  <Option name='SPATIALEXTENT' type='boolean' "
-                                           "description='Generate Spatial Extent' "
-                                           "default='TRUE'/>"
-"  <Option name='EXTENTSRID'  type='int'    description='Spatial ExtentSRID code' "
                                            "default='0'/>"
 "  <Option name='NBITS'       type='int'    description='BITS for sub-byte "
                                            "data types (1,2,4) bits'/>"

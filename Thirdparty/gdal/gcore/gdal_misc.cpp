@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_misc.cpp 25545 2013-01-25 17:55:47Z warmerdam $
+ * $Id: gdal_misc.cpp 23156 2011-10-01 15:34:16Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Free standing functions for GDAL.
@@ -34,7 +34,7 @@
 #include <ctype.h>
 #include <string>
 
-CPL_CVSID("$Id: gdal_misc.cpp 25545 2013-01-25 17:55:47Z warmerdam $");
+CPL_CVSID("$Id: gdal_misc.cpp 23156 2011-10-01 15:34:16Z rouault $");
 
 #include "ogr_spatialref.h"
 
@@ -63,8 +63,8 @@ void __pure_virtual()
  * \brief Return the smallest data type that can fully express both input data
  * types.
  *
- * @param eType1 first data type.
- * @param eType2 second data type.
+ * @param eType1 
+ * @param eType2
  *
  * @return a data type able to express eType1 and eType2.
  */
@@ -384,11 +384,11 @@ GDALDataType CPL_STDCALL GDALGetDataTypeByName( const char *pszName )
  */
 GDALAsyncStatusType CPL_DLL CPL_STDCALL GDALGetAsyncStatusTypeByName( const char *pszName )
 {
-    VALIDATE_POINTER1( pszName, "GDALGetAsyncStatusTypeByName", GARIO_ERROR);
+	VALIDATE_POINTER1( pszName, "GDALGetAsyncStatusTypeByName", GARIO_ERROR);
 
     int	iType;
 
-    for( iType = 1; iType < GARIO_TypeCount; iType++ )
+	for( iType = 1; iType < GARIO_TypeCount; iType++ )
     {
         if( GDALGetAsyncStatusTypeName((GDALAsyncStatusType)iType) != NULL
             && EQUAL(GDALGetAsyncStatusTypeName((GDALAsyncStatusType)iType), pszName) )
@@ -397,7 +397,7 @@ GDALAsyncStatusType CPL_DLL CPL_STDCALL GDALGetAsyncStatusTypeByName( const char
         }
     }
 
-    return GARIO_ERROR;
+	return GARIO_ERROR;
 }
 
 
@@ -589,6 +589,209 @@ GDALColorInterp GDALGetColorInterpretationByName( const char *pszName )
     }
 
     return GCI_Undefined;
+}
+
+/************************************************************************/
+/*                         GDALDummyProgress()                          */
+/************************************************************************/
+
+/**
+ * \brief Stub progress function.
+ *
+ * This is a stub (does nothing) implementation of the GDALProgressFunc()
+ * semantics.  It is primarily useful for passing to functions that take
+ * a GDALProgressFunc() argument but for which the application does not want
+ * to use one of the other progress functions that actually do something.
+ */
+
+int CPL_STDCALL GDALDummyProgress( double dfComplete, const char *pszMessage, 
+                                   void *pData )
+
+{
+    return TRUE;
+}
+
+/************************************************************************/
+/*                         GDALScaledProgress()                         */
+/************************************************************************/
+typedef struct { 
+    GDALProgressFunc pfnProgress;
+    void *pData;
+    double dfMin;
+    double dfMax;
+} GDALScaledProgressInfo;
+
+/**
+ * \brief Scaled progress transformer.
+ *
+ * This is the progress function that should be passed along with the
+ * callback data returned by GDALCreateScaledProgress().
+ */
+
+int CPL_STDCALL GDALScaledProgress( double dfComplete, const char *pszMessage, 
+                                    void *pData )
+
+{
+    GDALScaledProgressInfo *psInfo = (GDALScaledProgressInfo *) pData;
+
+    return psInfo->pfnProgress( dfComplete * (psInfo->dfMax - psInfo->dfMin)
+                                + psInfo->dfMin,
+                                pszMessage, psInfo->pData );
+}
+
+/************************************************************************/
+/*                      GDALCreateScaledProgress()                      */
+/************************************************************************/
+
+/**
+ * \brief Create scaled progress transformer.
+ *
+ * Sometimes when an operations wants to report progress it actually
+ * invokes several subprocesses which also take GDALProgressFunc()s, 
+ * and it is desirable to map the progress of each sub operation into
+ * a portion of 0.0 to 1.0 progress of the overall process.  The scaled
+ * progress function can be used for this. 
+ *
+ * For each subsection a scaled progress function is created and
+ * instead of passing the overall progress func down to the sub functions,
+ * the GDALScaledProgress() function is passed instead.
+ *
+ * @param dfMin the value to which 0.0 in the sub operation is mapped.
+ * @param dfMax the value to which 1.0 is the sub operation is mapped.
+ * @param pfnProgress the overall progress function.
+ * @param pData the overall progress function callback data. 
+ *
+ * @return pointer to pass as pProgressArg to sub functions.  Should be freed
+ * with GDALDestroyScaledProgress(). 
+ *
+ * Example:
+ *
+ * \code
+ *   int MyOperation( ..., GDALProgressFunc pfnProgress, void *pProgressData );
+ *
+ *   {
+ *       void *pScaledProgress;
+ *
+ *       pScaledProgress = GDALCreateScaledProgress( 0.0, 0.5, pfnProgress, 
+ *                                                   pProgressData );
+ *       GDALDoLongSlowOperation( ..., GDALScaledProgress, pScaledProgress );
+ *       GDALDestroyScaledProgress( pScaledProgress );
+ *
+ *       pScaledProgress = GDALCreateScaledProgress( 0.5, 1.0, pfnProgress, 
+ *                                                   pProgressData );
+ *       GDALDoAnotherOperation( ..., GDALScaledProgress, pScaledProgress );
+ *       GDALDestroyScaledProgress( pScaledProgress );
+ *
+ *       return ...;
+ *   }
+ * \endcode
+ */
+
+void * CPL_STDCALL GDALCreateScaledProgress( double dfMin, double dfMax, 
+                                GDALProgressFunc pfnProgress, 
+                                void * pData )
+
+{
+    GDALScaledProgressInfo *psInfo;
+
+    psInfo = (GDALScaledProgressInfo *) 
+        CPLCalloc(sizeof(GDALScaledProgressInfo),1);
+
+    if( ABS(dfMin-dfMax) < 0.0000001 )
+        dfMax = dfMin + 0.01;
+
+    psInfo->pData = pData;
+    psInfo->pfnProgress = pfnProgress;
+    psInfo->dfMin = dfMin;
+    psInfo->dfMax = dfMax;
+
+    return (void *) psInfo;
+}
+
+/************************************************************************/
+/*                     GDALDestroyScaledProgress()                      */
+/************************************************************************/
+
+/**
+ * \brief Cleanup scaled progress handle.
+ *
+ * This function cleans up the data associated with a scaled progress function
+ * as returned by GADLCreateScaledProgress(). 
+ *
+ * @param pData scaled progress handle returned by GDALCreateScaledProgress().
+ */
+
+void CPL_STDCALL GDALDestroyScaledProgress( void * pData )
+
+{
+    CPLFree( pData );
+}
+
+/************************************************************************/
+/*                          GDALTermProgress()                          */
+/************************************************************************/
+
+/**
+ * \brief Simple progress report to terminal.
+ *
+ * This progress reporter prints simple progress report to the
+ * terminal window.  The progress report generally looks something like
+ * this:
+
+\verbatim
+0...10...20...30...40...50...60...70...80...90...100 - done.
+\endverbatim
+
+ * Every 2.5% of progress another number or period is emitted.  Note that
+ * GDALTermProgress() uses internal static data to keep track of the last
+ * percentage reported and will get confused if two terminal based progress
+ * reportings are active at the same time.
+ *
+ * The GDALTermProgress() function maintains an internal memory of the 
+ * last percentage complete reported in a static variable, and this makes
+ * it unsuitable to have multiple GDALTermProgress()'s active eithin a 
+ * single thread or across multiple threads.
+ *
+ * @param dfComplete completion ratio from 0.0 to 1.0.
+ * @param pszMessage optional message.
+ * @param pProgressArg ignored callback data argument. 
+ *
+ * @return Always returns TRUE indicating the process should continue.
+ */
+
+int CPL_STDCALL GDALTermProgress( double dfComplete, const char *pszMessage, 
+                      void * pProgressArg )
+
+{
+    static int nLastTick = -1;
+    int nThisTick = (int) (dfComplete * 40.0);
+
+    (void) pProgressArg;
+
+    nThisTick = MIN(40,MAX(0,nThisTick));
+
+    // Have we started a new progress run?  
+    if( nThisTick < nLastTick && nLastTick >= 39 )
+        nLastTick = -1;
+
+    if( nThisTick <= nLastTick )
+        return TRUE;
+
+    while( nThisTick > nLastTick )
+    {
+        nLastTick++;
+        if( nLastTick % 4 == 0 )
+            fprintf( stdout, "%d", (nLastTick / 4) * 10 );
+        else
+            fprintf( stdout, "." );
+    }
+
+    if( nThisTick == 40 )
+        fprintf( stdout, " - done.\n" );
+    else
+        fflush( stdout );
+
+    return TRUE;
 }
 
 /************************************************************************/
@@ -941,6 +1144,7 @@ int CPL_STDCALL GDALLoadOziMapFile( const char *pszFilename,
     }
 
     OGRSpatialReference oSRS;
+    const char *pszProj = NULL, *pszProjParms = NULL;
     OGRErr eErr = OGRERR_NONE;
 
     /* The Map Scale Factor has been introduced recently on the 6th line */
@@ -962,16 +1166,27 @@ int CPL_STDCALL GDALLoadOziMapFile( const char *pszFilename,
                 dfMSF = 1;
             }
         }
+        else if ( EQUALN(papszLines[iLine], "Map Projection", 14) )
+        {
+            pszProj = papszLines[iLine];
+        }
+        else if ( EQUALN(papszLines[iLine], "Projection Setup", 16) )
+        {
+            pszProjParms = papszLines[iLine];
+        }
     }
 
-    eErr = oSRS.importFromOzi( papszLines );
-    if ( eErr == OGRERR_NONE )
+    if ( papszLines[4][0] != '\0' && pszProj && pszProjParms )
     {
-        if ( ppszWKT != NULL )
-            oSRS.exportToWkt( ppszWKT );
+        eErr = oSRS.importFromOzi( papszLines[4], pszProj, pszProjParms );
+        if ( eErr == OGRERR_NONE )
+        {
+            if ( ppszWKT != NULL )
+                oSRS.exportToWkt( ppszWKT );
+        }
     }
 
-    // Iterate all lines in the MAP-file
+    // Iterate all lines in the TAB-file
     for ( iLine = 5; iLine < nLines; iLine++ )
     {
         char    **papszTok = NULL;
@@ -1037,8 +1252,8 @@ int CPL_STDCALL GDALLoadOziMapFile( const char *pszFilename,
                 dfLat = CPLAtofM(papszTok[15]);
                 bReadOk = TRUE;
 
-                //if ( EQUAL(papszTok[16], "S") )
-                //    dfLat = -dfLat;
+                if ( EQUAL(papszTok[16], "S") )
+                    dfLat = -dfLat;
             }
 
             if ( bReadOk )
@@ -1186,7 +1401,7 @@ int CPL_STDCALL GDALLoadTabFile( const char *pszFilename,
             // Only RASTER-type will be handled
             if (EQUAL(papszTok[1], "RASTER"))
             {
-                bTypeRasterFound = TRUE;
+	        bTypeRasterFound = TRUE;
             }
             else
             {
@@ -1702,17 +1917,14 @@ GDALWriteWorldFile( const char * pszBaseFilename, const char *pszExtension,
  * Available pszRequest values:
  * <ul>
  * <li> "VERSION_NUM": Returns GDAL_VERSION_NUM formatted as a string.  ie. "1170"
- *      Note: starting with GDAL 1.10, this string will be longer than 4 characters.
  * <li> "RELEASE_DATE": Returns GDAL_RELEASE_DATE formatted as a string.  
  * ie. "20020416".
  * <li> "RELEASE_NAME": Returns the GDAL_RELEASE_NAME. ie. "1.1.7"
  * <li> "--version": Returns one line version message suitable for use in 
  * response to --version requests.  ie. "GDAL 1.1.7, released 2002/04/16"
- * <li> "LICENSE": Returns the content of the LICENSE.TXT file from the GDAL_DATA directory.
+ * <li> "LICENCE": Returns the content of the LICENSE.TXT file from the GDAL_DATA directory.
  *      Before GDAL 1.7.0, the returned string was leaking memory but this is now resolved.
  *      So the result should not been freed by the caller.
- * <li> "BUILD_INFO": List of NAME=VALUE pairs separated by newlines with 
- * information on build time options.
  * </ul>
  *
  * @param pszRequest the type of version info desired, as listed above.
@@ -1723,28 +1935,6 @@ GDALWriteWorldFile( const char * pszBaseFilename, const char *pszExtension,
 const char * CPL_STDCALL GDALVersionInfo( const char *pszRequest )
 
 {
-/* -------------------------------------------------------------------- */
-/*      Try to capture as much build information as practical.          */
-/* -------------------------------------------------------------------- */
-    if( pszRequest != NULL && EQUAL(pszRequest,"BUILD_INFO") ) 
-    {
-        CPLString osBuildInfo;
-
-#ifdef ESRI_BUILD
-        osBuildInfo += "ESRI_BUILD=YES\n";
-#endif
-#ifdef PAM_ENABLED
-        osBuildInfo += "PAM_ENABLED=YES\n";
-#endif
-#ifdef OGR_ENABLED
-        osBuildInfo += "OGR_ENABLED=YES\n";
-#endif
-
-        CPLFree(CPLGetTLS(CTLS_VERSIONINFO));
-        CPLSetTLS(CTLS_VERSIONINFO, CPLStrdup(osBuildInfo), TRUE );
-        return (char *) CPLGetTLS(CTLS_VERSIONINFO);
-    }
-
 /* -------------------------------------------------------------------- */
 /*      LICENSE is a special case. We try to find and read the          */
 /*      LICENSE.TXT file from the GDAL_DATA directory and return it     */
@@ -1789,27 +1979,27 @@ const char * CPL_STDCALL GDALVersionInfo( const char *pszRequest )
         return pszResultLicence;
     }
 
-/* -------------------------------------------------------------------- */
-/*      All other strings are fairly small.                             */
-/* -------------------------------------------------------------------- */
-    CPLString osVersionInfo;
+    char* pszResultSmall = (char*) CPLGetTLS( CTLS_VERSIONINFO );
+    if( pszResultSmall == NULL )
+    {
+        pszResultSmall = (char*) CPLCalloc(128, 1);
+        CPLSetTLS( CTLS_VERSIONINFO, pszResultSmall, TRUE );
+    }
 
     if( pszRequest == NULL || EQUAL(pszRequest,"VERSION_NUM") )
-        osVersionInfo.Printf( "%d", GDAL_VERSION_NUM );
+        sprintf(pszResultSmall, "%d", GDAL_VERSION_NUM );
     else if( EQUAL(pszRequest,"RELEASE_DATE") )
-        osVersionInfo.Printf( "%d", GDAL_RELEASE_DATE );
+        sprintf(pszResultSmall, "%d", GDAL_RELEASE_DATE );
     else if( EQUAL(pszRequest,"RELEASE_NAME") )
-        osVersionInfo.Printf( GDAL_RELEASE_NAME );
+        sprintf(pszResultSmall, GDAL_RELEASE_NAME );
     else // --version
-        osVersionInfo.Printf( "GDAL %s, released %d/%02d/%02d",
-                              GDAL_RELEASE_NAME, 
-                              GDAL_RELEASE_DATE / 10000, 
-                              (GDAL_RELEASE_DATE % 10000) / 100,
-                              GDAL_RELEASE_DATE % 100 );
+        sprintf(pszResultSmall, "GDAL %s, released %d/%02d/%02d",
+                 GDAL_RELEASE_NAME, 
+                 GDAL_RELEASE_DATE / 10000, 
+                 (GDAL_RELEASE_DATE % 10000) / 100,
+                 GDAL_RELEASE_DATE % 100 );
 
-    CPLFree(CPLGetTLS(CTLS_VERSIONINFO)); // clear old value.
-    CPLSetTLS(CTLS_VERSIONINFO, CPLStrdup(osVersionInfo), TRUE ); 
-    return (char *) CPLGetTLS(CTLS_VERSIONINFO);
+    return pszResultSmall;
 }
 
 /************************************************************************/
@@ -2000,7 +2190,7 @@ GDALGCPsToGeoTransform( int nGCPCount, const GDAL_GCP *pasGCPs,
     double sum_Lon = 0.0, sum_Lonx = 0.0, sum_Lony = 0.0;
     double sum_Lat = 0.0, sum_Latx = 0.0, sum_Laty = 0.0;
     double divisor;
-
+	
     for (i = 0; i < nGCPCount; ++i) {
         sum_x += pasGCPs[i].dfGCPPixel;
         sum_y += pasGCPs[i].dfGCPLine;
@@ -2028,7 +2218,7 @@ GDALGCPsToGeoTransform( int nGCPCount, const GDAL_GCP *pasGCPs,
 /* -------------------------------------------------------------------- */
 /*      Compute top/left origin.                                        */
 /* -------------------------------------------------------------------- */
-
+	
     padfGeoTransform[0] = (sum_Lon * (sum_xx * sum_yy - sum_xy * sum_xy)
                            + sum_Lonx * (sum_y * sum_xy - sum_x *  sum_yy)
                            + sum_Lony * (sum_x * sum_xy - sum_y * sum_xx))
@@ -2038,7 +2228,7 @@ GDALGCPsToGeoTransform( int nGCPCount, const GDAL_GCP *pasGCPs,
                            + sum_Latx * (sum_y * sum_xy - sum_x *  sum_yy)
                            + sum_Laty * (sum_x * sum_xy - sum_y * sum_xx)) 
         / divisor;
-
+	
 /* -------------------------------------------------------------------- */
 /*      Compute X related coefficients.                                 */
 /* -------------------------------------------------------------------- */
@@ -2046,7 +2236,7 @@ GDALGCPsToGeoTransform( int nGCPCount, const GDAL_GCP *pasGCPs,
                            + sum_Lonx * (nGCPCount * sum_yy - sum_y * sum_y)
                            + sum_Lony * (sum_x * sum_y - sum_xy * nGCPCount))
         / divisor;
-
+	
     padfGeoTransform[2] = (sum_Lon * (sum_x * sum_xy - sum_y * sum_xx)
                            + sum_Lonx * (sum_x * sum_y - nGCPCount * sum_xy)
                            + sum_Lony * (nGCPCount * sum_xx - sum_x * sum_x))
@@ -2059,7 +2249,7 @@ GDALGCPsToGeoTransform( int nGCPCount, const GDAL_GCP *pasGCPs,
                            + sum_Latx * (nGCPCount * sum_yy - sum_y * sum_y)
                            + sum_Laty * (sum_x * sum_y - sum_xy * nGCPCount))
         / divisor;
-
+	
     padfGeoTransform[5] = (sum_Lat * (sum_x * sum_xy - sum_y * sum_xx)
                            + sum_Latx * (sum_x * sum_y - nGCPCount * sum_xy)
                            + sum_Laty * (nGCPCount * sum_xx - sum_x * sum_x))
@@ -2111,7 +2301,6 @@ GDALGCPsToGeoTransform( int nGCPCount, const GDAL_GCP *pasGCPs,
  * commandline options:
  *  
  *  --version: report version of GDAL in use. 
- *  --build: report build info about GDAL in use.
  *  --license: report GDAL license info.
  *  --formats: report all format drivers configured.
  *  --format [format]: report details of one format driver. 
@@ -2170,16 +2359,6 @@ GDALGeneralCmdLineProcessor( int nArgc, char ***ppapszArgv, int nOptions )
         if( EQUAL(papszArgv[iArg],"--version") )
         {
             printf( "%s\n", GDALVersionInfo( "--version" ) );
-            CSLDestroy( papszReturn );
-            return 0;
-        }
-
-/* -------------------------------------------------------------------- */
-/*      --build                                                         */
-/* -------------------------------------------------------------------- */
-        else if( EQUAL(papszArgv[iArg],"--build") )
-        {
-            printf( "%s", GDALVersionInfo( "BUILD_INFO" ) );
             CSLDestroy( papszReturn );
             return 0;
         }
@@ -2349,7 +2528,7 @@ GDALGeneralCmdLineProcessor( int nArgc, char ***ppapszArgv, int nOptions )
             for( iDr = 0; iDr < GDALGetDriverCount(); iDr++ )
             {
                 GDALDriverH hDriver = GDALGetDriver(iDr);
-                const char *pszRWFlag, *pszVirtualIO, *pszSubdatasets;
+                const char *pszRWFlag, *pszVirtualIO;
                 
                 if( GDALGetMetadataItem( hDriver, GDAL_DCAP_CREATE, NULL ) )
                     pszRWFlag = "rw+";
@@ -2364,15 +2543,9 @@ GDALGeneralCmdLineProcessor( int nArgc, char ***ppapszArgv, int nOptions )
                 else
                     pszVirtualIO = "";
 
-                pszSubdatasets = GDALGetMetadataItem( hDriver, GDAL_DMD_SUBDATASETS, NULL );
-                if( pszSubdatasets && CSLTestBoolean( pszSubdatasets ) )
-                    pszSubdatasets = "s";
-                else
-                    pszSubdatasets = "";
-
-                printf( "  %s (%s%s%s): %s\n",
+                printf( "  %s (%s%s): %s\n",
                         GDALGetDriverShortName( hDriver ),
-                        pszRWFlag, pszVirtualIO, pszSubdatasets,
+                        pszRWFlag, pszVirtualIO,
                         GDALGetDriverLongName( hDriver ) );
             }
 
@@ -2424,8 +2597,6 @@ GDALGeneralCmdLineProcessor( int nArgc, char ***ppapszArgv, int nOptions )
                 printf( "  Help Topic: %s\n", 
                         CSLFetchNameValue( papszMD, GDAL_DMD_HELPTOPIC ) );
             
-            if( CSLFetchBoolean( papszMD, GDAL_DMD_SUBDATASETS, FALSE ) )
-                printf( "  Supports: Subdatasets\n" );
             if( CSLFetchBoolean( papszMD, GDAL_DCAP_CREATE, FALSE ) )
                 printf( "  Supports: Create() - Create writeable dataset.\n" );
             if( CSLFetchBoolean( papszMD, GDAL_DCAP_CREATECOPY, FALSE ) )
@@ -2907,3 +3078,4 @@ int GDALCheckBandCount( int nBands, int bIsZeroAllowed )
 }
 
 CPL_C_END
+

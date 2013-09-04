@@ -13,15 +13,16 @@ set( SHPOverrides_SRCS
    FdoShpPropertyDefinitionCollection.cpp
 )
 
-add_library( SHPOverrides-${FDO_VERSION} SHARED ${SHPOverrides_SRCS} )
-target_link_libraries( SHPOverrides-${FDO_VERSION}
-	ExpressionEngine-${FDO_VERSION}
+add_library( SHPOverrides SHARED ${SHPOverrides_SRCS} )
+target_link_libraries( SHPOverrides
+	ExpressionEngine
 	ProvidersCommon
-	FDO-${FDO_VERSION}
+	FDO
  )
-add_dependencies( SHPOverrides-${FDO_VERSION} ShpMessage )
+add_dependencies( SHPOverrides ShpMessage )
 
-install( TARGETS SHPOverrides-${FDO_VERSION} DESTINATION ${LIB_INSTALL_DIR} )
+set_target_properties( SHPOverrides PROPERTIES VERSION ${FDO_VERSION} SOVERSION ${FDO_VERSION_MAJOR} )
+install( TARGETS SHPOverrides DESTINATION ${LIB_INSTALL_DIR} )
 
 
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gsagdataset.cpp 25215 2012-11-08 08:25:05Z rouault $
+ * $Id: gsagdataset.cpp 23060 2011-09-05 17:58:30Z rouault $
  *
  * Project:  GDAL
  * Purpose:  Implements the Golden Software ASCII Grid Format.
@@ -49,7 +49,7 @@
 # define INT_MAX 2147483647
 #endif /* INT_MAX */
 
-CPL_CVSID("$Id: gsagdataset.cpp 25215 2012-11-08 08:25:05Z rouault $");
+CPL_CVSID("$Id: gsagdataset.cpp 23060 2011-09-05 17:58:30Z rouault $");
 
 CPL_C_START
 void	GDALRegister_GSAG(void);
@@ -83,13 +83,13 @@ class GSAGDataset : public GDALPamDataset
 		GSAGDataset( const char *pszEOL = "\x0D\x0A" );
 		~GSAGDataset();
 
-    static int          Identify( GDALOpenInfo * );
     static GDALDataset *Open( GDALOpenInfo * );
     static GDALDataset *CreateCopy( const char *pszFilename,
 				    GDALDataset *poSrcDS,
 				    int bStrict, char **papszOptions,
 				    GDALProgressFunc pfnProgress,
 				    void *pProgressData );
+    static CPLErr Delete( const char *pszFilename );
 
     CPLErr GetGeoTransform( double *padfGeoTransform );
     CPLErr SetGeoTransform( double *padfGeoTransform );
@@ -313,8 +313,7 @@ CPLErr GSAGRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
         // Discover the last read block
         for ( int iFoundLine = nLastReadLine - 1; iFoundLine > nBlockYOff; iFoundLine--)
         {
-            if( IReadBlock( nBlockXOff, iFoundLine, NULL) != CE_None )
-                return CE_Failure;
+            IReadBlock( nBlockXOff, iFoundLine, NULL);
         }
     }
 
@@ -802,31 +801,17 @@ GSAGDataset::~GSAGDataset()
 }
 
 /************************************************************************/
-/*                              Identify()                              */
-/************************************************************************/
-
-int GSAGDataset::Identify( GDALOpenInfo * poOpenInfo )
-
-{
-    /* Check for signature */
-    if( poOpenInfo->nHeaderBytes < 5
-        || !EQUALN((const char *) poOpenInfo->pabyHeader,"DSAA",4)
-        || ( poOpenInfo->pabyHeader[4] != '\x0D'
-            && poOpenInfo->pabyHeader[4] != '\x0A' ))
-    {
-        return FALSE;
-    }
-    return TRUE;
-}
-
-/************************************************************************/
 /*                                Open()                                */
 /************************************************************************/
 
 GDALDataset *GSAGDataset::Open( GDALOpenInfo * poOpenInfo )
 
 {
-    if( !Identify(poOpenInfo) )
+    /* Check for signature */
+    if( poOpenInfo->nHeaderBytes < 5
+	|| !EQUALN((const char *) poOpenInfo->pabyHeader,"DSAA",4)
+	|| ( poOpenInfo->pabyHeader[4] != '\x0D'
+	     && poOpenInfo->pabyHeader[4] != '\x0A' ))
     {
         return NULL;
     }
@@ -1679,7 +1664,7 @@ GDALDataset *GSAGDataset::CreateCopy( const char *pszFilename,
 	    return NULL;
 	}
 
-	if( !pfnProgress( static_cast<double>(iRow + 1)/nYSize,
+	if( !pfnProgress( static_cast<double>(iRow)/nYSize,
 			  NULL, pProgressData ) )
 	{
 	    VSIFCloseL( fp );
@@ -1728,13 +1713,107 @@ GDALDataset *GSAGDataset::CreateCopy( const char *pszFilename,
 
     VSIFCloseL( fp );
 
-    GDALPamDataset *poDS = (GDALPamDataset *)GDALOpen( pszFilename,
-                                                GA_Update );
-    if (poDS)
+    GDALPamDataset *poDstDS = (GDALPamDataset *)GDALOpen( pszFilename,
+							  GA_Update );
+    if( poDstDS == NULL )
     {
-        poDS->CloneInfo( poSrcDS, GCIF_PAM_DEFAULT );
+	VSIUnlink( pszFilename );
+	CPLError( CE_Failure, CPLE_FileIO,
+		  "Unable to open copy of dataset.\n" );
+	return NULL;
     }
-    return poDS;
+
+    GDALRasterBand *poDstBand = poDstDS->GetRasterBand(1);
+    if( poDstBand == NULL )
+    {
+	VSIUnlink( pszFilename );
+	delete poDstDS;
+	CPLError( CE_Failure, CPLE_FileIO,
+		  "Unable to open copy of raster band?\n" );
+	return NULL;
+    }
+
+/* -------------------------------------------------------------------- */
+/*      Attempt to copy metadata.					*/
+/* -------------------------------------------------------------------- */
+    if( !bStrict )
+	CPLPushErrorHandler( CPLQuietErrorHandler );
+
+    /* non-zero transform 2 or 4 or negative 1 or 5  not supported natively */
+    /*if( adfGeoTransform[2] != 0.0 || adfGeoTransform[4] != 0.0
+	|| adfGeoTransform[1] < 0.0 || adfGeoTransform[5] < 0.0 )
+	poDstDS->GDALPamDataset::SetGeoTransform( adfGeoTransform );*/
+
+    const char *szProjectionRef = poSrcDS->GetProjectionRef();
+    if( *szProjectionRef != '\0' )
+	poDstDS->SetProjection( szProjectionRef );
+
+    char **pszMetadata = poSrcDS->GetMetadata();
+    if( pszMetadata != NULL )
+	poDstDS->SetMetadata( pszMetadata );
+
+    /* FIXME:  Should the dataset description be copied as well, or is it
+     *         always the file name? */
+    poDstBand->SetDescription( poSrcBand->GetDescription() );
+
+    int bSuccess;
+    double dfOffset = poSrcBand->GetOffset( &bSuccess );
+    if( bSuccess && dfOffset != 0.0 )
+	poDstBand->SetOffset( dfOffset );
+
+    double dfScale = poSrcBand->GetScale( &bSuccess );
+    if( bSuccess && dfScale != 1.0 )
+	poDstBand->SetScale( dfScale );
+
+    GDALColorInterp oColorInterp = poSrcBand->GetColorInterpretation();
+    if( oColorInterp != GCI_Undefined )
+        poDstBand->SetColorInterpretation( oColorInterp );
+
+    char **pszCatNames = poSrcBand->GetCategoryNames();
+    if( pszCatNames != NULL)
+	poDstBand->SetCategoryNames( pszCatNames );
+
+    GDALColorTable *poColorTable = poSrcBand->GetColorTable();
+    if( poColorTable != NULL )
+	poDstBand->SetColorTable( poColorTable );
+
+    if( !bStrict )
+	CPLPopErrorHandler();
+
+    return poDstDS;
+}
+
+/************************************************************************/
+/*                               Delete()                               */
+/************************************************************************/
+
+CPLErr GSAGDataset::Delete( const char *pszFilename )
+
+{
+    VSIStatBufL sStat;
+    
+    if( VSIStatL( pszFilename, &sStat ) != 0 )
+    {
+	CPLError( CE_Failure, CPLE_FileIO,
+		  "Unable to stat() %s.\n", pszFilename );
+	return CE_Failure;
+    }
+    
+    if( !VSI_ISREG( sStat.st_mode ) )
+    {
+	CPLError( CE_Failure, CPLE_FileIO,
+		  "%s is not a regular file, not removed.\n", pszFilename );
+	return CE_Failure;
+    }
+
+    if( VSIUnlink( pszFilename ) != 0 )
+    {
+	CPLError( CE_Failure, CPLE_FileIO,
+		  "Error unlinking %s.\n", pszFilename );
+	return CE_Failure;
+    }
+
+    return CE_None;
 }
 
 /************************************************************************/
@@ -1761,9 +1840,9 @@ void GDALRegister_GSAG()
 				   "Float32 Float64" );
         poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
 
-        poDriver->pfnIdentify = GSAGDataset::Identify;
-        poDriver->pfnOpen = GSAGDataset::Open;
-        poDriver->pfnCreateCopy = GSAGDataset::CreateCopy;
+    poDriver->pfnOpen = GSAGDataset::Open;
+	poDriver->pfnCreateCopy = GSAGDataset::CreateCopy;
+	poDriver->pfnDelete = GSAGDataset::Delete;
 
         GetGDALDriverManager()->RegisterDriver( poDriver );
     }

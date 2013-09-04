@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_conv.h 25627 2013-02-10 10:17:19Z rouault $
+ * $Id: cpl_conv.h 23431 2011-11-27 15:02:24Z rouault $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Convenience functions declarations.
@@ -190,7 +190,6 @@ FILE CPL_DLL    *CPLOpenShared( const char *, const char *, int );
 void CPL_DLL     CPLCloseShared( FILE * );
 CPLSharedFileInfo CPL_DLL *CPLGetSharedList( int * );
 void CPL_DLL     CPLDumpSharedList( FILE * );
-void CPL_DLL     CPLCleanupSharedFileMutex();
 
 /* -------------------------------------------------------------------- */
 /*      DMS to Dec to DMS conversion.                                   */
@@ -221,25 +220,7 @@ CPLErr CPL_DLL CPLCreateFileInZip( void *hZip, const char *pszFilename,
 CPLErr CPL_DLL CPLWriteFileInZip( void *hZip, const void *pBuffer, int nBufferSize );
 CPLErr CPL_DLL CPLCloseFileInZip( void *hZip );
 CPLErr CPL_DLL CPLCloseZip( void *hZip );
-
-/* -------------------------------------------------------------------- */
-/*      ZLib compression                                                */
-/* -------------------------------------------------------------------- */
-
-void CPL_DLL *CPLZLibDeflate( const void* ptr, size_t nBytes, int nLevel,
-                              void* outptr, size_t nOutAvailableBytes,
-                              size_t* pnOutBytes );
-void CPL_DLL *CPLZLibInflate( const void* ptr, size_t nBytes,
-                              void* outptr, size_t nOutAvailableBytes,
-                              size_t* pnOutBytes );
-
-/* -------------------------------------------------------------------- */
-/*      XML validation.                                                 */
-/* -------------------------------------------------------------------- */
-int CPL_DLL CPLValidateXML(const char* pszXMLFilename,
-                           const char* pszXSDFilename,
-                           char** papszOptions);
-
+                            
 CPL_C_END
 
 /* -------------------------------------------------------------------- */
@@ -257,7 +238,7 @@ public:
 private:
     char *pszOldLocale;
 
-    /* Make it non-copyable */
+    // Make it non-copyable
     CPLLocaleC(CPLLocaleC&);
     CPLLocaleC& operator=(CPLLocaleC&);
 };

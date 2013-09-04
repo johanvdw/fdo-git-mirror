@@ -127,11 +127,6 @@ plugin_dir:
 	cd frmts
 	$(MAKE) /f makefile.vc plugindirs
 	cd ..
-!IFDEF INCLUDE_OGR_FRMTS
-	cd ogr\ogrsf_frmts
-	$(MAKE) /f makefile.vc plugindirs
-	cd ..\..
-!ENDIF
 
 apps_dir:
 	cd apps
@@ -191,12 +186,11 @@ install: $(GDAL_DLL) plugin_dir apps_dir
 	cd ogr
 	$(MAKE) /f makefile.vc install
 	cd ..
-	cd ogr\ogrsf_frmts
-	$(MAKE) /f makefile.vc plugins-install
 !IFDEF HTMLDIR
+	cd ogr\ogrsf_frmts
 	$(MAKE) /f makefile.vc html-install
-!ENDIF
 	cd ..\..
+!ENDIF
 !ENDIF
 
 devinstall: install

@@ -326,6 +326,7 @@ int MIFFile::Open(const char *pszFname, const char *pszAccess,
         else
             CPLErrorReset();
 
+        CPLFree(m_pszFname);
         return -1;
     }
 
@@ -724,37 +725,17 @@ int  MIFFile::AddFields(const char *pszLine)
     }
     else if (numTok >= 2 && EQUAL(papszToken[1], "integer"))
     {
-        if (numTok == 2)
-        {
-            /*-------------------------------------------------
-             * INTEGER type without a specified width
-             *------------------------------------------------*/
-            nStatus = AddFieldNative(papszToken[0], TABFInteger);
-        }
-        else if (numTok > 2)
-        {
-            /*-------------------------------------------------
-             * INTEGER type with a specified width
-             *------------------------------------------------*/
-            nStatus = AddFieldNative(papszToken[0], TABFInteger, atoi(papszToken[2]));
-        }
+        /*-------------------------------------------------
+         * INTEGER type
+         *------------------------------------------------*/
+        nStatus = AddFieldNative(papszToken[0], TABFInteger);
     }
     else if (numTok >= 2 && EQUAL(papszToken[1], "smallint"))
     {
-        if (numTok == 2)
-        {
-            /*-------------------------------------------------
-             * SMALLINT type without a specified width
-             *------------------------------------------------*/
-            nStatus = AddFieldNative(papszToken[0], TABFSmallInt);
-        }
-        else if (numTok > 2)
-        {
-            /*-------------------------------------------------
-             * SMALLINT type with a specified width
-             *------------------------------------------------*/
-            nStatus = AddFieldNative(papszToken[0], TABFSmallInt, atoi(papszToken[2]));
-        }
+        /*-------------------------------------------------
+         * SMALLINT type
+         *------------------------------------------------*/
+        nStatus = AddFieldNative(papszToken[0], TABFSmallInt);
     }
     else if (numTok >= 4 && EQUAL(papszToken[1], "decimal"))
     {
@@ -1086,13 +1067,8 @@ int MIFFile::WriteMIFHeader()
         switch(m_paeFieldType[iField])
         {
           case TABFInteger:
-            if (poFieldDefn->GetWidth() == 0)
-                m_poMIFFile->WriteLine("  %s Integer\n",
+            m_poMIFFile->WriteLine("  %s Integer\n",
                                    poFieldDefn->GetNameRef());
-            else
-                m_poMIFFile->WriteLine("  %s Integer(%d)\n",
-                                   poFieldDefn->GetNameRef(),
-                                   poFieldDefn->GetWidth());
             break;
           case TABFSmallInt:
             m_poMIFFile->WriteLine("  %s SmallInt\n",
@@ -1833,14 +1809,12 @@ int MIFFile::AddFieldNative(const char *pszName, TABFieldType eMapInfoType,
          * INTEGER type
          *------------------------------------------------*/
         poFieldDefn = new OGRFieldDefn(szNewFieldName, OFTInteger);
-        poFieldDefn->SetWidth(nWidth);
         break;
       case TABFSmallInt:
         /*-------------------------------------------------
          * SMALLINT type
          *------------------------------------------------*/
         poFieldDefn = new OGRFieldDefn(szNewFieldName, OFTInteger);
-        poFieldDefn->SetWidth(nWidth);
         break;
       case TABFDecimal:
         /*-------------------------------------------------

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ddfrecord.cpp 25841 2013-04-02 21:30:03Z rouault $
+ * $Id: ddfrecord.cpp 23598 2011-12-18 23:40:29Z rouault $
  *
  * Project:  ISO 8211 Access
  * Purpose:  Implements the DDFRecord class.
@@ -30,7 +30,7 @@
 #include "iso8211.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ddfrecord.cpp 25841 2013-04-02 21:30:03Z rouault $");
+CPL_CVSID("$Id: ddfrecord.cpp 23598 2011-12-18 23:40:29Z rouault $");
 
 static const int nLeaderSize = 24;
 
@@ -55,7 +55,7 @@ DDFRecord::DDFRecord( DDFModule * poModuleIn )
 
     bIsClone = FALSE;
 
-    _sizeFieldTag = poModuleIn->GetSizeFieldTag();
+    _sizeFieldTag = 4;
     _sizeFieldPos = 0;
     _sizeFieldLength = 0;
 }
@@ -304,7 +304,7 @@ int DDFRecord::ReadHeader()
 /* -------------------------------------------------------------------- */
 /*      Is there anything seemly screwy about this record?              */
 /* -------------------------------------------------------------------- */
-    if(( _recLength <= 24 || _recLength > 100000000
+    if(( _recLength < 24 || _recLength > 100000000
          || _fieldAreaStart < 24 || _fieldAreaStart > 100000 )
        && (_recLength != 0))
     {
@@ -340,7 +340,7 @@ int DDFRecord::ReadHeader()
 /*      we will read extra bytes till we get to it.                     */
 /* -------------------------------------------------------------------- */
         while( pachData[nDataSize-1] != DDF_FIELD_TERMINATOR 
-               && (nDataSize < 2 || pachData[nDataSize-2] != DDF_FIELD_TERMINATOR) )
+               && (nDataSize == 0 || pachData[nDataSize-2] != DDF_FIELD_TERMINATOR) )
         {
             nDataSize++;
             pachData = (char *) CPLRealloc(pachData,nDataSize);
@@ -364,13 +364,6 @@ int DDFRecord::ReadHeader()
         int         nFieldEntryWidth;
       
         nFieldEntryWidth = _sizeFieldLength + _sizeFieldPos + _sizeFieldTag;
-        if( nFieldEntryWidth <= 0 )
-        {
-            CPLError( CE_Failure, CPLE_FileIO, 
-                      "Invalid entry width = %d", nFieldEntryWidth);
-            return FALSE;
-        }
-
         nFieldCount = 0;
         for( i = 0; i < nDataSize; i += nFieldEntryWidth )
         {
@@ -487,7 +480,6 @@ int DDFRecord::ReadHeader()
                (int) VSIFReadL(tmpBuf, 1, nFieldEntryWidth, poModule->GetFP())) {
                 CPLError(CE_Failure, CPLE_FileIO,
                          "Data record is short on DDF file.");
-                CPLFree(tmpBuf);
                 return FALSE;
             }
       
@@ -507,9 +499,6 @@ int DDFRecord::ReadHeader()
         }
         while(DDF_FIELD_TERMINATOR != tmpBuf[0]);
 
-        CPLFree(tmpBuf);
-        tmpBuf = NULL;
-
         // --------------------------------------------------------------------
         // Now, rewind a little.  Only the TERMINATOR should have been read
         // --------------------------------------------------------------------
@@ -526,34 +515,18 @@ int DDFRecord::ReadHeader()
             int nEntryOffset = (i*nFieldEntryWidth) + _sizeFieldTag;
             int nFieldLength = DDFScanInt(pachData + nEntryOffset,
                                           _sizeFieldLength);
-            char *tmpBuf = NULL;
-            if( nFieldLength >= 0 )
-                tmpBuf = (char*)VSIMalloc(nFieldLength);
-            if( tmpBuf == NULL )
-            {
-                CPLError(CE_Failure, CPLE_OutOfMemory,
-                         "Cannot allocate %d bytes", nFieldLength);
-                return FALSE;
-            }
+            char *tmpBuf = (char*)CPLMalloc(nFieldLength);
 
             // read an Entry:
             if(nFieldLength != 
                (int) VSIFReadL(tmpBuf, 1, nFieldLength, poModule->GetFP())) {
                 CPLError(CE_Failure, CPLE_FileIO,
                          "Data record is short on DDF file.");
-                CPLFree(tmpBuf);
                 return FALSE;
             }
       
             // move this temp buffer into more permanent storage:
-            char *newBuf = (char*)VSIMalloc(nDataSize+nFieldLength);
-            if( newBuf == NULL )
-            {
-                CPLError(CE_Failure, CPLE_OutOfMemory,
-                         "Cannot allocate %d bytes", nDataSize + nFieldLength);
-                CPLFree(tmpBuf);
-                return FALSE;
-            }
+            char *newBuf = (char*)CPLMalloc(nDataSize+nFieldLength);
             memcpy(newBuf, pachData, nDataSize);
             CPLFree(pachData);
             memcpy(&newBuf[nDataSize], tmpBuf, nFieldLength);

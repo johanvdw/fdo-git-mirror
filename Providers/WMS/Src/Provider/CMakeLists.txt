@@ -54,15 +54,16 @@ set( WMSProvider_SRCS
    FdoWmsGetFeatureInfoRequest.cpp
 )
 
-add_library( WMSProvider-${FDO_VERSION} SHARED ${WMSProvider_SRCS} )
+add_library( WMSProvider SHARED ${WMSProvider_SRCS} )
 
-target_link_libraries( WMSProvider-${FDO_VERSION}
-	FDO-${FDO_VERSION}
+target_link_libraries( WMSProvider
+	FDO
 	ProvidersCommon
-	FdoOws-${FDO_VERSION}
-	WMSOverrides-${FDO_VERSION}
+	FdoOws
+	WMSOverrides
 	${GDAL_LIBRARY}
 	pthread
  )
 
-install( TARGETS WMSProvider-${FDO_VERSION} DESTINATION ${LIB_INSTALL_DIR} )
+set_target_properties( WMSProvider PROPERTIES VERSION ${FDO_VERSION} SOVERSION ${FDO_VERSION_MAJOR} )
+install( TARGETS WMSProvider DESTINATION ${LIB_INSTALL_DIR} )

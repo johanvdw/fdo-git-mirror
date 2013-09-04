@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: pdsdataset.cpp 24757 2012-08-11 15:24:44Z rouault $
+ * $Id: pdsdataset.cpp 23471 2011-12-05 20:37:37Z rouault $
  *
  * Project:  PDS Driver; Planetary Data System Format
  * Purpose:  Implementation of PDSDataset
@@ -46,7 +46,7 @@
 #include "cpl_string.h" 
 #include "nasakeywordhandler.h"
 
-CPL_CVSID("$Id: pdsdataset.cpp 24757 2012-08-11 15:24:44Z rouault $");
+CPL_CVSID("$Id: pdsdataset.cpp 23471 2011-12-05 20:37:37Z rouault $");
 
 CPL_C_START
 void	GDALRegister_PDS(void);
@@ -71,8 +71,6 @@ class PDSDataset : public RawDataset
     CPLString   osProjection;
 
     CPLString   osTempResult;
-
-    CPLString   osExternalCube;
 
     void        ParseSRS();
     int         ParseCompressedImage();
@@ -185,11 +183,6 @@ char **PDSDataset::GetFileList()
         papszFileList = CSLInsertStrings( papszFileList, -1, 
                                           papszCFileList );
         CSLDestroy( papszCFileList );
-    }
-
-    if( !osExternalCube.empty() )
-    {
-        papszFileList = CSLAddString( papszFileList, osExternalCube );
     }
 
     return papszFileList;
@@ -653,7 +646,7 @@ int PDSDataset::ParseImage( CPLString osPrefix )
     int nDetachedOffset = 0;
     int bDetachedOffsetInBytes = FALSE;
 
-    if( osQube.size() && osQube[0] == '(' )
+    if( osQube[0] == '(' )
     {
         osQube = "\"";
         osQube += GetKeywordSub( osImageKeyword, 1 );
@@ -666,13 +659,12 @@ int PDSDataset::ParseImage( CPLString osPrefix )
             bDetachedOffsetInBytes = TRUE;
     }
 
-    if( osQube.size() && osQube[0] == '"' )
+    if( osQube[0] == '"' )
     {
         CPLString osTPath = CPLGetPath(GetDescription());
         CPLString osFilename = osQube;
         CleanString( osFilename );
         osTargetFile = CPLFormCIFilename( osTPath, osFilename, NULL );
-        osExternalCube = osTargetFile;
     }
 
     GDALDataType eDataType = GDT_Byte;

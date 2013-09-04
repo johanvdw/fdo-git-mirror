@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2011, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2010, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -18,9 +18,9 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
+ * $Id: curl_threads.c,v 1.2 2010-01-29 17:47:54 yangtse Exp $
  ***************************************************************************/
-
-#include "curl_setup.h"
+#include "setup.h"
 
 #if defined(USE_THREADS_POSIX)
 #  ifdef HAVE_PTHREAD_H
@@ -45,7 +45,7 @@
 
 struct curl_actual_call {
   unsigned int (*func)(void *);
-  void *arg;
+  void *arg;  
 };
 
 static void *curl_thread_create_thunk(void *arg)
@@ -96,8 +96,7 @@ int Curl_thread_join(curl_thread_t *hnd)
 
 #elif defined(USE_THREADS_WIN32)
 
-curl_thread_t Curl_thread_create(unsigned int (CURL_STDCALL *func) (void*),
-                                 void *arg)
+curl_thread_t Curl_thread_create(unsigned int (CURL_STDCALL *func) (void*), void *arg)
 {
 #ifdef _WIN32_WCE
   return CreateThread(NULL, 0, func, arg, 0, NULL);

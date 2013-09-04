@@ -1,5 +1,5 @@
 /*
- * $Id: gdal_python.i 25101 2012-10-11 20:47:28Z rouault $
+ * $Id: gdal_python.i 22938 2011-08-15 18:12:28Z rouault $
  *
  * python specific code for gdal bindings.
  */
@@ -229,44 +229,6 @@ int wrapper_VSIFReadL( void **buf, int nMembSize, int nMembCount, VSILFILE *fp)
 %clear (void **buf );
 %clear (int*);
 
-%apply ( void **outPythonObject ) { (void **buf ) };
-%feature( "kwargs" ) ReadBlock;
-  CPLErr ReadBlock( int xoff, int yoff, void **buf) {
-
-    int nBlockXSize, nBlockYSize;
-    GDALGetBlockSize(self, &nBlockXSize, &nBlockYSize);
-    int nDataTypeSize = (GDALGetDataTypeSize(GDALGetRasterDataType(self)) / 8);
-    GIntBig buf_size = (GIntBig)nBlockXSize * nBlockYSize * nDataTypeSize;
-
-%#if PY_VERSION_HEX >= 0x03000000 
-    *buf = (void *)PyBytes_FromStringAndSize( NULL, buf_size ); 
-    if (*buf == NULL)
-    {
-        *buf = Py_None;
-        CPLError(CE_Failure, CPLE_OutOfMemory, "Cannot allocate result buffer");
-        return CE_Failure;
-    }
-    char *data = PyBytes_AsString( (PyObject *)*buf ); 
-%#else 
-    *buf = (void *)PyString_FromStringAndSize( NULL, buf_size ); 
-    if (*buf == NULL)
-    {
-        CPLError(CE_Failure, CPLE_OutOfMemory, "Cannot allocate result buffer");
-        return CE_Failure;
-    }
-    char *data = PyString_AsString( (PyObject *)*buf ); 
-%#endif
-    CPLErr eErr = GDALReadBlock( self, xoff, yoff, (void *) data); 
-    if (eErr == CE_Failure)
-    {
-        Py_DECREF((PyObject*)*buf);
-        *buf = NULL;
-    }
-    return eErr;
-  }
-%clear (void **buf );
-
-
 %pythoncode {
 
   def ReadRaster(self, xoff, yoff, xsize, ysize,
@@ -422,7 +384,7 @@ CPLErr ReadRaster1(  int xoff, int yoff, int xsize, int ysize,
             return sd_list
 
         i = 1
-        while 'SUBDATASET_'+str(i)+'_NAME' in sd:
+        while sd.has_key('SUBDATASET_'+str(i)+'_NAME'):
             sd_list.append( ( sd['SUBDATASET_'+str(i)+'_NAME'],
                               sd['SUBDATASET_'+str(i)+'_DESC'] ) )
             i = i + 1
@@ -465,4 +427,70 @@ CPLErr ReadRaster1(  int xoff, int yoff, int xsize, int ysize,
 }
 }
 
-%include "callback.i"
+/* ==================================================================== */
+/*	Support function for progress callbacks to python.              */
+/* ==================================================================== */
+
+%{
+
+typedef struct {
+    PyObject *psPyCallback;
+    PyObject *psPyCallbackData;
+    int nLastReported;
+} PyProgressData;
+
+/************************************************************************/
+/*                          PyProgressProxy()                           */
+/************************************************************************/
+
+int CPL_STDCALL
+PyProgressProxy( double dfComplete, const char *pszMessage, void *pData )
+
+{
+    PyProgressData *psInfo = (PyProgressData *) pData;
+    PyObject *psArgs, *psResult;
+    int      bContinue = TRUE;
+
+    if( psInfo->nLastReported == (int) (100.0 * dfComplete) )
+        return TRUE;
+
+    if( psInfo->psPyCallback == NULL || psInfo->psPyCallback == Py_None )
+        return TRUE;
+
+    psInfo->nLastReported = (int) (100.0 * dfComplete);
+    
+    if( pszMessage == NULL )
+        pszMessage = "";
+
+    if( psInfo->psPyCallbackData == NULL )
+        psArgs = Py_BuildValue("(dsO)", dfComplete, pszMessage, Py_None );
+    else
+        psArgs = Py_BuildValue("(dsO)", dfComplete, pszMessage, 
+	                       psInfo->psPyCallbackData );
+
+    psResult = PyEval_CallObject( psInfo->psPyCallback, psArgs);
+    Py_XDECREF(psArgs);
+
+    if( psResult == NULL )
+    {
+        return TRUE;
+    }
+
+    if( psResult == Py_None )
+    {
+	Py_XDECREF(Py_None);
+        return TRUE;
+    }
+
+    if( !PyArg_Parse( psResult, "i", &bContinue ) )
+    {
+        PyErr_SetString(PyExc_ValueError, "bad progress return value");
+	return FALSE;
+    }
+
+    Py_XDECREF(psResult);
+
+    return bContinue;    
+}
+%}
+

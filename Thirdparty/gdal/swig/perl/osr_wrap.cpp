@@ -2189,7 +2189,7 @@ CreateArrayFromDoubleArray( double *first, unsigned int size ) {
     av_store(av,i,newSVnv(*first));
     ++first;
   }
-  return sv_2mortal(newRV((SV*)av));
+  return newRV_noinc((SV*)av);
 }
 
 SWIGINTERN OGRErr OSRSpatialReferenceShadow_GetTOWGS84(OSRSpatialReferenceShadow *self,double argout[7]){
@@ -2247,9 +2247,6 @@ SWIGINTERN OGRErr OSRSpatialReferenceShadow_ImportFromERM(OSRSpatialReferenceSha
   }
 SWIGINTERN OGRErr OSRSpatialReferenceShadow_ImportFromMICoordSys(OSRSpatialReferenceShadow *self,char const *pszCoordSys){
     return OSRImportFromMICoordSys( self, pszCoordSys );
-  }
-SWIGINTERN OGRErr OSRSpatialReferenceShadow_ImportFromOzi(OSRSpatialReferenceShadow *self,char const *datum,char const *proj,char const *projParms){
-    return OSRImportFromOzi( self, datum, proj, projParms );
   }
 SWIGINTERN OGRErr OSRSpatialReferenceShadow_ExportToWkt(OSRSpatialReferenceShadow *self,char **argout){
     return OSRExportToWkt( self, argout );
@@ -2321,12 +2318,6 @@ SWIGINTERN void OSRCoordinateTransformationShadow_TransformPoints(OSRCoordinateT
         return;
     OCTTransform( self, nCount, x, y, z );
   }
-
-  OSRCoordinateTransformationShadow *CreateCoordinateTransformation( OSRSpatialReferenceShadow *src, OSRSpatialReferenceShadow *dst ) {
-    OSRCoordinateTransformationShadow *obj = (OSRCoordinateTransformationShadow*) OCTNewCoordinateTransformation( src, dst );
-    return obj;
-}
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -2616,8 +2607,7 @@ XS(_wrap_GetProjectionMethods) {
           }
           CSLDestroy(result);
         }
-        ST(argvi) = newRV((SV*)av);
-        sv_2mortal(ST(argvi));
+        ST(argvi) = newRV_noinc((SV*)av);
         argvi++;
       }
     }
@@ -2655,7 +2645,7 @@ XS(_wrap_GetProjectionMethodParameterList) {
     {
       /* %typemap(check) (char *method) */
       if (!arg1)
-      SWIG_croak("The method must not be undefined when it is an argument to a Geo::GDAL method");
+      SWIG_croak("The method must not be undefined");
     }
     {
       CPLErrorReset();
@@ -2694,8 +2684,7 @@ XS(_wrap_GetProjectionMethodParameterList) {
         }
         CSLDestroy(result);
       }
-      ST(argvi) = newRV((SV*)av);
-      sv_2mortal(ST(argvi));
+      ST(argvi) = newRV_noinc((SV*)av);
       argvi++;
     }
     {
@@ -2763,7 +2752,7 @@ XS(_wrap_GetProjectionMethodParamInfo) {
     {
       /* %typemap(check) (char *method) */
       if (!arg1)
-      SWIG_croak("The method must not be undefined when it is an argument to a Geo::GDAL method");
+      SWIG_croak("The method must not be undefined");
     }
     {
       CPLErrorReset();
@@ -2789,9 +2778,7 @@ XS(_wrap_GetProjectionMethodParamInfo) {
       
       
     }
-    {
-      /* %typemap(out) void */
-    }
+    ST(argvi) = sv_newmortal();
     {
       /* %typemap(argout) (char **argout) */
       ST(argvi) = sv_newmortal();
@@ -2927,9 +2914,7 @@ XS(_wrap_delete_SpatialReference) {
       
       
     }
-    {
-      /* %typemap(out) void */
-    }
+    ST(argvi) = sv_newmortal();
     
     XSRETURN(argvi);
   fail:
@@ -2989,7 +2974,7 @@ XS(_wrap_SpatialReference___str__) {
     }
     else
     {
-      ST(argvi) = &PL_sv_undef;
+      ST(argvi) = sv_newmortal();
     }
     argvi++ ;
     
@@ -4306,11 +4291,7 @@ XS(_wrap_SpatialReference_GetAuthorityCode) {
     char *result = 0 ;
     dXSARGS;
     
-    {
-      /* %typemap(default) const char * target_key */
-      arg2 = NULL;
-    }
-    if ((items < 1) || (items > 2)) {
+    if ((items < 2) || (items > 2)) {
       SWIG_croak("Usage: SpatialReference_GetAuthorityCode(self,target_key);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_OSRSpatialReferenceShadow, 0 |  0 );
@@ -4318,13 +4299,11 @@ XS(_wrap_SpatialReference_GetAuthorityCode) {
       SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "SpatialReference_GetAuthorityCode" "', argument " "1"" of type '" "OSRSpatialReferenceShadow *""'"); 
     }
     arg1 = reinterpret_cast< OSRSpatialReferenceShadow * >(argp1);
-    if (items > 1) {
-      res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
-      if (!SWIG_IsOK(res2)) {
-        SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "SpatialReference_GetAuthorityCode" "', argument " "2"" of type '" "char const *""'");
-      }
-      arg2 = reinterpret_cast< char * >(buf2);
+    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "SpatialReference_GetAuthorityCode" "', argument " "2"" of type '" "char const *""'");
     }
+    arg2 = reinterpret_cast< char * >(buf2);
     {
       CPLErrorReset();
       result = (char *)OSRSpatialReferenceShadow_GetAuthorityCode(arg1,(char const *)arg2);
@@ -4380,11 +4359,7 @@ XS(_wrap_SpatialReference_GetAuthorityName) {
     char *result = 0 ;
     dXSARGS;
     
-    {
-      /* %typemap(default) const char * target_key */
-      arg2 = NULL;
-    }
-    if ((items < 1) || (items > 2)) {
+    if ((items < 2) || (items > 2)) {
       SWIG_croak("Usage: SpatialReference_GetAuthorityName(self,target_key);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_OSRSpatialReferenceShadow, 0 |  0 );
@@ -4392,13 +4367,11 @@ XS(_wrap_SpatialReference_GetAuthorityName) {
       SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "SpatialReference_GetAuthorityName" "', argument " "1"" of type '" "OSRSpatialReferenceShadow *""'"); 
     }
     arg1 = reinterpret_cast< OSRSpatialReferenceShadow * >(argp1);
-    if (items > 1) {
-      res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
-      if (!SWIG_IsOK(res2)) {
-        SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "SpatialReference_GetAuthorityName" "', argument " "2"" of type '" "char const *""'");
-      }
-      arg2 = reinterpret_cast< char * >(buf2);
+    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "SpatialReference_GetAuthorityName" "', argument " "2"" of type '" "char const *""'");
     }
+    arg2 = reinterpret_cast< char * >(buf2);
     {
       CPLErrorReset();
       result = (char *)OSRSpatialReferenceShadow_GetAuthorityName(arg1,(char const *)arg2);
@@ -10600,9 +10573,9 @@ XS(_wrap_SpatialReference_ImportFromESRI) {
               arg2 = CSLAddNameValue( arg2, key, SvPV_nolen(sv) );
             }
           } else
-          SWIG_croak("the 'options' argument to a Geo::GDAL method is not a reference to an array or hash");
+          SWIG_croak("'options' is not a reference to an array or hash");
         } else
-        SWIG_croak("the 'options' argument to a Geo::GDAL method is not a reference");   
+        SWIG_croak("'options' is not a reference");   
       }
     }
     {
@@ -10833,7 +10806,7 @@ XS(_wrap_SpatialReference_ImportFromPCI) {
       {
         /* %typemap(in) (double argin4[ANY]) */
         if (!(SvROK(ST(3)) && (SvTYPE(SvRV(ST(3)))==SVt_PVAV)))
-        SWIG_croak("expected a reference to an array as an argument to a Geo::GDAL method");
+        SWIG_croak("expected a reference to an array");
         arg4 = argin4;
         AV *av = (AV*)(SvRV(ST(3)));
         for (unsigned int i=0; i<17; i++) {
@@ -10933,7 +10906,7 @@ XS(_wrap_SpatialReference_ImportFromUSGS) {
       {
         /* %typemap(in) (double argin4[ANY]) */
         if (!(SvROK(ST(3)) && (SvTYPE(SvRV(ST(3)))==SVt_PVAV)))
-        SWIG_croak("expected a reference to an array as an argument to a Geo::GDAL method");
+        SWIG_croak("expected a reference to an array");
         arg4 = argin4;
         AV *av = (AV*)(SvRV(ST(3)));
         for (unsigned int i=0; i<15; i++) {
@@ -11232,112 +11205,6 @@ XS(_wrap_SpatialReference_ImportFromMICoordSys) {
   fail:
     
     if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
-    SWIG_croak_null();
-  }
-}
-
-
-XS(_wrap_SpatialReference_ImportFromOzi) {
-  {
-    OSRSpatialReferenceShadow *arg1 = (OSRSpatialReferenceShadow *) 0 ;
-    char *arg2 = (char *) 0 ;
-    char *arg3 = (char *) 0 ;
-    char *arg4 = (char *) 0 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    int res2 ;
-    char *buf2 = 0 ;
-    int alloc2 = 0 ;
-    int res3 ;
-    char *buf3 = 0 ;
-    int alloc3 = 0 ;
-    int res4 ;
-    char *buf4 = 0 ;
-    int alloc4 = 0 ;
-    int argvi = 0;
-    OGRErr result;
-    dXSARGS;
-    
-    if ((items < 4) || (items > 4)) {
-      SWIG_croak("Usage: SpatialReference_ImportFromOzi(self,datum,proj,projParms);");
-    }
-    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_OSRSpatialReferenceShadow, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "SpatialReference_ImportFromOzi" "', argument " "1"" of type '" "OSRSpatialReferenceShadow *""'"); 
-    }
-    arg1 = reinterpret_cast< OSRSpatialReferenceShadow * >(argp1);
-    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
-    if (!SWIG_IsOK(res2)) {
-      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "SpatialReference_ImportFromOzi" "', argument " "2"" of type '" "char const *""'");
-    }
-    arg2 = reinterpret_cast< char * >(buf2);
-    res3 = SWIG_AsCharPtrAndSize(ST(2), &buf3, NULL, &alloc3);
-    if (!SWIG_IsOK(res3)) {
-      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "SpatialReference_ImportFromOzi" "', argument " "3"" of type '" "char const *""'");
-    }
-    arg3 = reinterpret_cast< char * >(buf3);
-    res4 = SWIG_AsCharPtrAndSize(ST(3), &buf4, NULL, &alloc4);
-    if (!SWIG_IsOK(res4)) {
-      SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "SpatialReference_ImportFromOzi" "', argument " "4"" of type '" "char const *""'");
-    }
-    arg4 = reinterpret_cast< char * >(buf4);
-    {
-      if (!arg2) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
-      if (!arg3) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
-      if (!arg4) {
-        SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-      }
-    }
-    {
-      CPLErrorReset();
-      result = (OGRErr)OSRSpatialReferenceShadow_ImportFromOzi(arg1,(char const *)arg2,(char const *)arg3,(char const *)arg4);
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
-        
-        
-        
-      }
-      
-      
-      /* 
-          Make warnings regular Perl warnings. This duplicates the warning
-          message if DontUseExceptions() is in effect (it is not by default).
-          */
-      if ( eclass == CE_Warning ) {
-        warn( CPLGetLastErrorMsg(), "%s" );
-      }
-      
-      
-    }
-    {
-      /* %typemap(out) OGRErr */
-      if ( result != 0 ) {
-        const char *err = CPLGetLastErrorMsg();
-        if (err and *err) SWIG_croak(err); /* this is usually better */
-        SWIG_croak( OGRErrMessages(result) );
-      }
-    }
-    
-    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
-    if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
-    if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
-    XSRETURN(argvi);
-  fail:
-    
-    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
-    if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
-    if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
     SWIG_croak_null();
   }
 }
@@ -12553,7 +12420,7 @@ XS(_wrap_delete_CoordinateTransformation) {
     {
       /* %typemap(check) (OSRCoordinateTransformationShadow *) */
       if (!arg1)
-      SWIG_croak("The coordinate transformation must not be undefined when it is an argument to a Geo::GDAL method");
+      SWIG_croak("The coordinate transformation must not be undefined");
     }
     {
       CPLErrorReset();
@@ -12579,9 +12446,7 @@ XS(_wrap_delete_CoordinateTransformation) {
       
       
     }
-    {
-      /* %typemap(out) void */
-    }
+    ST(argvi) = sv_newmortal();
     
     XSRETURN(argvi);
   fail:
@@ -12613,7 +12478,7 @@ XS(_wrap_CoordinateTransformation_TransformPoint__SWIG_0) {
     {
       /* %typemap(in) (double argin2[ANY]) */
       if (!(SvROK(ST(1)) && (SvTYPE(SvRV(ST(1)))==SVt_PVAV)))
-      SWIG_croak("expected a reference to an array as an argument to a Geo::GDAL method");
+      SWIG_croak("expected a reference to an array");
       arg2 = argin2;
       AV *av = (AV*)(SvRV(ST(1)));
       for (unsigned int i=0; i<3; i++) {
@@ -12624,7 +12489,7 @@ XS(_wrap_CoordinateTransformation_TransformPoint__SWIG_0) {
     {
       /* %typemap(check) (OSRCoordinateTransformationShadow *) */
       if (!arg1)
-      SWIG_croak("The coordinate transformation must not be undefined when it is an argument to a Geo::GDAL method");
+      SWIG_croak("The coordinate transformation must not be undefined");
     }
     _saved[0] = ST(1);
     {
@@ -12651,9 +12516,7 @@ XS(_wrap_CoordinateTransformation_TransformPoint__SWIG_0) {
       
       
     }
-    {
-      /* %typemap(out) void */
-    }
+    ST(argvi) = sv_newmortal();
     {
       /* %typemap(argout) (double argout[ANY]) */
       if (GIMME_V == G_ARRAY) {
@@ -12729,7 +12592,7 @@ XS(_wrap_CoordinateTransformation_TransformPoint__SWIG_1) {
     {
       /* %typemap(check) (OSRCoordinateTransformationShadow *) */
       if (!arg1)
-      SWIG_croak("The coordinate transformation must not be undefined when it is an argument to a Geo::GDAL method");
+      SWIG_croak("The coordinate transformation must not be undefined");
     }
     {
       CPLErrorReset();
@@ -12755,9 +12618,7 @@ XS(_wrap_CoordinateTransformation_TransformPoint__SWIG_1) {
       
       
     }
-    {
-      /* %typemap(out) void */
-    }
+    ST(argvi) = sv_newmortal();
     {
       /* %typemap(argout) (double argout[ANY]) */
       if (GIMME_V == G_ARRAY) {
@@ -12916,18 +12777,18 @@ XS(_wrap_CoordinateTransformation__TransformPoints) {
       /* %typemap(in) (int nCount, double *x, double *y, double *z) */
       /* ST(1) is a ref to a list of refs to point lists */
       if (! (SvROK(ST(1)) && (SvTYPE(SvRV(ST(1)))==SVt_PVAV)))
-      SWIG_croak("expected a reference to an array as an argument to a Geo::GDAL method");
+      SWIG_croak("expected a reference to an array");
       AV *av = (AV*)(SvRV(ST(1)));
       arg2 = av_len(av)+1;
       arg3 = (double*) malloc(arg2*sizeof(double));
       arg4 = (double*) malloc(arg2*sizeof(double));
       arg5 = (double*) malloc(arg2*sizeof(double));
       if (!arg3 or !arg4 or !arg5)
-      SWIG_croak("out of memory in Geo::GDAL");
+      SWIG_croak("out of memory");
       for (int i = 0; i < arg2; i++) {
         SV **sv = av_fetch(av, i, 0); /* ref to one point list */
         if (!(SvROK(*sv) && (SvTYPE(SvRV(*sv))==SVt_PVAV)))
-        SWIG_croak("expected a reference to a list of coordinates as an argument to a Geo::GDAL method");
+        SWIG_croak("expected a reference to a list of coordinates");
         AV *ac = (AV*)(SvRV(*sv));
         int n = av_len(ac)+1;
         SV **c = av_fetch(ac, 0, 0);
@@ -12945,7 +12806,7 @@ XS(_wrap_CoordinateTransformation__TransformPoints) {
     {
       /* %typemap(check) (OSRCoordinateTransformationShadow *) */
       if (!arg1)
-      SWIG_croak("The coordinate transformation must not be undefined when it is an argument to a Geo::GDAL method");
+      SWIG_croak("The coordinate transformation must not be undefined");
     }
     _saved[0] = ST(1);
     {
@@ -12972,9 +12833,7 @@ XS(_wrap_CoordinateTransformation__TransformPoints) {
       
       
     }
-    {
-      /* %typemap(out) void */
-    }
+    ST(argvi) = sv_newmortal();
     {
       /* %typemap(argout) (int nCount, double *x, double *y, double *z) */
       AV *av = (AV*)(SvRV(_saved[0]));
@@ -13009,67 +12868,6 @@ XS(_wrap_CoordinateTransformation__TransformPoints) {
       if (arg4) free(arg4);
       if (arg5) free(arg5);
     }
-    SWIG_croak_null();
-  }
-}
-
-
-XS(_wrap_CreateCoordinateTransformation) {
-  {
-    OSRSpatialReferenceShadow *arg1 = (OSRSpatialReferenceShadow *) 0 ;
-    OSRSpatialReferenceShadow *arg2 = (OSRSpatialReferenceShadow *) 0 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    void *argp2 = 0 ;
-    int res2 = 0 ;
-    int argvi = 0;
-    OSRCoordinateTransformationShadow *result = 0 ;
-    dXSARGS;
-    
-    if ((items < 2) || (items > 2)) {
-      SWIG_croak("Usage: CreateCoordinateTransformation(src,dst);");
-    }
-    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_OSRSpatialReferenceShadow, 0 |  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CreateCoordinateTransformation" "', argument " "1"" of type '" "OSRSpatialReferenceShadow *""'"); 
-    }
-    arg1 = reinterpret_cast< OSRSpatialReferenceShadow * >(argp1);
-    res2 = SWIG_ConvertPtr(ST(1), &argp2,SWIGTYPE_p_OSRSpatialReferenceShadow, 0 |  0 );
-    if (!SWIG_IsOK(res2)) {
-      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "CreateCoordinateTransformation" "', argument " "2"" of type '" "OSRSpatialReferenceShadow *""'"); 
-    }
-    arg2 = reinterpret_cast< OSRSpatialReferenceShadow * >(argp2);
-    {
-      CPLErrorReset();
-      result = (OSRCoordinateTransformationShadow *)CreateCoordinateTransformation(arg1,arg2);
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception_fail( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-        
-        
-        
-        
-        
-      }
-      
-      
-      /* 
-          Make warnings regular Perl warnings. This duplicates the warning
-          message if DontUseExceptions() is in effect (it is not by default).
-          */
-      if ( eclass == CE_Warning ) {
-        warn( CPLGetLastErrorMsg(), "%s" );
-      }
-      
-      
-    }
-    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_OSRCoordinateTransformationShadow, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
-    
-    
-    XSRETURN(argvi);
-  fail:
-    
-    
     SWIG_croak_null();
   }
 }
@@ -13237,7 +13035,6 @@ static swig_command_info swig_commands[] = {
 {"Geo::OSRc::SpatialReference_ImportFromXML", _wrap_SpatialReference_ImportFromXML},
 {"Geo::OSRc::SpatialReference_ImportFromERM", _wrap_SpatialReference_ImportFromERM},
 {"Geo::OSRc::SpatialReference_ImportFromMICoordSys", _wrap_SpatialReference_ImportFromMICoordSys},
-{"Geo::OSRc::SpatialReference_ImportFromOzi", _wrap_SpatialReference_ImportFromOzi},
 {"Geo::OSRc::SpatialReference_ExportToWkt", _wrap_SpatialReference_ExportToWkt},
 {"Geo::OSRc::SpatialReference_ExportToPrettyWkt", _wrap_SpatialReference_ExportToPrettyWkt},
 {"Geo::OSRc::SpatialReference_ExportToProj4", _wrap_SpatialReference_ExportToProj4},
@@ -13257,7 +13054,6 @@ static swig_command_info swig_commands[] = {
 {"Geo::OSRc::delete_CoordinateTransformation", _wrap_delete_CoordinateTransformation},
 {"Geo::OSRc::CoordinateTransformation_TransformPoint", _wrap_CoordinateTransformation_TransformPoint},
 {"Geo::OSRc::CoordinateTransformation__TransformPoints", _wrap_CoordinateTransformation__TransformPoints},
-{"Geo::OSRc::CreateCoordinateTransformation", _wrap_CreateCoordinateTransformation},
 {0,0}
 };
 /* -----------------------------------------------------------------------------
@@ -13650,11 +13446,6 @@ XS(SWIG_init) {
   /*@SWIG:/usr/share/swig1.3/perl5/perltypemaps.swg,65,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_GNOMONIC", TRUE | 0x2 | GV_ADDMULTI);
     sv_setsv(sv, SWIG_FromCharPtr("Gnomonic"));
-    SvREADONLY_on(sv);
-  } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/share/swig1.3/perl5/perltypemaps.swg,65,%set_constant@*/ do {
-    SV *sv = get_sv((char*) SWIG_prefix "SRS_PT_HOTINE_OBLIQUE_MERCATOR_AZIMUTH_CENTER", TRUE | 0x2 | GV_ADDMULTI);
-    sv_setsv(sv, SWIG_FromCharPtr("Hotine_Oblique_Mercator_Azimuth_Center"));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
   /*@SWIG:/usr/share/swig1.3/perl5/perltypemaps.swg,65,%set_constant@*/ do {

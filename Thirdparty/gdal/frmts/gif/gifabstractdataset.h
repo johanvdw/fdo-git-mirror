@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gifabstractdataset.h 24340 2012-04-28 23:07:09Z rouault $
+ * $Id: gifabstractdataset.h 22685 2011-07-10 19:31:35Z rouault $
  *
  * Project:  GIF Driver
  * Purpose:  GIF Abstract Dataset
@@ -72,6 +72,8 @@ class GIFAbstractDataset : public GDALPamDataset
     virtual const GDAL_GCP *GetGCPs();
 
     virtual char  **GetMetadata( const char * pszDomain = "" );
+    virtual const char *GetMetadataItem( const char * pszName,
+                                         const char * pszDomain = "" );
 
     static int          Identify( GDALOpenInfo * );
 };

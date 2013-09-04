@@ -4,8 +4,7 @@ include ../../../GDALmake.opt
 
 OBJ	=	ogrsfdriverregistrar.o ogrlayer.o ogrdatasource.o \
 		ogrsfdriver.o ogrregisterall.o ogr_gensql.o \
-		ogr_attrind.o ogr_miattrind.o ogrlayerdecorator.o \
-		ogrwarpedlayer.o ogrunionlayer.o ogrlayerpool.o
+		ogr_attrind.o ogr_miattrind.o
 
 BASEFORMATS = \
 	-DAVCBIN_ENABLED \
@@ -135,7 +134,8 @@ ifeq ($(HAVE_PANORAMA),yes)
 CXXFLAGS :=	$(CXXFLAGS) -DPANORAMA_ENABLED
 endif
 
-ifeq ($(HAVE_SQLITE),yes)
+ifeq ($(HAVE_VFK),yes)
+CFLAGS   :=	$(CFLAGS) -DVFK_ENABLED
 CXXFLAGS :=	$(CXXFLAGS) -DVFK_ENABLED
 endif
 
@@ -161,26 +161,6 @@ endif
 
 ifeq ($(HAVE_FREEXL),yes)
 CXXFLAGS :=	$(CXXFLAGS) -DFREEXL_ENABLED
-endif
-
-ifeq ($(HAVE_EXPAT),yes)
-CXXFLAGS :=	$(CXXFLAGS) -DODS_ENABLED
-endif
-
-ifeq ($(HAVE_EXPAT),yes)
-CXXFLAGS :=	$(CXXFLAGS) -DXLSX_ENABLED
-endif
-
-ifeq ($(CURL_SETTING),yes)
-CXXFLAGS :=	$(CXXFLAGS) -DELASTIC_ENABLED
-endif
-
-ifeq ($(HAVE_SQLITE),yes)
-CXXFLAGS :=	$(CXXFLAGS) -DOSM_ENABLED
-endif
-
-ifneq ($(LIBZ_SETTING),no)
-CXXFLAGS :=	$(CXXFLAGS) -DPDF_ENABLED
 endif
 
 CPPFLAGS	:=	-I.. -I../.. $(GDAL_INCLUDE) $(CPPFLAGS)

@@ -435,7 +435,6 @@ int main(int argc,char **argv)
 	    EXIT(3);
 	    }
 	}
-	fclose(f);
 
 #ifndef OPENSSL_NO_ENGINE
     ENGINE_cleanup();

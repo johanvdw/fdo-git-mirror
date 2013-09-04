@@ -1,7 +1,7 @@
 #!/bin/sh
 
 ##
-## Copyright (C) 2013  Autodesk, Inc.
+## Copyright (C) 2004-2006  Autodesk, Inc.
 ## 
 ## This library is free software; you can redistribute it and/or
 ## modify it under the terms of version 2.1 of the GNU Lesser
@@ -20,9 +20,8 @@
 TYPEACTION=buildinstall
 TYPEBUILD=release
 TYPECONFIGURE=configure
-TYPEARCHITECTURE=32
 BUILDDOCS=skip
-PREFIXVAL=/usr/local/fdo-3.8.1
+PREFIXVAL=/usr/local/fdo-3.8.0
 
 DEFMODIFY=no
 FDOCOREENABLE=yes
@@ -50,15 +49,6 @@ do
   -h | --h | --help)
     SHOWHELP=yes
     break
-    ;;
-  -b | --b | --build)
-    if test "$1" == ""; then
-        echo "$arg Invalid parameter $1"
-        exit 1
-    else
-        TYPEARCHITECTURE="$1"
-    fi
-    shift
     ;;
   -a | --a | --action)
     if test "$1" == buildinstall; then
@@ -152,7 +142,7 @@ do
         KINGORACLEENABLE=yes
         SQLITEENABLE=yes
     elif test "$1" == fdocore; then
-        FDOCOREENABLE=yes
+		FDOCOREENABLE=yes
     elif test "$1" == fdo; then
         FDOENABLE=yes
     elif test "$1" == utilities; then
@@ -215,11 +205,9 @@ done
 if test "$FDO" == "" ; then
     export FDO="$PWD/Fdo"
 fi
-
 if test "$FDOTHIRDPARTY" == "" ; then
     export FDOTHIRDPARTY="$PWD/Thirdparty"
 fi
-
 if test "$FDOUTILITIES" == "" ; then
     export FDOUTILITIES="$PWD/Utilities"
 fi
@@ -236,17 +224,15 @@ if test "$SHOWHELP" == yes; then
    echo "               [--d BuildDocs]"
    echo "               [--m ConfigMakefiles]"
    echo "               [--p Prefix]"
-   echo "               [--b BuildArchicture]"
-   echo " "
-   echo "Help:                  --h[elp]"
-   echo "BuildType:             --c[onfig] release(default), debug"
-   echo "Action:                --a[ction] buildinstall(default), build, install, uninstall, clean"
-   echo "BuildDocs:             --d[ocs] skip(default), build"
-   echo "ConfigMakefiles:       --m[akefile] configure(default), noconfigure"
-   echo "BuildArchitecture:     --b[uild] 32(default), 64"
-   echo "Prefix:                --p[refix] <fdo install location>"
+   echo "*"
+   echo "Help:            --h[elp]"
+   echo "BuildType:       --c[onfig] release(default), debug"
+   echo "Action:          --a[ction] buildinstall(default), build, install, uninstall, clean"
+   echo "BuildDocs:       --d[ocs] skip(default), build"
+   echo "ConfigMakefiles: --m[akefile] configure(default), noconfigure"
+   echo "Prefix:          --p[refix] <fdo install location>"
 
-   HELPSTRINGWITH="WithModule:            --w[ith] all(default), fdocore, fdo, utilities, providers"
+   HELPSTRINGWITH="WithModule:      --w[ith] all(default), fdocore, fdo, utilities, providers"
    if test -e "Providers/SHP/build_linux.sh"; then
    HELPSTRINGWITH="$HELPSTRINGWITH, shp"
    fi
@@ -283,79 +269,20 @@ if test "$SHOWHELP" == yes; then
    exit 0
 fi
 
-if [[ "$CFLAGS" != *"-m$TYPEARCHITECTURE"* ]]; then
-CFLAGS="$CFLAGS -m$TYPEARCHITECTURE"
-echo "Exporting CFLAGS: "$CFLAGS""
-export CFLAGS
-fi
-
-if [[ "$CPPFLAGS" != *"-m$TYPEARCHITECTURE"* ]]; then
-CPPFLAGS="$CPPFLAGS -m$TYPEARCHITECTURE"
-echo "Exporting CPPFLAGS: "$CPPFLAGS""
-export CPPFLAGS
-fi
-
-if [[ "$LDFLAGS" != *"-m$TYPEARCHITECTURE"* ]]; then
-LDFLAGS="$LDFLAGS -m$TYPEARCHITECTURE"
-echo "Exporting LDFLAGS: "$LDFLAGS""
-export LDFLAGS
-fi
-
-if test "$TYPEARCHITECTURE" == "32" ; then
-if test "$HOSTTYPE" == "i686" ; then
-if [[ "$CPPFLAGS" != *"-march=i686"* ]]; then
-CPPFLAGS="$CPPFLAGS -march=i686"
-echo "Exporting CPPFLAGS: "$CPPFLAGS""
-export CPPFLAGS
-fi
-fi
-fi
-
-if [[ "$CPPFLAGS" != *"-Wno-write-strings"* ]]; then
-CPPFLAGS="$CPPFLAGS -Wno-write-strings"
-echo "Exporting CPPFLAGS: "$CPPFLAGS""
-export CPPFLAGS
-fi
-
-if [[ "$CPPFLAGS" != *"-Wno-deprecated"* ]]; then
-CPPFLAGS="$CPPFLAGS -Wno-deprecated"
-echo "Exporting CPPFLAGS: "$CPPFLAGS""
-export CPPFLAGS
-fi
-
 ### configure build ###
 if test "$TYPECONFIGURE" == configure ; then
    if test "$FDOCOREENABLE" == yes || test "$THRPENABLE" == yes || test "$FDOENABLE" == yes || test "$UTILENABLE" == yes; then
       echo "configuring fdocore"
-	  
-      if test -e "m4"; then
-         echo "m4 directory exists"
-      else
-         mkdir m4
-      fi
-   
       aclocal
-      if [ "$?" -ne 0 ] ; then
-        exit 1
-      fi
-      
-	  libtoolize --force
-      if [ "$?" -ne 0 ] ; then
-        exit 1
-      fi
-
+      libtoolize --force
       automake --add-missing --copy
-      if [ "$?" -ne 0 ] ; then
-        exit 1
-      fi
-
       autoconf
-      if [ "$?" -ne 0 ] ; then
-        exit 1
+
+      if test "$HOSTTYPE" == "i686" ; then
+         export CPPFLAGS="-march=i686" 
       fi
 
-      chmod a+x ./configure
-
+	  chmod a+x ./configure
       if test "$TYPEBUILD" == release; then
          ./configure --prefix="$PREFIXVAL"
       else
@@ -365,36 +292,22 @@ if test "$TYPECONFIGURE" == configure ; then
 fi
 
 ### start build ###
-CMDEX="--c $TYPEBUILD --a $TYPEACTION --d $BUILDDOCS --m $TYPECONFIGURE --p $PREFIXVAL --b $TYPEARCHITECTURE"
+
+CMDEX="--c $TYPEBUILD --a $TYPEACTION --d $BUILDDOCS --m $TYPECONFIGURE --p $PREFIXVAL"
 
 #build all of fdocore
 if test "$FDOCOREENABLE" == yes; then
    if test "$TYPEACTION" == buildinstall || test "$TYPEACTION" == build ; then
-      make
-      if [ "$?" -ne 0 ] ; then
-        exit 1
-      fi
+      sudo -E make
    fi
-
    if test "$TYPEACTION" == clean ; then
-      make clean
-      if [ "$?" -ne 0 ] ; then
-        exit 1
-      fi
+      sudo -E make clean
    fi
-
    if test "$TYPEACTION" == buildinstall || test "$TYPEACTION" == install ; then
-      sudo make install
-      if [ "$?" -ne 0 ] ; then
-        exit 1
-      fi
+      sudo -E make install
    fi
-
    if test "$TYPEACTION" == uninstall ; then
-      sudo make uninstall
-      if [ "$?" -ne 0 ] ; then
-        exit 1
-      fi
+      sudo -E make uninstall
    fi
 fi
 
@@ -403,31 +316,16 @@ if test "$FDOENABLE" == yes; then
    pushd Fdo >& /dev/null
    
    if test "$TYPEACTION" == clean ; then
-      make clean
-      if [ "$?" -ne 0 ] ; then
-        exit 1
-      fi
+      sudo -E make clean
    fi
-
    if test "$TYPEACTION" == buildinstall || test "$TYPEACTION" == build ; then
-      make
-      if [ "$?" -ne 0 ] ; then
-        exit 1
-      fi
+      sudo -E make
    fi
-
    if test "$TYPEACTION" == buildinstall || test "$TYPEACTION" == install ; then
-      sudo make install
-      if [ "$?" -ne 0 ] ; then
-        exit 1
-      fi
+      sudo -E make install
    fi
-
    if test "$TYPEACTION" == uninstall ; then
-      sudo make uninstall
-      if [ "$?" -ne 0 ] ; then
-        exit 1
-      fi
+      sudo -E make uninstall
    fi
    
    if test "$BUILDDOCS" == build ; then
@@ -451,10 +349,10 @@ if test "$FDOENABLE" == yes; then
    fi
    
    if test "$TYPEACTION" == buildinstall || test "$TYPEACTION" == install ; then
-      sudo rm -rf "$PREFIXVAL/docs/HTML/FDO_API"
-      sudo mkdir -p "$PREFIXVAL/docs/HTML"
+      rm -rf "$PREFIXVAL/docs/HTML/FDO_API"
+      mkdir -p "$PREFIXVAL/docs/HTML"
       if test -e "Docs/HTML/FDO_API"; then  
-         sudo cp --force --recursive "Docs/HTML/FDO_API" "$PREFIXVAL/docs/HTML"
+         cp --force --recursive "Docs/HTML/FDO_API" "$PREFIXVAL/docs/HTML"
       fi
    fi
    
@@ -463,45 +361,30 @@ fi
 
 #build Utilities
 if test "$UTILENABLE" == yes; then
-
+   pushd Utilities >& /dev/null
+   
    if test "$TYPEACTION" == clean ; then
-      make clean
-      if [ "$?" -ne 0 ] ; then
-        exit 1
-      fi
+      sudo -E make clean
    fi
-
    if test "$TYPEACTION" == buildinstall || test "$TYPEACTION" == build ; then
-      make
-      if [ "$?" -ne 0 ] ; then
-        exit 1
-      fi
+      sudo -E make
    fi
-
    if test "$TYPEACTION" == buildinstall || test "$TYPEACTION" == install ; then
-      sudo make install
-      if [ "$?" -ne 0 ] ; then
-        exit 1
-      fi
+      sudo -E make install
    fi
-
    if test "$TYPEACTION" == uninstall ; then
-      sudo make uninstall
-      if [ "$?" -ne 0 ] ; then
-        exit 1
-      fi
+      sudo -E make uninstall
    fi
+   
+   popd >& /dev/null
 fi
 
 #build SHP Provider
 if test "$SHPENABLE" == yes; then
    if test -e "Providers/SHP/build_linux.sh"; then
        pushd Providers/SHP >& /dev/null
-       chmod a+x ./build_linux.sh
-       sh ./build_linux.sh $CMDEX
-       if [ "$?" -ne 0 ] ; then
-         exit 1
-       fi
+	   chmod a+x ./build_linux.sh
+       sudo -E sh ./build_linux.sh $CMDEX
        popd >& /dev/null
    fi
 fi
@@ -510,65 +393,48 @@ fi
 if test "$SDFENABLE" == yes; then
    if test -e "Providers/SDF/build_linux.sh"; then
        pushd Providers/SDF >& /dev/null
-       chmod a+x ./build_linux.sh
-       sh ./build_linux.sh $CMDEX
-       if [ "$?" -ne 0 ] ; then
-         exit 1
-       fi
+	   chmod a+x ./build_linux.sh
+       sudo -E sh ./build_linux.sh $CMDEX
        popd >& /dev/null
    fi
 fi
 
-#build WFS Provider -- Temporalily disabled for 64bit builds
+#build WFS Provider
 if test "$WFSENABLE" == yes; then
    if test -e "Providers/WFS/build_linux.sh"; then
        pushd Providers/WFS >& /dev/null
-       chmod a+x ./build_linux.sh
-       sh ./build_linux.sh $CMDEX
-       if [ "$?" -ne 0 ] ; then
-         exit 1
-       fi
+	   chmod a+x ./build_linux.sh
+       sudo -E sh ./build_linux.sh $CMDEX
        popd >& /dev/null
    fi
 fi
 
-#build WMS Provider -- Temporalily disabled for 64bit builds
+#build WMS Provider
 if test "$WMSENABLE" == yes; then
    if test -e "Providers/WMS/build_linux.sh"; then
        pushd Providers/WMS >& /dev/null
-       chmod a+x ./build_linux.sh
-       sh ./build_linux.sh $CMDEX
-       if [ "$?" -ne 0 ] ; then
-         exit 1
-       fi
+	   chmod a+x ./build_linux.sh
+       sudo -E sh ./build_linux.sh $CMDEX
        popd >& /dev/null
    fi
 fi
 
-#build ArcSDE Provider -- Temporalily disabled for 64bit builds
-if test "$TYPEARCHITECTURE" == "32" ; then
+#build ArcSDE Provider
 if test "$ARCENABLE" == yes; then
    if test -e "Providers/ArcSDE/build_linux.sh"; then
        pushd Providers/ArcSDE >& /dev/null
-       chmod a+x ./build_linux.sh
-       sh ./build_linux.sh $CMDEX
-       if [ "$?" -ne 0 ] ; then
-         exit 1
-       fi
+	   chmod a+x ./build_linux.sh
+       sudo -E sh ./build_linux.sh $CMDEX
        popd >& /dev/null
    fi
 fi
-fi
 
-#build GenericRdbms Providers -- Temporalily disabled for 64bit builds
+#build GenericRdbms Providers
 if test "$RDBMSENABLE" == yes; then
    if test -e "Providers/GenericRdbms/build_linux.sh"; then
        pushd Providers/GenericRdbms >& /dev/null
-       chmod a+x ./build_linux.sh
-       sh ./build_linux.sh $CMDEX
-       if [ "$?" -ne 0 ] ; then
-         exit 1
-       fi
+	   chmod a+x ./build_linux.sh
+       sudo -E sh ./build_linux.sh $CMDEX
        popd >& /dev/null
    fi
 fi
@@ -577,11 +443,8 @@ fi
 if test "$GDALENABLE" == yes; then
    if test -e "Providers/GDAL/build_linux.sh"; then
        pushd Providers/GDAL >& /dev/null
-       chmod a+x ./build_linux.sh
-       sh ./build_linux.sh $CMDEX
-       if [ "$?" -ne 0 ] ; then
-         exit 1
-       fi
+	   chmod a+x ./build_linux.sh
+       sudo -E sh ./build_linux.sh $CMDEX
        popd >& /dev/null
    fi
 fi
@@ -590,37 +453,28 @@ fi
 if test "$OGRENABLE" == yes; then
    if test -e "Providers/OGR/build_linux.sh"; then
        pushd Providers/OGR >& /dev/null
-       chmod a+x ./build_linux.sh
-       sh ./build_linux.sh $CMDEX
-       if [ "$?" -ne 0 ] ; then
-         exit 1
-       fi
+	   chmod a+x ./build_linux.sh
+       sudo -E sh ./build_linux.sh $CMDEX
        popd >& /dev/null
    fi
 fi
 
-#build KingOracle Provider -- Temporalily disabled for 64bit builds
+#build KingOracle Provider
 if test "$KINGORACLEENABLE" == yes; then
    if test -e "Providers/KingOracle/build_linux.sh"; then
        pushd Providers/KingOracle >& /dev/null
-       chmod a+x ./build_linux.sh
-       sh ./build_linux.sh $CMDEX
-       if [ "$?" -ne 0 ] ; then
-         exit 1
-       fi
+	   chmod a+x ./build_linux.sh
+       sudo -E sh ./build_linux.sh $CMDEX
        popd >& /dev/null
    fi
 fi
 
-#build SQLite Provider
+#build SSLite Provider
 if test "$SQLITEENABLE" == yes; then
    if test -e "Providers/SQLite/build_linux.sh"; then
        pushd Providers/SQLite >& /dev/null
-       chmod a+x ./build_linux.sh
-       sh ./build_linux.sh $CMDEX
-       if [ "$?" -ne 0 ] ; then
-         exit 1
-       fi
+	   chmod a+x ./build_linux.sh
+       sudo -E sh ./build_linux.sh $CMDEX
        popd >& /dev/null
    fi
 fi

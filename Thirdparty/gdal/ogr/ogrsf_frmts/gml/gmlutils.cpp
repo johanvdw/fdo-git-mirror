@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gmlutils.cpp 25727 2013-03-10 14:56:33Z rouault $
+ * $Id: gmlutils.cpp 23638 2011-12-22 21:02:56Z rouault $
  *
  * Project:  GML Utils
  * Purpose:  GML reader
@@ -33,7 +33,6 @@
 #include "ogr_api.h"
 #include "ogr_p.h"
 #include <string>
-#include <map>
 
 /************************************************************************/
 /*                GML_ExtractSrsNameFromGeometry()                      */
@@ -95,7 +94,7 @@ int GML_IsSRSLatLongOrder(const char* pszSRSName)
             OGRSpatialReference oSRS;
             if (oSRS.importFromURN(pszSRSName) == OGRERR_NONE)
             {
-                if (oSRS.EPSGTreatsAsLatLong() || oSRS.EPSGTreatsAsNorthingEasting())
+                if (oSRS.EPSGTreatsAsLatLong())
                     return TRUE;
             }
         }
@@ -108,62 +107,11 @@ int GML_IsSRSLatLongOrder(const char* pszSRSName)
 /*                GML_BuildOGRGeometryFromList_CreateCache()            */
 /************************************************************************/
 
-class SRSDesc
-{
-public:
-    std::string          osSRSName;
-    int                  bAxisInvert;
-    OGRSpatialReference* poSRS;
-
-    SRSDesc() : bAxisInvert(FALSE), poSRS(NULL)
-    {
-    }
-};
-
 class SRSCache
 {
-    std::map<std::string, SRSDesc> oMap;
-    SRSDesc                        oLastDesc;
-
 public:
-
-    SRSCache()
-    {
-    }
-
-    ~SRSCache()
-    {
-        std::map<std::string, SRSDesc>::iterator oIter;
-        for( oIter = oMap.begin(); oIter != oMap.end(); ++oIter )
-        {
-            if( oIter->second.poSRS != NULL )
-                oIter->second.poSRS->Release();
-        }
-    }
-
-    SRSDesc& Get(const std::string& osSRSName)
-    {
-        if( osSRSName == oLastDesc.osSRSName )
-            return oLastDesc;
-
-        std::map<std::string, SRSDesc>::iterator oIter = oMap.find(osSRSName);
-        if( oIter != oMap.end() )
-        {
-            oLastDesc = oIter->second;
-            return oLastDesc;
-        }
-
-        oLastDesc.osSRSName = osSRSName;
-        oLastDesc.bAxisInvert = GML_IsSRSLatLongOrder(osSRSName.c_str());
-        oLastDesc.poSRS = new OGRSpatialReference();
-        if( oLastDesc.poSRS->SetFromUserInput(osSRSName.c_str()) != OGRERR_NONE )
-        {
-            delete oLastDesc.poSRS;
-            oLastDesc.poSRS = NULL;
-        }
-        oMap[osSRSName] = oLastDesc;
-        return oLastDesc;
-    }
+    std::string osLastSRSName;
+    int   bAxisInvertLastSRSName;
 };
 
 void* GML_BuildOGRGeometryFromList_CreateCache()
@@ -266,24 +214,30 @@ OGRGeometry* GML_BuildOGRGeometryFromList(const CPLXMLNode* const * papsGeometry
             }
         }
     }
-    
-    if( poGeom == NULL )
-        return NULL;
 
-    std::string osWork;
-    const char* pszSRSName = GML_ExtractSrsNameFromGeometry(papsGeometry, osWork,
-                                                            bConsiderEPSGAsURN);
-    const char* pszNameLookup = pszSRSName;
-    if( pszNameLookup == NULL )
-        pszNameLookup = pszDefaultSRSName;
-
-    if (pszNameLookup != NULL)
+    if ( poGeom != NULL && bInvertAxisOrderIfLatLong )
     {
-        SRSCache* poSRSCache = (SRSCache*)hCacheSRS;
-        SRSDesc& oSRSDesc = poSRSCache->Get(pszNameLookup);
-        poGeom->assignSpatialReference(oSRSDesc.poSRS);
-        if (oSRSDesc.bAxisInvert && bInvertAxisOrderIfLatLong)
-            poGeom->swapXY();
+        std::string osWork;
+        const char* pszSRSName = GML_ExtractSrsNameFromGeometry(papsGeometry, osWork,
+                                                          bConsiderEPSGAsURN);
+        const char* pszNameLookup = pszSRSName ? pszSRSName : pszDefaultSRSName;
+        if (pszNameLookup != NULL)
+        {
+            SRSCache* poSRSCache = (SRSCache*)hCacheSRS;
+            int bSwap;
+            if (strcmp(poSRSCache->osLastSRSName.c_str(), pszNameLookup) == 0)
+            {
+                bSwap = poSRSCache->bAxisInvertLastSRSName;
+            }
+            else
+            {
+                bSwap = GML_IsSRSLatLongOrder(pszNameLookup);
+                poSRSCache->osLastSRSName = pszNameLookup;
+                poSRSCache->bAxisInvertLastSRSName= bSwap;
+            }
+            if (bSwap)
+                poGeom->swapXY();
+        }
     }
 
     return poGeom;
@@ -319,13 +273,12 @@ char* GML_GetSRSName(const OGRSpatialReference* poSRS, int bLongSRS, int *pbCoor
             pszAuthCode = poSRS->GetAuthorityCode( pszTarget );
             if( NULL != pszAuthCode && strlen(pszAuthCode) < 10 )
             {
-                if (bLongSRS && !(((OGRSpatialReference*)poSRS)->EPSGTreatsAsLatLong() ||
-                                  ((OGRSpatialReference*)poSRS)->EPSGTreatsAsNorthingEasting()))
+                if (bLongSRS && !((OGRSpatialReference*)poSRS)->EPSGTreatsAsLatLong())
                 {
                     OGRSpatialReference oSRS;
                     if (oSRS.importFromEPSGA(atoi(pszAuthCode)) == OGRERR_NONE)
                     {
-                        if (oSRS.EPSGTreatsAsLatLong() || oSRS.EPSGTreatsAsNorthingEasting())
+                        if (oSRS.EPSGTreatsAsLatLong())
                             *pbCoordSwap = TRUE;
                     }
                 }

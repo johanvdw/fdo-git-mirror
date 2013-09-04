@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: srpdataset.cpp 25844 2013-04-02 22:40:27Z rouault $
+ * $Id: srpdataset.cpp 23124 2011-09-27 16:55:26Z rouault $
  * Purpose:  ASRP/USRP Reader
  * Author:   Frank Warmerdam (warmerdam@pobox.com)
  *
@@ -33,7 +33,7 @@
 #include "cpl_string.h"
 #include "iso8211.h"
 
-CPL_CVSID("$Id: srpdataset.cpp 25844 2013-04-02 22:40:27Z rouault $");
+CPL_CVSID("$Id: srpdataset.cpp 23124 2011-09-27 16:55:26Z rouault $");
 
 class SRPDataset : public GDALPamDataset
 {
@@ -60,6 +60,10 @@ class SRPDataset : public GDALPamDataset
     int          PCB;
     int          PVB;
 
+
+    int          bGeoTransformValid;
+    double       adfGeoTransform[6];
+
     GDALColorTable oCT;
 
   public:
@@ -68,13 +72,21 @@ class SRPDataset : public GDALPamDataset
     
     virtual const char *GetProjectionRef(void);
     virtual CPLErr GetGeoTransform( double * padfGeoTransform );
+    virtual CPLErr SetGeoTransform( double * padfGeoTransform );
 
     virtual char **GetFileList();
+
+    virtual char      **GetMetadata( const char * pszDomain = "" );
+
+    void                AddSubDataset(const char* pszFilename);
 
     int                 GetFromRecord( const char* pszFileName, 
                                        DDFRecord * record);
 
     static GDALDataset *Open( GDALOpenInfo * );
+    
+    static double GetLongitudeFromString(const char* str);
+    static double GetLatitudeFromString(const char* str);
 };
 
 /************************************************************************/
@@ -349,6 +361,16 @@ CPLString SRPDataset::ResetTo01( const char* str )
 }
 
 /************************************************************************/
+/*                            GetMetadata()                             */
+/************************************************************************/
+
+char **SRPDataset::GetMetadata( const char *pszDomain )
+
+{
+    return GDALPamDataset::GetMetadata( pszDomain );
+}
+
+/************************************************************************/
 /*                        GetProjectionRef()                            */
 /************************************************************************/
 
@@ -400,6 +422,57 @@ CPLErr SRPDataset::GetGeoTransform( double * padfGeoTransform)
 
     return CE_Failure;
 }
+
+/************************************************************************/
+/*                          SetGeoTransform()                           */
+/************************************************************************/
+
+CPLErr SRPDataset::SetGeoTransform( double * padfGeoTransform )
+
+{
+    memcpy( adfGeoTransform, padfGeoTransform, sizeof(double)*6 );
+    bGeoTransformValid = TRUE;
+    return CE_None;
+}
+
+/************************************************************************/
+/*                     GetLongitudeFromString()                         */
+/************************************************************************/
+
+double SRPDataset::GetLongitudeFromString(const char* str)
+{
+    char ddd[3+1] = { 0 };
+    char mm[2+1] = { 0 };
+    char ssdotss[5+1] = { 0 };
+    int sign = (str[0] == '+') ? 1 : - 1;
+    str++;
+    strncpy(ddd, str, 3);
+    str+=3;
+    strncpy(mm, str, 2);
+    str+=2;
+    strncpy(ssdotss, str, 5);
+    return sign * (atof(ddd) + atof(mm) / 60 + atof(ssdotss) / 3600);
+}
+
+/************************************************************************/
+/*                      GetLatitudeFromString()                         */
+/************************************************************************/
+
+double SRPDataset::GetLatitudeFromString(const char* str)
+{
+    char ddd[2+1] = { 0 };
+    char mm[2+1] = { 0 };
+    char ssdotss[5+1] = { 0 };
+    int sign = (str[0] == '+') ? 1 : - 1;
+    str++;
+    strncpy(ddd, str, 2);
+    str+=2;
+    strncpy(mm, str, 2);
+    str+=2;
+    strncpy(ssdotss, str, 5);
+    return sign * (atof(ddd) + atof(mm) / 60 + atof(ssdotss) / 3600);
+}
+
 
 /************************************************************************/
 /*                           GetFromRecord()                            */
@@ -477,10 +550,7 @@ int SRPDataset::GetFromRecord(const char* pszFileName, DDFRecord * record)
         return FALSE;
     }
 
-    const char* pszBAD = record->GetStringSubfield( "SPR", 0, "BAD", 0, &bSuccess );
-    if( pszBAD == NULL )
-        return FALSE;
-    osBAD = pszBAD;
+    osBAD = record->GetStringSubfield( "SPR", 0, "BAD", 0, &bSuccess );
     {
         char* c = (char*) strchr(osBAD, ' ');
         if (c)
@@ -491,8 +561,7 @@ int SRPDataset::GetFromRecord(const char* pszFileName, DDFRecord * record)
 /* -------------------------------------------------------------------- */
 /*      Read the tile map if available.                                 */
 /* -------------------------------------------------------------------- */
-    const char* pszTIF = record->GetStringSubfield( "SPR", 0, "TIF", 0 );
-    int TIF = pszTIF != NULL && EQUAL(pszTIF,"Y");
+    int TIF = EQUAL(record->GetStringSubfield( "SPR", 0, "TIF", 0 ),"Y");
     CPLDebug("SRP", "TIF=%d", TIF);
     
     if (TIF)
@@ -833,10 +902,7 @@ GDALDataset *SRPDataset::Open( GDALOpenInfo * poOpenInfo )
         if( !EQUAL(osPRT,"ASRP") && !EQUAL(osPRT,"USRP") )
             continue;
 
-        const char* pszNAM = record->GetStringSubfield( "DSI", 0, "NAM", 0 );
-        if( pszNAM == NULL )
-            pszNAM = "";
-        osNAM = pszNAM;
+        osNAM = record->GetStringSubfield( "DSI", 0, "NAM", 0 );
         CPLDebug("SRP", "NAM=%s", osNAM.c_str());
 
         SRPDataset *poDS = new SRPDataset();

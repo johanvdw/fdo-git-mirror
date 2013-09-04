@@ -549,27 +549,6 @@ class OgrPINVOKE {
   [DllImport("ogr_wrap", EntryPoint="CSharp_Layer_SetIgnoredFields")]
   public static extern int Layer_SetIgnoredFields(HandleRef jarg1, IntPtr[] jarg2);
 
-  [DllImport("ogr_wrap", EntryPoint="CSharp_Layer_Intersection")]
-  public static extern int Layer_Intersection(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3, IntPtr[] jarg4, HandleRef jarg5, HandleRef jarg6);
-
-  [DllImport("ogr_wrap", EntryPoint="CSharp_Layer_Union")]
-  public static extern int Layer_Union(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3, IntPtr[] jarg4, HandleRef jarg5, HandleRef jarg6);
-
-  [DllImport("ogr_wrap", EntryPoint="CSharp_Layer_SymDifference")]
-  public static extern int Layer_SymDifference(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3, IntPtr[] jarg4, HandleRef jarg5, HandleRef jarg6);
-
-  [DllImport("ogr_wrap", EntryPoint="CSharp_Layer_Identity")]
-  public static extern int Layer_Identity(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3, IntPtr[] jarg4, HandleRef jarg5, HandleRef jarg6);
-
-  [DllImport("ogr_wrap", EntryPoint="CSharp_Layer_Update")]
-  public static extern int Layer_Update(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3, IntPtr[] jarg4, HandleRef jarg5, HandleRef jarg6);
-
-  [DllImport("ogr_wrap", EntryPoint="CSharp_Layer_Clip")]
-  public static extern int Layer_Clip(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3, IntPtr[] jarg4, HandleRef jarg5, HandleRef jarg6);
-
-  [DllImport("ogr_wrap", EntryPoint="CSharp_Layer_Erase")]
-  public static extern int Layer_Erase(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3, IntPtr[] jarg4, HandleRef jarg5, HandleRef jarg6);
-
   [DllImport("ogr_wrap", EntryPoint="CSharp_delete_Feature")]
   public static extern void delete_Feature(HandleRef jarg1);
 
@@ -822,9 +801,6 @@ class OgrPINVOKE {
   [DllImport("ogr_wrap", EntryPoint="CSharp_ForceToPolygon")]
   public static extern IntPtr ForceToPolygon(HandleRef jarg1);
 
-  [DllImport("ogr_wrap", EntryPoint="CSharp_ForceToLineString")]
-  public static extern IntPtr ForceToLineString(HandleRef jarg1);
-
   [DllImport("ogr_wrap", EntryPoint="CSharp_ForceToMultiPolygon")]
   public static extern IntPtr ForceToMultiPolygon(HandleRef jarg1);
 
@@ -1028,9 +1004,6 @@ class OgrPINVOKE {
 
   [DllImport("ogr_wrap", EntryPoint="CSharp_Geometry_Centroid")]
   public static extern IntPtr Geometry_Centroid(HandleRef jarg1);
-
-  [DllImport("ogr_wrap", EntryPoint="CSharp_Geometry_PointOnSurface")]
-  public static extern IntPtr Geometry_PointOnSurface(HandleRef jarg1);
 
   [DllImport("ogr_wrap", EntryPoint="CSharp_Geometry_WkbSize")]
   public static extern int Geometry_WkbSize(HandleRef jarg1);

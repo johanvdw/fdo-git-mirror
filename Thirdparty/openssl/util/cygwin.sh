@@ -8,10 +8,9 @@
 #set -x
 
 CONFIG_OPTIONS="--prefix=/usr shared zlib no-idea no-rc5"
-INSTALL_PREFIX=/tmp/install/INSTALL
+INSTALL_PREFIX=/tmp/install
 
 VERSION=
-SHLIB_VERSION_NUMBER=
 SUBVERSION=$1
 
 function cleanup()
@@ -27,13 +26,6 @@ function get_openssl_version()
   then
     echo "Error: Couldn't retrieve OpenSSL version from Makefile."
     echo "       Check value of variable VERSION in Makefile."
-    exit 1
-  fi
-  eval `grep '^SHLIB_VERSION_NUMBER=' Makefile`
-  if [ -z "${SHLIB_VERSION_NUMBER}" ]
-  then
-    echo "Error: Couldn't retrieve OpenSSL shared lib version from Makefile."
-    echo " Check value of variable SHLIB_VERSION_NUMBER in Makefile."
     exit 1
   fi
 }
@@ -132,12 +124,8 @@ strip usr/bin/*.exe usr/bin/*.dll usr/lib/engines/*.so
 chmod u-w usr/lib/engines/*.so
 
 # Runtime package
-tar cjf libopenssl${SHLIB_VERSION_NUMBER//[!0-9]/}-${VERSION}-${SUBVERSION}.tar.bz2 \
-     usr/bin/cyg*dll
-# Base package
-find etc usr/bin/openssl.exe usr/bin/c_rehash usr/lib/engines usr/share/doc \
-     usr/ssl/certs usr/ssl/man/man[157] usr/ssl/misc usr/ssl/openssl.cnf \
-     usr/ssl/private \
+find etc usr/bin usr/lib/engines usr/share/doc usr/ssl/certs \
+     usr/ssl/man/man[157] usr/ssl/misc usr/ssl/openssl.cnf usr/ssl/private \
      -empty -o \! -type d |
 tar cjfT openssl-${VERSION}-${SUBVERSION}.tar.bz2 -
 # Development package
@@ -147,7 +135,6 @@ tar cjfT openssl-devel-${VERSION}-${SUBVERSION}.tar.bz2 -
 
 ls -l openssl-${VERSION}-${SUBVERSION}.tar.bz2
 ls -l openssl-devel-${VERSION}-${SUBVERSION}.tar.bz2
-ls -l libopenssl${SHLIB_VERSION_NUMBER//[!0-9]/}-${VERSION}-${SUBVERSION}.tar.bz2
 
 cleanup
 

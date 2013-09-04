@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: xmlreformat.cpp 24835 2012-08-23 20:11:13Z warmerdam $
+ * $Id: xmlreformat.cpp 11940 2007-08-23 15:11:23Z warmerdam $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  XML Reformatting - mostly for testing minixml implementation.
@@ -34,7 +34,7 @@ int main( int argc, char **argv )
 
 {
     CPLXMLNode *poTree;
-    static char  szXML[20000000];
+    static char  szXML[10000000];
     FILE       *fp;
     int        nLen;
 
@@ -56,12 +56,6 @@ int main( int argc, char **argv )
     }
 
     nLen = fread( szXML, 1, sizeof(szXML), fp );
-    if( nLen >= (int) sizeof(szXML)-2 ) {
-        fprintf( stderr, 
-                 "xmlreformat fixed sized buffer (%d bytes) exceeded.\n",
-                 (int) sizeof(szXML) );
-        exit(1);
-    }
 
     if( fp != stdin )
         fclose( fp );
@@ -79,3 +73,4 @@ int main( int argc, char **argv )
 
     return 0;
 }
+
