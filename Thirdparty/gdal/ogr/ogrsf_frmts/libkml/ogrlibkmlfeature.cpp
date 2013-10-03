@@ -36,7 +36,6 @@ using kmldom::PlacemarkPtr;
 using kmldom::ElementPtr;
 using kmldom::GeometryPtr;
 using kmldom::Geometry;
-using kmldom::GroundOverlayPtr;
 
 #include "ogr_libkml.h"
 
@@ -100,43 +99,7 @@ OGRFeature *kml2feat (
 
     /***** fields *****/
 
-    kml2field ( poOgrFeat, AsFeature ( poKmlPlacemark ) );
-
-    return poOgrFeat;
-}
-
-OGRFeature *kmlgroundoverlay2feat (
-    GroundOverlayPtr poKmlOverlay,
-    OGRLIBKMLDataSource * poOgrDS,
-    OGRLayer * poOgrLayer,
-    OGRFeatureDefn * poOgrFeatDefn,
-    OGRSpatialReference *poOgrSRS)
-{
-
-    OGRFeature *poOgrFeat = new OGRFeature ( poOgrFeatDefn );
-
-    /***** style *****/
-
-    //kml2featurestyle ( poKmlPlacemark, poOgrDS, poOgrLayer, poOgrFeat );
-
-    /***** geometry *****/
-
-    if ( poKmlOverlay->has_latlonbox (  ) ) {
-        OGRGeometry *poOgrGeom =
-            kml2geom_latlonbox ( poKmlOverlay->get_latlonbox (  ), poOgrSRS );
-        poOgrFeat->SetGeometryDirectly ( poOgrGeom );
-
-    }
-    else if ( poKmlOverlay->has_gx_latlonquad (  ) ) {
-        OGRGeometry *poOgrGeom =
-            kml2geom_latlonquad ( poKmlOverlay->get_gx_latlonquad (  ), poOgrSRS );
-        poOgrFeat->SetGeometryDirectly ( poOgrGeom );
-
-    }
-
-    /***** fields *****/
-
-    kml2field ( poOgrFeat, AsFeature ( poKmlOverlay ) );
+    kml2field ( poOgrFeat, poKmlPlacemark );
 
     return poOgrFeat;
 }

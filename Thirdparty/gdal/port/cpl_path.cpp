@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_path.cpp 25181 2012-10-27 11:52:46Z rouault $
+ * $Id: cpl_path.cpp 21583 2011-01-27 02:35:12Z warmerdam $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Portable filename/path parsing, and forming ala "Glob API".
@@ -31,7 +31,7 @@
 #include "cpl_string.h"
 #include "cpl_multiproc.h"
 
-CPL_CVSID("$Id: cpl_path.cpp 25181 2012-10-27 11:52:46Z rouault $");
+CPL_CVSID("$Id: cpl_path.cpp 21583 2011-01-27 02:35:12Z warmerdam $");
 
 
 /* should be size of larged possible filename */
@@ -446,7 +446,7 @@ const char *CPLResetExtension( const char *pszPath, const char *pszExt )
  * not.  May be NULL.
  *
  * @param pszBasename file basename.  May optionally have path and/or
- * extension.  Must *NOT* be NULL. 
+ * extension.  May not be NULL. 
  *
  * @param pszExtension file extension, optionally including the period.  May
  * be NULL.
@@ -467,9 +467,6 @@ const char *CPLFormFilename( const char * pszPath,
 
     CPLAssert( ! (pszPath >= pszStaticResult && pszPath < pszStaticResult + CPL_PATH_BUF_SIZE) );
     CPLAssert( ! (pszBasename >= pszStaticResult && pszBasename < pszStaticResult + CPL_PATH_BUF_SIZE) );
-
-    if( pszBasename[0] == '.' && pszBasename[1] == '/' )
-        pszBasename += 2;
 
     if( pszPath == NULL )
         pszPath = "";

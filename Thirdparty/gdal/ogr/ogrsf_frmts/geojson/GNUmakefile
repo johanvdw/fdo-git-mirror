@@ -10,7 +10,6 @@ OBJ = \
 	ogrgeojsondriver.o \
 	ogrgeojsondatasource.o \
 	ogrgeojsonlayer.o \
-	ogrgeojsonwritelayer.o \
 	ogrgeojsonutils.o \
 	ogrgeojsonreader.o \
 	ogrgeojsonwriter.o \

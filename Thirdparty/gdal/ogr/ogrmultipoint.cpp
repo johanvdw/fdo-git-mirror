@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrmultipoint.cpp 25426 2013-01-01 17:51:35Z rouault $
+ * $Id: ogrmultipoint.cpp 21298 2010-12-20 10:58:34Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRMultiPoint class.
@@ -31,7 +31,7 @@
 #include "ogr_p.h"
 #include <assert.h>
 
-CPL_CVSID("$Id: ogrmultipoint.cpp 25426 2013-01-01 17:51:35Z rouault $");
+CPL_CVSID("$Id: ogrmultipoint.cpp 21298 2010-12-20 10:58:34Z rouault $");
 
 /************************************************************************/
 /*                           OGRMultiPoint()                            */
@@ -52,16 +52,6 @@ OGRwkbGeometryType OGRMultiPoint::getGeometryType() const
         return wkbMultiPoint25D;
     else
         return wkbMultiPoint;
-}
-
-/************************************************************************/
-/*                            getDimension()                            */
-/************************************************************************/
-
-int OGRMultiPoint::getDimension() const
-
-{
-    return 0;
 }
 
 /************************************************************************/

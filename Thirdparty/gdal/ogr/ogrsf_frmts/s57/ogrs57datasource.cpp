@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrs57datasource.cpp 25905 2013-04-13 20:46:53Z rouault $
+ * $Id: ogrs57datasource.cpp 20996 2010-10-28 18:38:15Z rouault $
  *
  * Project:  S-57 Translator
  * Purpose:  Implements OGRS57DataSource class
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrs57datasource.cpp 25905 2013-04-13 20:46:53Z rouault $");
+CPL_CVSID("$Id: ogrs57datasource.cpp 20996 2010-10-28 18:38:15Z rouault $");
 
 /************************************************************************/
 /*                          OGRS57DataSource()                          */
@@ -226,12 +226,7 @@ int OGRS57DataSource::Open( const char * pszFilename, int bTestOpen )
         papszReaderOptions = 
             CSLSetNameValue( papszReaderOptions, S57O_RETURN_DSID,
                              GetOption(S57O_RETURN_DSID) );
-
-    if( GetOption(S57O_RECODE_BY_DSSI) != NULL )
-        papszReaderOptions = 
-            CSLSetNameValue( papszReaderOptions, S57O_RECODE_BY_DSSI,
-                             GetOption(S57O_RECODE_BY_DSSI) );
-
+                                              
     poModule->SetOptions( papszReaderOptions );
     CSLDestroy( papszReaderOptions );
 

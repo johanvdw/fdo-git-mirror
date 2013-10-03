@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdallocationinfo.cpp 23726 2012-01-07 22:57:12Z rouault $
+ * $Id: gdallocationinfo.cpp 23155 2011-10-01 15:03:13Z rouault $
  *
  * Project:  GDAL
  * Purpose:  Commandline raster query tool.
@@ -33,7 +33,7 @@
 #include "cpl_minixml.h"
 #include <vector>
 
-CPL_CVSID("$Id: gdallocationinfo.cpp 23726 2012-01-07 22:57:12Z rouault $");
+CPL_CVSID("$Id: gdallocationinfo.cpp 23155 2011-10-01 15:03:13Z rouault $");
 
 /******************************************************************************/
 /*! \page gdallocationinfo gdallocationinfo
@@ -48,8 +48,7 @@ Usage:
 
 \verbatim
 Usage: gdallocationinfo [--help-general] [-xml] [-lifonly] [-valonly]
-                        [-b band]* [-overview overview_level]
-                        [-l_srs srs_def] [-geoloc] [-wgs84]
+                        [-b band]* [-l_srs srs_def] [-geoloc] [-wgs84]
                         srcfile [x y]
 \endverbatim
 
@@ -76,11 +75,6 @@ the selected bands.</dd>
 <dt> <b>-b</b> <em>band</em>:</dt> 
 <dd>Selects a band to query.  Multiple bands can be listed.  By default all
 bands are queried.</dd>
-
-<dt> <b>-overview</b> <em>overview_level</em>:</dt>
-<dd>Query the (overview_level)th overview (overview_level=1 is the 1st overview),
-instead of the base band. Note that the x,y location (if the coordinate system is
-pixel/line) must still be given with respect to the base band.</dd>
 
 <dt> <b>-l_srs</b> <em>srs def</em>:</dt>
 <dd> The coordinate system of the input x, y location.</dd>
@@ -170,8 +164,7 @@ static void Usage()
 
 {
     printf( "Usage: gdallocationinfo [--help-general] [-xml] [-lifonly] [-valonly]\n"
-            "                        [-b band]* [-overview overview_level]\n"
-            "                        [-l_srs srs_def] [-geoloc] [-wgs84]\n"
+            "                        [-b band]* [-l_srs srs_def] [-geoloc] [-wgs84]\n"
             "                        srcfile x y\n" 
             "\n" );
     exit( 1 );
@@ -214,11 +207,10 @@ int main( int argc, char ** argv )
 {
     const char         *pszLocX = NULL, *pszLocY = NULL;
     const char         *pszSrcFilename = NULL;
-    char               *pszSourceSRS = NULL;
+    const char         *pszSourceSRS = NULL;
     std::vector<int>   anBandList;
     bool               bAsXML = false, bLIFOnly = false;
     bool               bQuiet = false, bValOnly = false;
-    int                nOverview = -1;
 
     GDALAllRegister();
     argc = GDALGeneralCmdLineProcessor( argc, &argv, 0 );
@@ -242,23 +234,16 @@ int main( int argc, char ** argv )
         {
             anBandList.push_back( atoi(argv[++i]) );
         }
-        else if( EQUAL(argv[i],"-overview") && i < argc-1 )
-        {
-            nOverview = atoi(argv[++i]) - 1;
-        }
         else if( EQUAL(argv[i],"-l_srs") && i < argc-1 )
         {
-            CPLFree(pszSourceSRS);
             pszSourceSRS = SanitizeSRS(argv[++i]);
         }
         else if( EQUAL(argv[i],"-geoloc") )
         {
-            CPLFree(pszSourceSRS);
-            pszSourceSRS = CPLStrdup("-geoloc");
+            pszSourceSRS = "-geoloc";
         }
         else if( EQUAL(argv[i],"-wgs84") )
         {
-            CPLFree(pszSourceSRS);
             pszSourceSRS = SanitizeSRS("WGS84");
         }
         else if( EQUAL(argv[i],"-xml") )
@@ -414,43 +399,16 @@ int main( int argc, char ** argv )
                 printf( "\nLocation is off this file! No further details to report.\n");
             bPixelReport = FALSE;
         }
-
+        
     /* -------------------------------------------------------------------- */
     /*      Process each band.                                              */
     /* -------------------------------------------------------------------- */
         for( i = 0; bPixelReport && i < (int) anBandList.size(); i++ )
         {
             GDALRasterBandH hBand = GDALGetRasterBand( hSrcDS, anBandList[i] );
-
-            int iPixelToQuery = iPixel;
-            int iLineToQuery = iLine;
-
-            if (nOverview >= 0 && hBand != NULL)
-            {
-                GDALRasterBandH hOvrBand = GDALGetOverview(hBand, nOverview);
-                if (hOvrBand != NULL)
-                {
-                    int nOvrXSize = GDALGetRasterBandXSize(hOvrBand);
-                    int nOvrYSize = GDALGetRasterBandYSize(hOvrBand);
-                    iPixelToQuery = (int)(0.5 + 1.0 * iPixel / GDALGetRasterXSize( hSrcDS ) * nOvrXSize);
-                    iLineToQuery = (int)(0.5 + 1.0 * iLine / GDALGetRasterYSize( hSrcDS ) * nOvrYSize);
-                    if (iPixelToQuery >= nOvrXSize)
-                        iPixelToQuery = nOvrXSize - 1;
-                    if (iLineToQuery >= nOvrYSize)
-                        iLineToQuery = nOvrYSize - 1;
-                }
-                else
-                {
-                    CPLError(CE_Failure, CPLE_AppDefined,
-                             "Cannot get overview %d of band %d",
-                             nOverview + 1, anBandList[i] );
-                }
-                hBand = hOvrBand;
-            }
-
             if (hBand == NULL)
                 continue;
-
+    
             if( bAsXML )
             {
                 osLine.Printf( "<BandReport band=\"%d\">", anBandList[i] );
@@ -467,7 +425,7 @@ int main( int argc, char ** argv )
     /* -------------------------------------------------------------------- */
             CPLString osItem;
             
-            osItem.Printf( "Pixel_%d_%d", iPixelToQuery, iLineToQuery );
+            osItem.Printf( "Pixel_%d_%d", iPixel, iLine );
             
             const char *pszLI = GDALGetMetadataItem( hBand, osItem, "LocationInfo");
     
@@ -514,7 +472,7 @@ int main( int argc, char ** argv )
     /* -------------------------------------------------------------------- */
             double adfPixel[2];
     
-            if( GDALRasterIO( hBand, GF_Read, iPixelToQuery, iLineToQuery, 1, 1, 
+            if( GDALRasterIO( hBand, GF_Read, iPixel, iLine, 1, 1, 
                               adfPixel, 1, 1, GDT_CFloat64, 0, 0) == CE_None )
             {
                 CPLString osValue;
@@ -607,7 +565,6 @@ int main( int argc, char ** argv )
 
     GDALDumpOpenDatasets( stderr );
     GDALDestroyDriverManager();
-    CPLFree(pszSourceSRS);
 
     CSLDestroy( argv );
 

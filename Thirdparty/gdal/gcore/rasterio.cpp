@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: rasterio.cpp 25225 2012-11-11 19:29:06Z rouault $
+ * $Id: rasterio.cpp 22420 2011-05-23 21:23:29Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Contains default implementation of GDALRasterBand::IRasterIO()
@@ -47,7 +47,7 @@
 #endif
 
 
-CPL_CVSID("$Id: rasterio.cpp 25225 2012-11-11 19:29:06Z rouault $");
+CPL_CVSID("$Id: rasterio.cpp 22420 2011-05-23 21:23:29Z rouault $");
 
 /************************************************************************/
 /*                             IRasterIO()                              */
@@ -421,10 +421,6 @@ CPLErr GDALRasterBand::IRasterIO( GDALRWFlag eRWFlag,
     else
     {
         double      dfSrcX, dfSrcY;
-        int         nLimitBlockY = 0;
-        int         bByteCopy = ( eDataType == eBufType && nBandDataSize == 1); 
-        int nStartBlockX = -nBlockXSize;
-
 /* -------------------------------------------------------------------- */
 /*      Read case                                                       */
 /*      Loop over buffer computing source locations.                    */
@@ -434,35 +430,26 @@ CPLErr GDALRasterBand::IRasterIO( GDALRWFlag eRWFlag,
             size_t   iBufOffset, iSrcOffset;
 
             dfSrcY = (iBufYOff+0.5) * dfSrcYInc + nYOff;
-            dfSrcX = 0.5 * dfSrcXInc + nXOff;
             iSrcY = (int) dfSrcY;
 
             iBufOffset = (size_t)iBufYOff * nLineSpace;
 
-            if( iSrcY >= nLimitBlockY )
+            for( iBufXOff = 0; iBufXOff < nBufXSize; iBufXOff++ )
             {
-                nLBlockY = iSrcY / nBlockYSize;
-                nLimitBlockY = (nLBlockY + 1) * nBlockYSize;
-                nStartBlockX = -nBlockXSize; /* make sure a new block is loaded */
-            }
-            else if( (int)dfSrcX < nStartBlockX )
-                nStartBlockX = -nBlockXSize; /* make sure a new block is loaded */
+                dfSrcX = (iBufXOff+0.5) * dfSrcXInc + nXOff;
 
-            size_t iSrcOffsetCst = (iSrcY - nLBlockY*nBlockYSize) * (size_t)nBlockXSize;
-
-            for( iBufXOff = 0; iBufXOff < nBufXSize; iBufXOff++, dfSrcX += dfSrcXInc )
-            {
                 iSrcX = (int) dfSrcX;
-                int nDiffX = iSrcX - nStartBlockX;
 
     /* -------------------------------------------------------------------- */
     /*      Ensure we have the appropriate block loaded.                    */
     /* -------------------------------------------------------------------- */
-                if( nDiffX >= nBlockXSize )
+                if( iSrcX < nLBlockX * nBlockXSize
+                    || iSrcX >= (nLBlockX+1) * nBlockXSize
+                    || iSrcY < nLBlockY * nBlockYSize
+                    || iSrcY >= (nLBlockY+1) * nBlockYSize )
                 {
                     nLBlockX = iSrcX / nBlockXSize;
-                    nStartBlockX = nLBlockX * nBlockXSize;
-                    nDiffX = iSrcX - nStartBlockX;
+                    nLBlockY = iSrcY / nBlockYSize;
 
                     if( poBlock != NULL )
                         poBlock->DropLock();
@@ -485,13 +472,10 @@ CPLErr GDALRasterBand::IRasterIO( GDALRWFlag eRWFlag,
     /* -------------------------------------------------------------------- */
     /*      Copy over this pixel of data.                                   */
     /* -------------------------------------------------------------------- */
-                iSrcOffset = ((size_t)nDiffX + iSrcOffsetCst)*nBandDataSize;
+                iSrcOffset = ((size_t)iSrcX - (size_t)nLBlockX*nBlockXSize
+                    + ((size_t)iSrcY - (size_t)nLBlockY*nBlockYSize) * nBlockXSize)*nBandDataSize;
 
-                if( bByteCopy )
-                {
-                    ((GByte *) pData)[iBufOffset] = pabySrcBlock[iSrcOffset];
-                }
-                else if( eDataType == eBufType )
+                if( eDataType == eBufType )
                 {
                     memcpy( ((GByte *) pData) + iBufOffset,
                             pabySrcBlock + iSrcOffset, nBandDataSize );

@@ -28,7 +28,12 @@
 #define  DBG(X)
 #endif
 
-#include <limits.h>
+#ifndef _LLONG_MAX
+#   define LLONG_MAX    9223372036854775807LL
+#endif
+#ifndef LLONG_MIN
+#   define LLONG_MIN    (-LLONG_MAX - 1LL)
+#endif
 
 FdoString* FdoInsertTest::mDefect1206136Suffix = L"_defect1206136";
 
@@ -1488,7 +1493,7 @@ FdoInt16 FdoInsertTest::GetMinInt16Value()
 
 FdoInt32 FdoInsertTest::GetMinInt32Value()
 {
-    return (FdoInt32) INT_MIN;
+    return (FdoInt32) LONG_MIN;
 }
 
 FdoInt64 FdoInsertTest::GetMinInt64Value()
@@ -1518,7 +1523,7 @@ FdoInt16 FdoInsertTest::GetMaxInt16Value()
 
 FdoInt32 FdoInsertTest::GetMaxInt32Value()
 {
-    return (FdoInt32) INT_MAX;
+    return (FdoInt32) LONG_MAX;
 }
 
 FdoInt64 FdoInsertTest::GetMaxInt64Value()

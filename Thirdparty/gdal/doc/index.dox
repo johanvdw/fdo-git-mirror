@@ -1,5 +1,5 @@
 #ifndef DOXYGEN_SKIP                                                            
-/* $Id: index.dox 25344 2012-12-23 23:56:10Z rouault $ */               
+/* $Id: index.dox 23318 2011-11-04 21:06:43Z rouault $ */               
 #endif /* DOXYGEN_SKIP */                                                       
 
 /*! \mainpage GDAL - Geospatial Data Abstraction Library
@@ -16,8 +16,8 @@ Geospatial Foundation</a>.  As a library, it presents a
 to the calling application for all supported formats.  It also comes with a variety
 of useful \link gdal_utilities.html commandline utilities\endlink
 for data translation and processing.  The 
-<a href="http://trac.osgeo.org/gdal/wiki/Release/1.9.2-News">NEWS</a>
-page describes the October 2012 GDAL/OGR 1.9.2 release.
+<a href="http://trac.osgeo.org/gdal/wiki/Release/1.8.1-News">NEWS</a>
+page describes the July 2011 GDAL/OGR 1.8.1 release.
 
 The related <a href="ogr/index.html">OGR</a> library (which lives within the GDAL source tree) 
 provides a similar capability for simple features vector data.
@@ -72,7 +72,7 @@ the web</a>.  The mailing list is also available in read-only format by NNTP at
 <a href="news://news.gmane.org/gmane.comp.gis.gdal.devel">news://news.gmane.org/gmane.comp.gis.gdal.devel</a>
 and by HTTP at
 <a href="http://news.gmane.org/gmane.comp.gis.gdal.devel">http://news.gmane.org/gmane.comp.gis.gdal.devel</a>.
-Archives since 2005 are searchable on <a href="http://osgeo-org.1560.n6.nabble.com/GDAL-Dev-f3742093.html">Nabble</a>.<p>
+Archives since 2005 are searchable on <a href="http://osgeo-org.1803224.n2.nabble.com/GDAL-Dev-f2022644.html">Nabble</a>.<p>
 
 Some GDAL/OGR users and developers can also often be found in the 
 <a href="irc://irc.freenode.net/#gdal">#gdal</a> IRC channel on irc.freenode.net.<p>

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ersdataset.cpp 24927 2012-09-16 12:14:44Z rouault $
+ * $Id: ersdataset.cpp 23029 2011-09-03 10:15:51Z rouault $
  *
  * Project:  ERMapper .ers Driver
  * Purpose:  Implementation of .ers driver.
@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include "ershdrnode.h"
 
-CPL_CVSID("$Id: ersdataset.cpp 24927 2012-09-16 12:14:44Z rouault $");
+CPL_CVSID("$Id: ersdataset.cpp 23029 2011-09-03 10:15:51Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -687,9 +687,9 @@ void ERSDataset::ReadGCPs()
     osDatum = poHeader->Find( "RasterInfo.WarpControl.CoordinateSpace.Datum", "" );
     osUnits = poHeader->Find( "RasterInfo.WarpControl.CoordinateSpace.Units", "" );
 
-    oSRS.importFromERM( osProj.size() ? osProj.c_str() : "RAW",
-                        osDatum.size() ? osDatum.c_str() : "WGS84",
-                        osUnits.size() ? osUnits.c_str() : "METERS" );
+    oSRS.importFromERM( osProj.size() ? osProj : "RAW",
+                        osDatum.size() ? osDatum : "WGS84",
+                        osUnits.size() ? osUnits : "METERS" );
 
     CPLFree( pszGCPProjection );
     oSRS.exportToWkt( &pszGCPProjection );
@@ -1045,9 +1045,9 @@ GDALDataset *ERSDataset::Open( GDALOpenInfo * poOpenInfo )
     poDS->osDatum = poHeader->Find( "CoordinateSpace.Datum", "" );
     poDS->osUnits = poHeader->Find( "CoordinateSpace.Units", "" );
 
-    oSRS.importFromERM( poDS->osProj.size() ? poDS->osProj.c_str() : "RAW",
-                        poDS->osDatum.size() ? poDS->osDatum.c_str() : "WGS84",
-                        poDS->osUnits.size() ? poDS->osUnits.c_str() : "METERS" );
+    oSRS.importFromERM( poDS->osProj.size() ? poDS->osProj : "RAW",
+                        poDS->osDatum.size() ? poDS->osDatum : "WGS84",
+                        poDS->osUnits.size() ? poDS->osUnits : "METERS" );
 
     CPLFree( poDS->pszProjection );
     oSRS.exportToWkt( &(poDS->pszProjection) );

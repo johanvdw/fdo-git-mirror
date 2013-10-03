@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrpgresultlayer.cpp 25647 2013-02-12 18:40:15Z rouault $
+ * $Id: ogrpgresultlayer.cpp 23674 2012-01-01 14:32:18Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRPGResultLayer class, access the resultset from
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "ogr_pg.h"
 
-CPL_CVSID("$Id: ogrpgresultlayer.cpp 25647 2013-02-12 18:40:15Z rouault $");
+CPL_CVSID("$Id: ogrpgresultlayer.cpp 23674 2012-01-01 14:32:18Z rouault $");
 
 #define PQexec this_is_an_error
 
@@ -55,49 +55,33 @@ OGRPGResultLayer::OGRPGResultLayer( OGRPGDataSource *poDSIn,
 
     poFeatureDefn = ReadResultDefinition(hInitialResultIn);
 
-    pszGeomTableName = NULL;
-    pszGeomTableSchemaName = NULL;
-
-    /* Find at which index the geometry column is */
-    int iGeomCol = -1;
-    if (pszGeomColumn != NULL)
+    /* We have to get the SRID of the geometry column, so to be able */
+    /* to do spatial filtering */
+    if (bHasPostGISGeometry)
     {
-        int iRawField;
-        for( iRawField = 0; iRawField < PQnfields(hInitialResultIn); iRawField++ )
-        {
-            if( strcmp(PQfname(hInitialResultIn,iRawField), pszGeomColumn) == 0 )
-            {
-                iGeomCol = iRawField;
-                break;
-            }
-        }
-    }
+        CPLString osGetSRID;
+        osGetSRID += "SELECT getsrid(";
+        osGetSRID += OGRPGEscapeColumnName(pszGeomColumn);
+        osGetSRID += ") FROM (";
+        osGetSRID += pszRawStatement;
+        osGetSRID += ") AS ogrpggetsrid LIMIT 1";
 
-#ifndef PG_PRE74
-    /* Determine the table from which the geometry column is extracted */
-    if (iGeomCol != -1)
-    {
-        Oid tableOID = PQftable(hInitialResultIn, iGeomCol);
-        if (tableOID != InvalidOid)
-        {
-            CPLString osGetTableName;
-            osGetTableName.Printf("SELECT c.relname, n.nspname FROM pg_class c "
-                                  "JOIN pg_namespace n ON c.relnamespace=n.oid WHERE c.oid = %d ", tableOID);
-            PGresult* hTableNameResult = OGRPG_PQexec(poDS->GetPGConn(), osGetTableName );
-            if( hTableNameResult && PQresultStatus(hTableNameResult) == PGRES_TUPLES_OK)
-            {
-                if ( PQntuples(hTableNameResult) > 0 )
-                {
-                    pszGeomTableName = CPLStrdup(PQgetvalue(hTableNameResult,0,0));
-                    pszGeomTableSchemaName = CPLStrdup(PQgetvalue(hTableNameResult,0,1));
-                }
-            }
-            OGRPGClearResult( hTableNameResult );
-        }
-    }
-#endif
+        PGresult* hSRSIdResult = OGRPG_PQexec(poDS->GetPGConn(), osGetSRID );
 
-    if (bHasPostGISGeography)
+        if( hSRSIdResult && PQresultStatus(hSRSIdResult) == PGRES_TUPLES_OK)
+        {
+            if ( PQntuples(hSRSIdResult) > 0 )
+                nSRSId = atoi(PQgetvalue(hSRSIdResult, 0, 0));
+        }
+        else
+        {
+            CPLError( CE_Failure, CPLE_AppDefined,
+                        "%s", PQerrorMessage(poDS->GetPGConn()) );
+        }
+
+        OGRPGClearResult(hSRSIdResult);
+    }
+    else if (bHasPostGISGeography)
     {
         // FIXME? But for the moment, PostGIS 1.5 only handles SRID:4326.
         nSRSId = 4326;
@@ -112,8 +96,6 @@ OGRPGResultLayer::~OGRPGResultLayer()
 
 {
     CPLFree( pszRawStatement );
-    CPLFree( pszGeomTableName );
-    CPLFree( pszGeomTableSchemaName );
 }
 
 
@@ -212,10 +194,6 @@ int OGRPGResultLayer::TestCapability( const char * pszCap )
 OGRFeature *OGRPGResultLayer::GetNextFeature()
 
 {
-    if( (bHasPostGISGeometry || bHasPostGISGeography) && nSRSId == UNDETERMINED_SRID )
-    {
-        GetSpatialRef(); /* make sure that we fetch the SRID if not already done */
-    }
 
     for( ; TRUE; )
     {
@@ -245,11 +223,6 @@ void OGRPGResultLayer::SetSpatialFilter( OGRGeometry * poGeomIn )
 {
     if( InstallFilter( poGeomIn ) )
     {
-        if( (bHasPostGISGeometry || bHasPostGISGeography) && nSRSId == UNDETERMINED_SRID )
-        {
-            GetSpatialRef(); /* make sure that we fetch the SRID if not already done */
-        }
-
         if ((bHasPostGISGeometry || bHasPostGISGeography) && nSRSId != UNDETERMINED_SRID)
         {
             if( m_poFilterGeom != NULL)
@@ -301,11 +274,6 @@ OGRErr OGRPGResultLayer::GetExtent( OGREnvelope *psExtent, int bForce )
     else
         pszExtentFct = "Extent";
 
-    if( (bHasPostGISGeometry || bHasPostGISGeography) && nSRSId == UNDETERMINED_SRID )
-    {
-        GetSpatialRef(); /* make sure that we fetch the SRID if not already done */
-    }
-
     if ( TestCapability(OLCFastGetExtent) )
     {
         /* Do not take the spatial filter into account */
@@ -322,74 +290,4 @@ OGRErr OGRPGResultLayer::GetExtent( OGREnvelope *psExtent, int bForce )
     }
     
     return RunGetExtentRequest(psExtent, bForce, osCommand);
-}
-
-/************************************************************************/
-/*                           GetSpatialRef()                            */
-/*                                                                      */
-/*      We override this to try and fetch the table SRID from the       */
-/*      geometry_columns table if the srsid is UNDETERMINED_SRID        */
-/*      (meaning we haven't yet even looked for it).                    */
-/************************************************************************/
-
-OGRSpatialReference *OGRPGResultLayer::GetSpatialRef()
-
-{
-    if( nSRSId == UNDETERMINED_SRID )
-    {
-        /* We have to get the SRID of the geometry column, so to be able */
-        /* to do spatial filtering */
-        if (bHasPostGISGeometry)
-        {
-            if (pszGeomTableName != NULL)
-            {
-                CPLString osName(pszGeomTableSchemaName);
-                osName += ".";
-                osName += pszGeomTableName;
-                OGRPGLayer* poBaseLayer = (OGRPGLayer*) poDS->GetLayerByName(osName);
-                if (poBaseLayer)
-                {
-                    nSRSId = poBaseLayer->GetSRID();
-                }
-            }
-
-            if( nSRSId == UNDETERMINED_SRID )
-            {
-                CPLString osGetSRID;
-
-                const char* psGetSRIDFct;
-                if (poDS->sPostGISVersion.nMajor >= 2)
-                    psGetSRIDFct = "ST_SRID";
-                else
-                    psGetSRIDFct = "getsrid";
-
-                osGetSRID += "SELECT ";
-                osGetSRID += psGetSRIDFct;
-                osGetSRID += "(";
-                osGetSRID += OGRPGEscapeColumnName(pszGeomColumn);
-                osGetSRID += ") FROM(";
-                osGetSRID += pszRawStatement;
-                osGetSRID += ") AS ogrpggetsrid LIMIT 1";
-
-                PGresult* hSRSIdResult = OGRPG_PQexec(poDS->GetPGConn(), osGetSRID );
-
-                nSRSId = -1;
-
-                if( hSRSIdResult && PQresultStatus(hSRSIdResult) == PGRES_TUPLES_OK)
-                {
-                    if ( PQntuples(hSRSIdResult) > 0 )
-                        nSRSId = atoi(PQgetvalue(hSRSIdResult, 0, 0));
-                }
-                else
-                {
-                    CPLError( CE_Failure, CPLE_AppDefined,
-                                "%s", PQerrorMessage(poDS->GetPGConn()) );
-                }
-
-                OGRPGClearResult(hSRSIdResult);
-            }
-        }
-    }
-
-    return OGRPGLayer::GetSpatialRef();
 }

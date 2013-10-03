@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ll_recio.cpp 25185 2012-10-27 19:40:46Z rouault $
+ * $Id: ll_recio.cpp 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  EPIInfo .REC Reader
  * Purpose:  Implements low level REC reading API.
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ll_recio.cpp 25185 2012-10-27 19:40:46Z rouault $");
+CPL_CVSID("$Id: ll_recio.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
 
 static int nNextRecLine = 0;
 
@@ -149,7 +149,7 @@ int RECReadRecord( FILE *fp, char *pszRecord, int nRecordLength )
         if( pszLine == NULL )
             return FALSE;
 
-        if( *pszLine == 0 || *pszLine == 26 /* Cntl-Z - DOS EOF */ )
+        if( *pszLine == 26 /* Cntl-Z - DOS EOF */ )
             return FALSE;
 
         // If the end-of-line markers is '?' the record is deleted.

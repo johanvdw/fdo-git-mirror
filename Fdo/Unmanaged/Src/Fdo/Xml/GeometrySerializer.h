@@ -33,65 +33,56 @@ public:
 	/// <param name="writer">An instance of FdoXmlWriter to serialize the geometry.</param>
 	/// <param name="srsName">SRS name.</param>
 	/// <param name="version">GML version.</param>
-    /// <param name="transform">Coordinate system transformation.</param>
 	/// <returns>Returns nothing</returns>
-	static void SerializeGeometry(FdoIGeometry* geometry, FdoXmlWriter* writer, FdoString* srsName,FdoGmlVersion gmlversion, FdoCoordinateSystemTransform *transform = NULL);
+	static void SerializeGeometry(FdoIGeometry* geometry, FdoXmlWriter* writer, FdoString* srsName,FdoGmlVersion gmlversion);
 
 	/// <summary>Serialzies the point object to OGC format.</summary>
 	/// <param name="point">An instance of the point type.</param>
 	/// <param name="writer">An instance of FdoXmlWriter to serialize the point.</param>
-    /// <param name="transform">Coordinate system transformation.</param>
 	/// <returns>Returns nothing</returns>
-	static void SerializePoint(FdoIPoint* point, FdoXmlWriter* writer,FdoGmlVersion gmlversion, FdoCoordinateSystemTransform *transform = NULL);
+	static void SerializePoint(FdoIPoint* point, FdoXmlWriter* writer,FdoGmlVersion gmlversion);
 
 	/// <summary>Serializes the line string object to OGC format.</summary>
 	/// <param name="lineString">An instance of the line string type.</param>
 	/// <param name="writer">An instance of FdoXmlWriter to serialize the line string.</param>
-    /// <param name="transform">Coordinate system transformation.</param>
 	/// <returns>Returns nothing</returns>
-	static void SerializeLineString(FdoILineString* lineString, FdoXmlWriter* writer,FdoGmlVersion gmlversion, FdoCoordinateSystemTransform *transform = NULL);
+	static void SerializeLineString(FdoILineString* lineString, FdoXmlWriter* writer,FdoGmlVersion gmlversion);
 
 	/// <summary>Serializes the linear ring object to OGC format.</summary>
 	/// <param name="linearRing">An instance of the linear ring type.</param>
 	/// <param name="writer">An instance of FdoXmlWriter to serialize the linear ring.</param>
-    /// <param name="transform">Coordinate system transformation.</param>
 	/// <returns>Returns nothing</returns>
-	static void SerializeLinearRing(FdoILinearRing* linearRing, FdoXmlWriter* writer,FdoGmlVersion gmlversion, FdoCoordinateSystemTransform *transform = NULL);
+	static void SerializeLinearRing(FdoILinearRing* linearRing, FdoXmlWriter* writer,FdoGmlVersion gmlversion);
 
 	/// <summary>Serializes the polygon object to OGC format.</summary>
 	/// <param name="linearRing">An instance of the polygon type.</param>
 	/// <param name="writer">An instance of FdoXmlWriter to serialize the polygon.</param>
-    /// <param name="transform">Coordinate system transformation.</param>
 	/// <returns>Returns nothing</returns>
-	static void SerializePolygon(FdoIPolygon* polygon, FdoXmlWriter* writer, FdoString* srsName,FdoGmlVersion gmlversion, FdoCoordinateSystemTransform *transform = NULL);
+	static void SerializePolygon(FdoIPolygon* polygon, FdoXmlWriter* writer, FdoString* srsName,FdoGmlVersion gmlversion);
 	
 	/// <summary>Serializes the multipoint object to OGC format.</summary>
 	/// <param name="linearRing">An instance of the multipoint type.</param>
 	/// <param name="writer">An instance of FdoXmlWriter to serialize the multipoint.</param>
-    /// <param name="transform">Coordinate system transformation.</param>
 	/// <returns>Returns nothing</returns>
-	static void SerializeMultiPoint(FdoIMultiPoint* multiPoint, FdoXmlWriter* writer, FdoString* srsName,FdoGmlVersion gmlversion, FdoCoordinateSystemTransform *transform = NULL);
+	static void SerializeMultiPoint(FdoIMultiPoint* multiPoint, FdoXmlWriter* writer, FdoString* srsName,FdoGmlVersion gmlversion);
 	
 	/// <summary>Serializes the multi line string object to OGC format.</summary>
 	/// <param name="linearRing">An instance of the multi line string type.</param>
 	/// <param name="writer">An instance of FdoXmlWriter to serialize the multi line string.</param>
-    /// <param name="transform">Coordinate system transformation.</param>
 	/// <returns>Returns nothing</returns>
-	static void SerializeMultiLineString(FdoIMultiLineString* mlString, FdoXmlWriter* writer,FdoGmlVersion gmlversion, FdoCoordinateSystemTransform *transform = NULL);
+	static void SerializeMultiLineString(FdoIMultiLineString* mlString, FdoXmlWriter* writer,FdoGmlVersion gmlversion);
 	
 	/// <summary>Serializes the multi polygon object to OGC format.</summary>
 	/// <param name="linearRing">An instance of the multi polygon type.</param>
 	/// <param name="writer">An instance of FdoXmlWriter to serialize the multi polygon.</param>
-    /// <param name="transform">Coordinate system transformation.</param>
 	/// <returns>Returns nothing</returns>
-	static void SerializeMultiPolygon(FdoIMultiPolygon*, FdoXmlWriter* writer, FdoString* srsName,FdoGmlVersion gmlversion, FdoCoordinateSystemTransform *transform = NULL);
+	static void SerializeMultiPolygon(FdoIMultiPolygon*, FdoXmlWriter* writer, FdoString* srsName,FdoGmlVersion gmlversion);
 	
 	/// <summary>Serializes the multi geometry object to OGC format.</summary>
 	/// <param name="linearRing">An instance of the multi geometry type.</param>
 	/// <param name="writer">An instance of FdoXmlWriter to serialize the multi geometry.</param>
-    /// <param name="transform">Coordinate system transformation.</param>
 	/// <returns>Returns nothing</returns>
-	static void SerializeMultiGeometry(FdoIMultiGeometry*, FdoXmlWriter* writer, FdoString* srsName,FdoGmlVersion gmlversion, FdoCoordinateSystemTransform *transform = NULL);
+	static void SerializeMultiGeometry(FdoIMultiGeometry*, FdoXmlWriter* writer, FdoString* srsName,FdoGmlVersion gmlversion);
 };
 
 // The abstract GML geometry serializer 
@@ -108,65 +99,56 @@ public:
 	/// <param name="writer">An instance of FdoXmlWriter to serialize the geometry.</param>
 	/// <param name="srsName">SRS name.</param>
 	/// <param name="version">GML version.</param>
-    /// <param name="transform">Coordinate system transformation.</param>
 	/// <returns>Returns nothing</returns>
-	virtual void SerializeGeometry(FdoIGeometry* geometry, FdoXmlWriter* writer, FdoString* srsName, FdoCoordinateSystemTransform *transform = NULL) = 0;
+	virtual void SerializeGeometry(FdoIGeometry* geometry, FdoXmlWriter* writer, FdoString* srsName) = 0;
 
 	/// <summary>Serialzies the point object to OGC format.</summary>
 	/// <param name="point">An instance of the point type.</param>
 	/// <param name="writer">An instance of FdoXmlWriter to serialize the point.</param>
-    /// <param name="transform">Coordinate system transformation.</param>
 	/// <returns>Returns nothing</returns>
-	virtual void SerializePoint(FdoIPoint* point, FdoXmlWriter* writer, FdoCoordinateSystemTransform *transform = NULL) = 0;
+	virtual void SerializePoint(FdoIPoint* point, FdoXmlWriter* writer) = 0;
 
 	/// <summary>Serializes the line string object to OGC format.</summary>
 	/// <param name="lineString">An instance of the line string type.</param>
 	/// <param name="writer">An instance of FdoXmlWriter to serialize the line string.</param>
-    /// <param name="transform">Coordinate system transformation.</param>
 	/// <returns>Returns nothing</returns>
-	virtual void SerializeLineString(FdoILineString* lineString, FdoXmlWriter* writer, FdoCoordinateSystemTransform *transform = NULL) = 0;
+	virtual void SerializeLineString(FdoILineString* lineString, FdoXmlWriter* writer) = 0;
 
 	/// <summary>Serializes the linear ring object to OGC format.</summary>
 	/// <param name="linearRing">An instance of the linear ring type.</param>
 	/// <param name="writer">An instance of FdoXmlWriter to serialize the linear ring.</param>
-    /// <param name="transform">Coordinate system transformation.</param>
 	/// <returns>Returns nothing</returns>
-	virtual void SerializeLinearRing(FdoILinearRing* linearRing, FdoXmlWriter* writer, FdoCoordinateSystemTransform *transform = NULL) = 0;
+	virtual void SerializeLinearRing(FdoILinearRing* linearRing, FdoXmlWriter* writer) = 0;
 
 	/// <summary>Serializes the polygon object to OGC format.</summary>
 	/// <param name="linearRing">An instance of the polygon type.</param>
 	/// <param name="writer">An instance of FdoXmlWriter to serialize the polygon.</param>
-    /// <param name="transform">Coordinate system transformation.</param>
 	/// <returns>Returns nothing</returns>
-	virtual void SerializePolygon(FdoIPolygon* polygon, FdoXmlWriter* writer, FdoString* srsName, FdoCoordinateSystemTransform *transform = NULL) = 0;
+	virtual void SerializePolygon(FdoIPolygon* polygon, FdoXmlWriter* writer, FdoString* srsName) = 0;
 	
 	/// <summary>Serializes the multipoint object to OGC format.</summary>
 	/// <param name="linearRing">An instance of the multipoint type.</param>
 	/// <param name="writer">An instance of FdoXmlWriter to serialize the multipoint.</param>
-    /// <param name="transform">Coordinate system transformation.</param>
 	/// <returns>Returns nothing</returns>
-	virtual void SerializeMultiPoint(FdoIMultiPoint* multiPoint, FdoXmlWriter* writer, FdoString* srsName, FdoCoordinateSystemTransform *transform = NULL) = 0;
+	virtual void SerializeMultiPoint(FdoIMultiPoint* multiPoint, FdoXmlWriter* writer, FdoString* srsName) = 0;
 	
 	/// <summary>Serializes the multi line string object to OGC format.</summary>
 	/// <param name="linearRing">An instance of the multi line string type.</param>
 	/// <param name="writer">An instance of FdoXmlWriter to serialize the multi line string.</param>
-    /// <param name="transform">Coordinate system transformation.</param>
 	/// <returns>Returns nothing</returns>
-	virtual void SerializeMultiLineString(FdoIMultiLineString* mlString, FdoXmlWriter* writer, FdoCoordinateSystemTransform *transform = NULL) = 0;
+	virtual void SerializeMultiLineString(FdoIMultiLineString* mlString, FdoXmlWriter* writer) = 0;
 	
 	/// <summary>Serializes the multi polygon object to OGC format.</summary>
 	/// <param name="linearRing">An instance of the multi polygon type.</param>
 	/// <param name="writer">An instance of FdoXmlWriter to serialize the multi polygon.</param>
-    /// <param name="transform">Coordinate system transformation.</param>
 	/// <returns>Returns nothing</returns>
-	virtual void SerializeMultiPolygon(FdoIMultiPolygon*, FdoXmlWriter* writer, FdoString* srsName, FdoCoordinateSystemTransform *transform = NULL) = 0;
+	virtual void SerializeMultiPolygon(FdoIMultiPolygon*, FdoXmlWriter* writer, FdoString* srsName) = 0;
 	
 	/// <summary>Serializes the multi geometry object to OGC format.</summary>
 	/// <param name="linearRing">An instance of the multi geometry type.</param>
 	/// <param name="writer">An instance of FdoXmlWriter to serialize the multi geometry.</param>
-    /// <param name="transform">Coordinate system transformation.</param>
 	/// <returns>Returns nothing</returns>
-	virtual void SerializeMultiGeometry(FdoIMultiGeometry*, FdoXmlWriter* writer, FdoString* srsName, FdoCoordinateSystemTransform *transform = NULL) = 0;
+	virtual void SerializeMultiGeometry(FdoIMultiGeometry*, FdoXmlWriter* writer, FdoString* srsName) = 0;
 
     /// Default disposal.
     virtual void Dispose()
@@ -177,9 +159,8 @@ public:
 private:
 	/// <summary>Gets the coordinates of the FdoIDirectPosition object.</summary>
 	/// <param name="position">An instance of FdoIDirectPosition type.</param>
-    /// <param name="transform">Coordinate system transformation.</param>
 	/// <returns>Returns the corrdinates as string.</returns>
-	FdoStringP GetDirectPositionCoordinates( FdoIDirectPosition* position, FdoGmlVersion gmlversion, FdoCoordinateSystemTransform *transform = NULL);
+	FdoStringP GetDirectPositionCoordinates( FdoIDirectPosition* position,FdoGmlVersion gmlversion);
 };
 // typedef FdoGMLGeometrySerializerP.
 typedef FdoPtr<FdoGMLGeometrySerializer> FdoGMLGeometrySerializerP;
@@ -198,72 +179,62 @@ public:
 	/// <param name="writer">An instance of FdoXmlWriter to serialize the geometry.</param>
 	/// <param name="srsName">SRS name.</param>
 	/// <param name="version">GML version.</param>
-    /// <param name="transform">Coordinate system transformation.</param>
 	/// <returns>Returns nothing</returns>
-	virtual void SerializeGeometry(FdoIGeometry* geometry, FdoXmlWriter* writer, FdoString* srsName, FdoCoordinateSystemTransform *transform = NULL);
+	virtual void SerializeGeometry(FdoIGeometry* geometry, FdoXmlWriter* writer, FdoString* srsName);
 
 	/// <summary>Serialzies the point object to OGC format.</summary>
 	/// <param name="point">An instance of the point type.</param>
 	/// <param name="writer">An instance of FdoXmlWriter to serialize the point.</param>
-    /// <param name="transform">Coordinate system transformation.</param>
 	/// <returns>Returns nothing</returns>
-	virtual void SerializePoint(FdoIPoint* point, FdoXmlWriter* writer, FdoCoordinateSystemTransform *transform = NULL);
+	virtual void SerializePoint(FdoIPoint* point, FdoXmlWriter* writer);
 
 	/// <summary>Serializes the line string object to OGC format.</summary>
 	/// <param name="lineString">An instance of the line string type.</param>
 	/// <param name="writer">An instance of FdoXmlWriter to serialize the line string.</param>
-    /// <param name="transform">Coordinate system transformation.</param>
 	/// <returns>Returns nothing</returns>
-	virtual void SerializeLineString(FdoILineString* lineString, FdoXmlWriter* writer, FdoCoordinateSystemTransform *transform = NULL);
+	virtual void SerializeLineString(FdoILineString* lineString, FdoXmlWriter* writer);
 
 	/// <summary>Serializes the linear ring object to OGC format.</summary>
 	/// <param name="linearRing">An instance of the linear ring type.</param>
 	/// <param name="writer">An instance of FdoXmlWriter to serialize the linear ring.</param>
-    /// <param name="transform">Coordinate system transformation.</param>
 	/// <returns>Returns nothing</returns>
-	virtual void SerializeLinearRing(FdoILinearRing* linearRing, FdoXmlWriter* writer, FdoCoordinateSystemTransform *transform = NULL);
+	virtual void SerializeLinearRing(FdoILinearRing* linearRing, FdoXmlWriter* writer);
 
 	/// <summary>Serializes the polygon object to OGC format.</summary>
 	/// <param name="linearRing">An instance of the polygon type.</param>
 	/// <param name="writer">An instance of FdoXmlWriter to serialize the polygon.</param>
-    /// <param name="transform">Coordinate system transformation.</param>
 	/// <returns>Returns nothing</returns>
-	virtual void SerializePolygon(FdoIPolygon* polygon, FdoXmlWriter* writer, FdoString* srsName, FdoCoordinateSystemTransform *transform = NULL);
+	virtual void SerializePolygon(FdoIPolygon* polygon, FdoXmlWriter* writer, FdoString* srsName);
 	
 	/// <summary>Serializes the multipoint object to OGC format.</summary>
 	/// <param name="linearRing">An instance of the multipoint type.</param>
 	/// <param name="writer">An instance of FdoXmlWriter to serialize the multipoint.</param>
-    /// <param name="transform">Coordinate system transformation.</param>
 	/// <returns>Returns nothing</returns>
-	virtual void SerializeMultiPoint(FdoIMultiPoint* multiPoint, FdoXmlWriter* writer, FdoString* srsName, FdoCoordinateSystemTransform *transform = NULL);
+	virtual void SerializeMultiPoint(FdoIMultiPoint* multiPoint, FdoXmlWriter* writer, FdoString* srsName);
 	
 	/// <summary>Serializes the multi line string object to OGC format.</summary>
 	/// <param name="linearRing">An instance of the multi line string type.</param>
 	/// <param name="writer">An instance of FdoXmlWriter to serialize the multi line string.</param>
-    /// <param name="transform">Coordinate system transformation.</param>
 	/// <returns>Returns nothing</returns>
-	virtual void SerializeMultiLineString(FdoIMultiLineString* mlString, FdoXmlWriter* writer, FdoCoordinateSystemTransform *transform = NULL);
+	virtual void SerializeMultiLineString(FdoIMultiLineString* mlString, FdoXmlWriter* writer);
 	
 	/// <summary>Serializes the multi polygon object to OGC format.</summary>
 	/// <param name="linearRing">An instance of the multi polygon type.</param>
 	/// <param name="writer">An instance of FdoXmlWriter to serialize the multi polygon.</param>
-    /// <param name="transform">Coordinate system transformation.</param>
 	/// <returns>Returns nothing</returns>
-	virtual void SerializeMultiPolygon(FdoIMultiPolygon*, FdoXmlWriter* writer, FdoString* srsName, FdoCoordinateSystemTransform *transform = NULL);
+	virtual void SerializeMultiPolygon(FdoIMultiPolygon*, FdoXmlWriter* writer, FdoString* srsName);
 	
 	/// <summary>Serializes the multi geometry object to OGC format.</summary>
 	/// <param name="linearRing">An instance of the multi geometry type.</param>
 	/// <param name="writer">An instance of FdoXmlWriter to serialize the multi geometry.</param>
-    /// <param name="transform">Coordinate system transformation.</param>
 	/// <returns>Returns nothing</returns>
-	virtual void SerializeMultiGeometry(FdoIMultiGeometry*, FdoXmlWriter* writer, FdoString* srsName, FdoCoordinateSystemTransform *transform = NULL);
+	virtual void SerializeMultiGeometry(FdoIMultiGeometry*, FdoXmlWriter* writer, FdoString* srsName);
 
 private:
 	/// <summary>Gets the coordinates of the FdoIDirectPosition object.</summary>
 	/// <param name="position">An instance of FdoIDirectPosition type.</param>
-    /// <param name="transform">Coordinate system transformation.</param>
 	/// <returns>Returns the corrdinates as string.</returns>
-	FdoStringP GetDirectPositionCoordinates(FdoIDirectPosition* position, FdoCoordinateSystemTransform *transform = NULL);
+	FdoStringP GetDirectPositionCoordinates( FdoIDirectPosition* position);
 
     /// Suppress create the object of this type from outside.
     FdoGML212GeometrySerializer(){};
@@ -291,72 +262,62 @@ public:
 	/// <param name="writer">An instance of FdoXmlWriter to serialize the geometry.</param>
 	/// <param name="srsName">SRS name.</param>
 	/// <param name="version">GML version.</param>
-    /// <param name="transform">Coordinate system transformation.</param>
 	/// <returns>Returns nothing</returns>
-	virtual void SerializeGeometry(FdoIGeometry* geometry, FdoXmlWriter* writer, FdoString* srsName, FdoCoordinateSystemTransform *transform = NULL);
+	virtual void SerializeGeometry(FdoIGeometry* geometry, FdoXmlWriter* writer, FdoString* srsName);
 
 	/// <summary>Serialzies the point object to OGC format.</summary>
 	/// <param name="point">An instance of the point type.</param>
 	/// <param name="writer">An instance of FdoXmlWriter to serialize the point.</param>
-    /// <param name="transform">Coordinate system transformation.</param>
 	/// <returns>Returns nothing</returns>
-	virtual void SerializePoint(FdoIPoint* point, FdoXmlWriter* write, FdoCoordinateSystemTransform *transform = NULL);
+	virtual void SerializePoint(FdoIPoint* point, FdoXmlWriter* writer);
 
 	/// <summary>Serializes the line string object to OGC format.</summary>
 	/// <param name="lineString">An instance of the line string type.</param>
 	/// <param name="writer">An instance of FdoXmlWriter to serialize the line string.</param>
-    /// <param name="transform">Coordinate system transformation.</param>
 	/// <returns>Returns nothing</returns>
-	virtual void SerializeLineString(FdoILineString* lineString, FdoXmlWriter* writer, FdoCoordinateSystemTransform *transform = NULL);
+	virtual void SerializeLineString(FdoILineString* lineString, FdoXmlWriter* writer);
 
 	/// <summary>Serializes the linear ring object to OGC format.</summary>
 	/// <param name="linearRing">An instance of the linear ring type.</param>
 	/// <param name="writer">An instance of FdoXmlWriter to serialize the linear ring.</param>
-    /// <param name="transform">Coordinate system transformation.</param>
 	/// <returns>Returns nothing</returns>
-	virtual void SerializeLinearRing(FdoILinearRing* linearRing, FdoXmlWriter* writer, FdoCoordinateSystemTransform *transform = NULL);
+	virtual void SerializeLinearRing(FdoILinearRing* linearRing, FdoXmlWriter* writer);
 
 	/// <summary>Serializes the polygon object to OGC format.</summary>
 	/// <param name="linearRing">An instance of the polygon type.</param>
 	/// <param name="writer">An instance of FdoXmlWriter to serialize the polygon.</param>
-    /// <param name="transform">Coordinate system transformation.</param>
 	/// <returns>Returns nothing</returns>
-	virtual void SerializePolygon(FdoIPolygon* polygon, FdoXmlWriter* writer, FdoString* srsName, FdoCoordinateSystemTransform *transform = NULL);
+	virtual void SerializePolygon(FdoIPolygon* polygon, FdoXmlWriter* writer, FdoString* srsName);
 	
 	/// <summary>Serializes the multipoint object to OGC format.</summary>
 	/// <param name="linearRing">An instance of the multipoint type.</param>
 	/// <param name="writer">An instance of FdoXmlWriter to serialize the multipoint.</param>
-    /// <param name="transform">Coordinate system transformation.</param>
 	/// <returns>Returns nothing</returns>
-	virtual void SerializeMultiPoint(FdoIMultiPoint* multiPoint, FdoXmlWriter* writer, FdoString* srsName, FdoCoordinateSystemTransform *transform = NULL);
+	virtual void SerializeMultiPoint(FdoIMultiPoint* multiPoint, FdoXmlWriter* writer, FdoString* srsName);
 	
 	/// <summary>Serializes the multi line string object to OGC format.</summary>
 	/// <param name="linearRing">An instance of the multi line string type.</param>
 	/// <param name="writer">An instance of FdoXmlWriter to serialize the multi line string.</param>
-    /// <param name="transform">Coordinate system transformation.</param>
 	/// <returns>Returns nothing</returns>
-	virtual void SerializeMultiLineString(FdoIMultiLineString* mlString, FdoXmlWriter* writer, FdoCoordinateSystemTransform *transform = NULL);
+	virtual void SerializeMultiLineString(FdoIMultiLineString* mlString, FdoXmlWriter* writer);
 	
 	/// <summary>Serializes the multi polygon object to OGC format.</summary>
 	/// <param name="linearRing">An instance of the multi polygon type.</param>
 	/// <param name="writer">An instance of FdoXmlWriter to serialize the multi polygon.</param>
-    /// <param name="transform">Coordinate system transformation.</param>
 	/// <returns>Returns nothing</returns>
-	virtual void SerializeMultiPolygon(FdoIMultiPolygon*, FdoXmlWriter* writer, FdoString* srsName, FdoCoordinateSystemTransform *transform = NULL);
+	virtual void SerializeMultiPolygon(FdoIMultiPolygon*, FdoXmlWriter* writer, FdoString* srsName);
 	
 	/// <summary>Serializes the multi geometry object to OGC format.</summary>
 	/// <param name="linearRing">An instance of the multi geometry type.</param>
 	/// <param name="writer">An instance of FdoXmlWriter to serialize the multi geometry.</param>
-    /// <param name="transform">Coordinate system transformation.</param>
 	/// <returns>Returns nothing</returns>
-	virtual void SerializeMultiGeometry(FdoIMultiGeometry*, FdoXmlWriter* writer, FdoString* srsName, FdoCoordinateSystemTransform *transform = NULL);
+	virtual void SerializeMultiGeometry(FdoIMultiGeometry*, FdoXmlWriter* writer, FdoString* srsName);
 
 private:
 	/// <summary>Gets the coordinates of the FdoIDirectPosition object.</summary>
 	/// <param name="position">An instance of FdoIDirectPosition type.</param>
-    /// <param name="transform">Coordinate system transformation.</param>
 	/// <returns>Returns the corrdinates as string.</returns>
-	FdoStringP GetDirectPositionCoordinates(FdoIDirectPosition* position, FdoCoordinateSystemTransform *transform = NULL);
+	FdoStringP GetDirectPositionCoordinates( FdoIDirectPosition* position);
 
     /// Suppress create the object of this type from outside.
     FdoGML311GeometrySerializer(){};

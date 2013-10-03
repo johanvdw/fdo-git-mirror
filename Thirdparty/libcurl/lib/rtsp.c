@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2012, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2010, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -18,9 +18,10 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
+ * $Id: rtsp.c,v 1.11 2010-02-06 17:30:06 yangtse Exp $
  ***************************************************************************/
 
-#include "curl_setup.h"
+#include "setup.h"
 
 #ifndef CURL_DISABLE_RTSP
 
@@ -28,6 +29,7 @@
 #include <curl/curl.h>
 #include "transfer.h"
 #include "sendf.h"
+#include "easyif.h" /* for Curl_convert_... prototypes */
 #include "multiif.h"
 #include "http.h"
 #include "url.h"
@@ -35,8 +37,6 @@
 #include "rtsp.h"
 #include "rawstr.h"
 #include "curl_memory.h"
-#include "select.h"
-#include "connect.h"
 
 #define _MPRINTF_REPLACE /* use our functions only */
 #include <curl/mprintf.h>
@@ -59,28 +59,9 @@
 #define RTP_PKT_LENGTH(p)  ((((int)((unsigned char)((p)[2]))) << 8) | \
                              ((int)((unsigned char)((p)[3]))))
 
-/* protocol-specific functions set up to be called by the main engine */
-static CURLcode rtsp_do(struct connectdata *conn, bool *done);
-static CURLcode rtsp_done(struct connectdata *conn, CURLcode, bool premature);
-static CURLcode rtsp_connect(struct connectdata *conn, bool *done);
-static CURLcode rtsp_disconnect(struct connectdata *conn, bool dead);
-
 static int rtsp_getsock_do(struct connectdata *conn,
                            curl_socket_t *socks,
                            int numsocks);
-
-/*
- * Parse and write out any available RTP data.
- *
- * nread: amount of data left after k->str. will be modified if RTP
- *        data is parsed and k->str is moved up
- * readmore: whether or not the RTP parser needs more data right away
- */
-static CURLcode rtsp_rtp_readwrite(struct SessionHandle *data,
-                                   struct connectdata *conn,
-                                   ssize_t *nread,
-                                   bool *readmore);
-
 
 /* this returns the socket to wait for in the DO and DOING state for the multi
    interface and then we're always _sending_ a request and thus we wait for
@@ -105,57 +86,21 @@ CURLcode rtp_client_write(struct connectdata *conn, char *ptr, size_t len);
 const struct Curl_handler Curl_handler_rtsp = {
   "RTSP",                               /* scheme */
   ZERO_NULL,                            /* setup_connection */
-  rtsp_do,                              /* do_it */
-  rtsp_done,                            /* done */
+  Curl_rtsp,                            /* do_it */
+  Curl_rtsp_done,                       /* done */
   ZERO_NULL,                            /* do_more */
-  rtsp_connect,                         /* connect_it */
+  Curl_rtsp_connect,                    /* connect_it */
   ZERO_NULL,                            /* connecting */
   ZERO_NULL,                            /* doing */
   ZERO_NULL,                            /* proto_getsock */
   rtsp_getsock_do,                      /* doing_getsock */
-  ZERO_NULL,                            /* domore_getsock */
   ZERO_NULL,                            /* perform_getsock */
-  rtsp_disconnect,                      /* disconnect */
-  rtsp_rtp_readwrite,                   /* readwrite */
+  Curl_rtsp_disconnect,                 /* disconnect */
   PORT_RTSP,                            /* defport */
-  CURLPROTO_RTSP,                       /* protocol */
-  PROTOPT_NONE                          /* flags */
+  PROT_RTSP,                            /* protocol */
 };
 
-/*
- * The server may send us RTP data at any point, and RTSPREQ_RECEIVE does not
- * want to block the application forever while receiving a stream. Therefore,
- * we cannot assume that an RTSP socket is dead just because it is readable.
- *
- * Instead, if it is readable, run Curl_getconnectinfo() to peek at the socket
- * and distinguish between closed and data.
- */
-bool Curl_rtsp_connisdead(struct connectdata *check)
-{
-  int sval;
-  bool ret_val = TRUE;
-
-  sval = Curl_socket_ready(check->sock[FIRSTSOCKET], CURL_SOCKET_BAD, 0);
-  if(sval == 0) {
-    /* timeout */
-    ret_val = FALSE;
-  }
-  else if(sval & CURL_CSELECT_ERR) {
-    /* socket is in an error state */
-    ret_val = TRUE;
-  }
-  else if((sval & CURL_CSELECT_IN) && check->data) {
-    /* readable with no error. could be closed or could be alive but we can
-       only check if we have a proper SessionHandle for the connection */
-    curl_socket_t connectinfo = Curl_getconnectinfo(check->data, &check);
-    if(connectinfo != CURL_SOCKET_BAD)
-      ret_val = FALSE;
-  }
-
-  return ret_val;
-}
-
-static CURLcode rtsp_connect(struct connectdata *conn, bool *done)
+CURLcode Curl_rtsp_connect(struct connectdata *conn, bool *done)
 {
   CURLcode httpStatus;
   struct SessionHandle *data = conn->data;
@@ -173,16 +118,14 @@ static CURLcode rtsp_connect(struct connectdata *conn, bool *done)
   return httpStatus;
 }
 
-static CURLcode rtsp_disconnect(struct connectdata *conn, bool dead)
-{
-  (void) dead;
+CURLcode Curl_rtsp_disconnect(struct connectdata *conn) {
   Curl_safefree(conn->proto.rtspc.rtp_buf);
   return CURLE_OK;
 }
 
 
-static CURLcode rtsp_done(struct connectdata *conn,
-                          CURLcode status, bool premature)
+CURLcode Curl_rtsp_done(struct connectdata *conn,
+                        CURLcode status, bool premature)
 {
   struct SessionHandle *data = conn->data;
   struct RTSP *rtsp = data->state.proto.rtsp;
@@ -201,8 +144,7 @@ static CURLcode rtsp_done(struct connectdata *conn,
     CSeq_sent = rtsp->CSeq_sent;
     CSeq_recv = rtsp->CSeq_recv;
     if((data->set.rtspreq != RTSPREQ_RECEIVE) && (CSeq_sent != CSeq_recv)) {
-      failf(data,
-            "The CSeq of this request %ld did not match the response %ld",
+      failf(data, "The CSeq of this request %ld did not match the response %ld",
             CSeq_sent, CSeq_recv);
       return CURLE_RTSP_CSEQ_ERROR;
     }
@@ -216,7 +158,7 @@ static CURLcode rtsp_done(struct connectdata *conn,
   return httpStatus;
 }
 
-static CURLcode rtsp_do(struct connectdata *conn, bool *done)
+CURLcode Curl_rtsp(struct connectdata *conn, bool *done)
 {
   struct SessionHandle *data = conn->data;
   CURLcode result=CURLE_OK;
@@ -293,7 +235,6 @@ static CURLcode rtsp_do(struct connectdata *conn, bool *done)
     p_request = "TEARDOWN";
     break;
   case RTSPREQ_GET_PARAMETER:
-    /* GET_PARAMETER's no_body status is determined later */
     p_request = "GET_PARAMETER";
     data->set.opt_no_body = FALSE;
     break;
@@ -314,8 +255,8 @@ static CURLcode rtsp_do(struct connectdata *conn, bool *done)
   }
 
   if(rtspreq == RTSPREQ_RECEIVE) {
-    Curl_setup_transfer(conn, FIRSTSOCKET, -1, TRUE,
-                        &http->readbytecount, -1, NULL);
+    result = Curl_setup_transfer(conn, FIRSTSOCKET, -1, TRUE,
+                                 &http->readbytecount, -1, NULL);
 
     return result;
   }
@@ -379,6 +320,12 @@ static CURLcode rtsp_do(struct connectdata *conn, bool *done)
 
       p_accept_encoding = conn->allocptr.accept_encoding;
     }
+  }
+
+  /* Default to text/parameters for GET_PARAMETER */
+  if(rtspreq == RTSPREQ_GET_PARAMETER) {
+    p_accept = Curl_checkheaders(data, "Accept:")?
+      NULL:"Accept: text/parameters\r\n";
   }
 
   /* The User-Agent string might have been allocated in url.c already, because
@@ -487,10 +434,7 @@ static CURLcode rtsp_do(struct connectdata *conn, bool *done)
   if(result)
     return result;
 
-  if(rtspreq == RTSPREQ_ANNOUNCE ||
-     rtspreq == RTSPREQ_SET_PARAMETER ||
-     rtspreq == RTSPREQ_GET_PARAMETER) {
-
+  if(rtspreq == RTSPREQ_ANNOUNCE || rtspreq == RTSPREQ_SET_PARAMETER) {
     if(data->set.upload) {
       putsize = data->set.infilesize;
       data->set.httpreq = HTTPREQ_PUT;
@@ -503,44 +447,37 @@ static CURLcode rtsp_do(struct connectdata *conn, bool *done)
       data->set.httpreq = HTTPREQ_POST;
     }
 
-    if(putsize > 0 || postsize > 0) {
-      /* As stated in the http comments, it is probably not wise to
-       * actually set a custom Content-Length in the headers */
-      if(!Curl_checkheaders(data, "Content-Length:")) {
+    /* As stated in the http comments, it is probably not wise to
+     * actually set a custom Content-Length in the headers */
+    if(!Curl_checkheaders(data, "Content-Length:")) {
+      result = Curl_add_bufferf(req_buffer,
+                                "Content-Length: %" FORMAT_OFF_T"\r\n",
+                                (data->set.upload ? putsize : postsize));
+      if(result)
+        return result;
+    }
+
+    if(rtspreq == RTSPREQ_SET_PARAMETER) {
+      if(!Curl_checkheaders(data, "Content-Type:")) {
         result = Curl_add_bufferf(req_buffer,
-            "Content-Length: %" FORMAT_OFF_T"\r\n",
-            (data->set.upload ? putsize : postsize));
+                                  "Content-Type: text/parameters\r\n");
         if(result)
           return result;
       }
-
-      if(rtspreq == RTSPREQ_SET_PARAMETER ||
-         rtspreq == RTSPREQ_GET_PARAMETER) {
-        if(!Curl_checkheaders(data, "Content-Type:")) {
-          result = Curl_add_bufferf(req_buffer,
-              "Content-Type: text/parameters\r\n");
-          if(result)
-            return result;
-        }
-      }
-
-      if(rtspreq == RTSPREQ_ANNOUNCE) {
-        if(!Curl_checkheaders(data, "Content-Type:")) {
-          result = Curl_add_bufferf(req_buffer,
-              "Content-Type: application/sdp\r\n");
-          if(result)
-            return result;
-        }
-      }
-
-      data->state.expect100header = FALSE; /* RTSP posts are simple/small */
     }
-    else if(rtspreq == RTSPREQ_GET_PARAMETER) {
-      /* Check for an empty GET_PARAMETER (heartbeat) request */
-      data->set.httpreq = HTTPREQ_HEAD;
-      data->set.opt_no_body = TRUE;
+
+    if(rtspreq == RTSPREQ_ANNOUNCE) {
+      if(!Curl_checkheaders(data, "Content-Type:")) {
+        result = Curl_add_bufferf(req_buffer,
+                                  "Content-Type: application/sdp\r\n");
+        if(result)
+          return result;
+      }
     }
+
+    data->state.expect100header = FALSE; /* RTSP posts are simple/small */
   }
+
 
   /* RTSP never allows chunked transfer */
   data->req.forbidchunk = TRUE;
@@ -564,9 +501,15 @@ static CURLcode rtsp_do(struct connectdata *conn, bool *done)
     return result;
   }
 
-  Curl_setup_transfer(conn, FIRSTSOCKET, -1, TRUE, &http->readbytecount,
-                      putsize?FIRSTSOCKET:-1,
-                      putsize?&http->writebytecount:NULL);
+  result = Curl_setup_transfer(conn, FIRSTSOCKET, -1, TRUE,
+                               &http->readbytecount,
+                               putsize?FIRSTSOCKET:-1,
+                               putsize?&http->writebytecount:NULL);
+
+  if(result) {
+    failf(data, "Failed RTSP transfer");
+    return result;
+  }
 
   /* Increment the CSeq on success */
   data->state.rtsp_next_client_CSeq++;
@@ -582,11 +525,10 @@ static CURLcode rtsp_do(struct connectdata *conn, bool *done)
   return result;
 }
 
-
-static CURLcode rtsp_rtp_readwrite(struct SessionHandle *data,
-                                   struct connectdata *conn,
-                                   ssize_t *nread,
-                                   bool *readmore) {
+CURLcode Curl_rtsp_rtp_readwrite(struct SessionHandle *data,
+                                 struct connectdata *conn,
+                                 ssize_t *nread,
+                                 bool *readmore) {
   struct SingleRequest *k = &data->req;
   struct rtsp_conn *rtspc = &(conn->proto.rtspc);
 
@@ -747,7 +689,13 @@ CURLcode Curl_rtsp_parseheader(struct connectdata *conn,
 
   if(checkprefix("CSeq:", header)) {
     /* Store the received CSeq. Match is verified in rtsp_done */
-    int nc = sscanf(&header[4], ": %ld", &CSeq);
+    int nc;
+    char *temp = strdup(header);
+    if(!temp)
+      return CURLE_OUT_OF_MEMORY;
+    Curl_strntoupper(temp, temp, sizeof(temp));
+    nc = sscanf(temp, "CSEQ: %ld", &CSeq);
+    free(temp);
     if(nc == 1) {
       data->state.proto.rtsp->CSeq_recv = CSeq; /* mark the request */
       data->state.rtsp_CSeq_recv = CSeq; /* update the handle */
@@ -765,7 +713,7 @@ CURLcode Curl_rtsp_parseheader(struct connectdata *conn,
     while(*start && ISSPACE(*start))
       start++;
 
-    if(!*start) {
+    if(!start) {
       failf(data, "Got a blank Session ID");
     }
     else if(data->set.str[STRING_RTSP_SESSION_ID]) {

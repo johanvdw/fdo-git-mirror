@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgeojsonreader.cpp 25870 2013-04-06 20:35:40Z warmerdam $
+ * $Id: ogrgeojsonreader.cpp 23654 2011-12-29 16:19:38Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implementation of OGRGeoJSONReader class (OGR GeoJSON Driver).
@@ -111,8 +111,8 @@ OGRGeoJSONLayer* OGRGeoJSONReader::ReadLayer( const char* pszName,
     }
         
     poLayer_ = new OGRGeoJSONLayer( pszName, NULL,
-                                    OGRGeoJSONLayer::DefaultGeometryType,
-                                    poDS );
+                                   OGRGeoJSONLayer::DefaultGeometryType,
+                                   NULL, poDS );
 
     if( !GenerateLayerDefn() )
     {
@@ -304,17 +304,7 @@ OGRSpatialReference* OGRGeoJSONReadSpatialReference( json_object* poObj) {
             }
         }
     }
-
-    /* Strip AXIS, since geojson has (easting, northing) / (longitude, latitude) order. */
-    /* According to http://www.geojson.org/geojson-spec.html#id2 : "Point coordinates are in x, y order */
-    /* (easting, northing for projected coordinates, longitude, latitude for geographic coordinates)" */
-    if( poSRS != NULL )
-    {
-        OGR_SRSNode *poGEOGCS = poSRS->GetAttrNode( "GEOGCS" );
-        if( poGEOGCS != NULL )
-            poGEOGCS->StripNodes( "AXIS" );
-    }
-
+    
     return poSRS;
 }
 /************************************************************************/
@@ -336,7 +326,7 @@ void OGRGeoJSONReader::SetSkipAttributes( bool bSkip )
 }
 
 /************************************************************************/
-/*                         GenerateLayerDefn()                          */
+/*                           GenerateFeatureDefn                        */
 /************************************************************************/
 
 bool OGRGeoJSONReader::GenerateLayerDefn()
@@ -351,7 +341,7 @@ bool OGRGeoJSONReader::GenerateLayerDefn()
         return true;
 
 /* -------------------------------------------------------------------- */
-/*      Scan all features and generate layer definition.                */
+/*      Scan all features and generate layer definition.				*/
 /* -------------------------------------------------------------------- */
     GeoJSONObject::Type objType = OGRGeoJSONGetType( poGJObject_ );
     if( GeoJSONObject::eFeature == objType )
@@ -389,41 +379,38 @@ bool OGRGeoJSONReader::GenerateLayerDefn()
 /* -------------------------------------------------------------------- */
 /*      Validate and add FID column if necessary.                       */
 /* -------------------------------------------------------------------- */
-    OGRFeatureDefn* poLayerDefn = poLayer_->GetLayerDefn();
-    CPLAssert( NULL != poLayerDefn );
+	OGRFeatureDefn* poLayerDefn = poLayer_->GetLayerDefn();
+	CPLAssert( NULL != poLayerDefn );
 
-    bool bHasFID = false;
+	bool bHasFID = false;
 
-    for( int i = 0; i < poLayerDefn->GetFieldCount(); ++i )
-    {
-        OGRFieldDefn* poDefn = poLayerDefn->GetFieldDefn(i);
-        if( EQUAL( poDefn->GetNameRef(), OGRGeoJSONLayer::DefaultFIDColumn )
-            && OFTInteger == poDefn->GetType() )
-        {
-            poLayer_->SetFIDColumn( poDefn->GetNameRef() );
+	for( int i = 0; i < poLayerDefn->GetFieldCount(); ++i )
+	{
+		OGRFieldDefn* poDefn = poLayerDefn->GetFieldDefn(i);
+		if( EQUAL( poDefn->GetNameRef(), OGRGeoJSONLayer::DefaultFIDColumn )
+			&& OFTInteger == poDefn->GetType() )
+		{
+			poLayer_->SetFIDColumn( poDefn->GetNameRef() );
             bHasFID = true;
             break;
-        }
-    }
+		}
+	}
 
     // TODO - mloskot: This is wrong! We want to add only FID field if
     // found in source layer (by default name or by FID_PROPERTY= specifier,
     // the latter has to be implemented).
     /*
-      if( !bHasFID )
-      {
-      OGRFieldDefn fldDefn( OGRGeoJSONLayer::DefaultFIDColumn, OFTInteger );
-      poLayerDefn->AddFieldDefn( &fldDefn );
-      poLayer_->SetFIDColumn( fldDefn.GetNameRef() );
-      }
+    if( !bHasFID )
+    {
+        OGRFieldDefn fldDefn( OGRGeoJSONLayer::DefaultFIDColumn, OFTInteger );
+        poLayerDefn->AddFieldDefn( &fldDefn );
+        poLayer_->SetFIDColumn( fldDefn.GetNameRef() );
+    }
     */
 
     return bSuccess;
 }
 
-/************************************************************************/
-/*                        GenerateFeatureDefn()                         */
-/************************************************************************/
 bool OGRGeoJSONReader::GenerateFeatureDefn( json_object* poObj )
 {
     OGRFeatureDefn* poDefn = poLayer_->GetLayerDefn();
@@ -432,7 +419,7 @@ bool OGRGeoJSONReader::GenerateFeatureDefn( json_object* poObj )
     bool bSuccess = false;
 
 /* -------------------------------------------------------------------- */
-/*      Read collection of properties.                                  */
+/*      Read collection of properties.									*/
 /* -------------------------------------------------------------------- */
     json_object* poObjProps = NULL;
     poObjProps = OGRGeoJSONFindMemberByName( poObj, "properties" );
@@ -483,7 +470,7 @@ bool OGRGeoJSONReader::GenerateFeatureDefn( json_object* poObj )
                 }
 
                 OGRFieldDefn fldDefn( it.key,
-                                      GeoJSONPropertyToFieldType( it.val ) );
+                    GeoJSONPropertyToFieldType( it.val ) );
                 poDefn->AddFieldDefn( &fldDefn );
             }
             else
@@ -642,17 +629,17 @@ OGRFeature* OGRGeoJSONReader::ReadFeature( json_object* poObj )
                 /* nothing to do */
             }
             else if( OFTInteger == eType )
-            {
+			{
                 poFeature->SetField( nField, json_object_get_int(it.val) );
 				
-                /* Check if FID available and set correct value. */
-                if( EQUAL( it.key, poLayer_->GetFIDColumn() ) )
-                    poFeature->SetFID( json_object_get_int(it.val) );
-            }
+				/* Check if FID available and set correct value. */
+				if( EQUAL( it.key, poLayer_->GetFIDColumn() ) )
+					poFeature->SetFID( json_object_get_int(it.val) );
+			}
             else if( OFTReal == eType )
-            {
-                poFeature->SetField( nField, CPLAtof(json_object_get_string(it.val)) );
-            }
+			{
+                poFeature->SetField( nField, json_object_get_double(it.val) );
+			}
             else if( OFTIntegerList == eType )
             {
                 if ( json_object_get_type(it.val) == json_type_array )
@@ -677,7 +664,7 @@ OGRFeature* OGRGeoJSONReader::ReadFeature( json_object* poObj )
                     for(int i=0;i<nLength;i++)
                     {
                         json_object* poRow = json_object_array_get_idx(it.val, i);
-                        padfVal[i] = CPLAtof(json_object_get_string(poRow));
+                        padfVal[i] = json_object_get_double(poRow);
                     }
                     poFeature->SetField( nField, nLength, padfVal );
                     CPLFree(padfVal);
@@ -704,9 +691,9 @@ OGRFeature* OGRGeoJSONReader::ReadFeature( json_object* poObj )
                 }
             }
             else
-            {
+			{
                 poFeature->SetField( nField, json_object_get_string(it.val) );
-            }
+			}
         }
     }
 

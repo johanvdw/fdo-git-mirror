@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: bsbdataset.cpp 25340 2012-12-21 20:30:21Z rouault $
+ * $Id: bsbdataset.cpp 23113 2011-09-23 23:24:19Z rouault $
  *
  * Project:  BSB Reader
  * Purpose:  BSBDataset implementation for BSB format.
@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: bsbdataset.cpp 25340 2012-12-21 20:30:21Z rouault $");
+CPL_CVSID("$Id: bsbdataset.cpp 23113 2011-09-23 23:24:19Z rouault $");
 
 CPL_C_START
 void	GDALRegister_BSB(void);
@@ -711,7 +711,7 @@ int BSBDataset::IdentifyInternal( GDALOpenInfo * poOpenInfo, bool& isNosOut )
     isNosOut = false;
 
     if( poOpenInfo->nHeaderBytes < 1000 )
-        return FALSE;
+        return NULL;
 
     for( i = 0; i < poOpenInfo->nHeaderBytes - 4; i++ )
     {

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: vrtwarped.cpp 25884 2013-04-09 17:04:16Z etourigny $
+ * $Id: vrtwarped.cpp 23545 2011-12-12 00:50:37Z rouault $
  *
  * Project:  Virtual GDAL Datasets
  * Purpose:  Implementation of VRTWarpedRasterBand *and VRTWarpedDataset.
@@ -34,7 +34,7 @@
 #include "gdal_alg_priv.h"
 #include <cassert>
 
-CPL_CVSID("$Id: vrtwarped.cpp 25884 2013-04-09 17:04:16Z etourigny $");
+CPL_CVSID("$Id: vrtwarped.cpp 23545 2011-12-12 00:50:37Z rouault $");
 
 /************************************************************************/
 /*                      GDALAutoCreateWarpedVRT()                       */
@@ -70,9 +70,8 @@ CPL_CVSID("$Id: vrtwarped.cpp 25884 2013-04-09 17:04:16Z etourigny $");
  * @param pszDstWKT The coordinate system to convert to.  If NULL no change 
  * of coordinate system will take place.  
  *
- * @param eResampleAlg One of GRA_NearestNeighbour, GRA_Bilinear, GRA_Cubic,  
- * GRA_CubicSpline, GRA_Lanczos, GRA_Average or GRA_Mode.  
- * Controls the sampling method used.
+ * @param eResampleAlg One of GRA_NearestNeighbour, GRA_Bilinear, GRA_Cubic or 
+ * GRA_CubicSpline.  Controls the sampling method used. 
  *
  * @param dfMaxError Maximum error measured in input pixels that is allowed in 
  * approximating the transformation (0.0 for exact calculations).
@@ -382,25 +381,14 @@ CPLErr VRTWarpedDataset::Initialize( void *psWO )
 
     poWarper = new GDALWarpOperation();
 
-    GDALWarpOptions* psWO_Dup = GDALCloneWarpOptions((GDALWarpOptions *) psWO);
-
-    /* Avoid errors when adding an alpha band, but source dataset has */
-    /* no alpha band (#4571) */
-    if (CSLFetchNameValue( psWO_Dup->papszWarpOptions, "INIT_DEST" ) == NULL)
-        psWO_Dup->papszWarpOptions = CSLSetNameValue(psWO_Dup->papszWarpOptions, "INIT_DEST", "0");
-
     // The act of initializing this warped dataset with this warp options
     // will result in our assuming ownership of a reference to the
     // hSrcDS.
 
     if( ((GDALWarpOptions *) psWO)->hSrcDS != NULL )
-        GDALReferenceDataset( psWO_Dup->hSrcDS );
+        GDALReferenceDataset( ((GDALWarpOptions *) psWO)->hSrcDS );
 
-    CPLErr eErr = poWarper->Initialize( psWO_Dup );
-
-    GDALDestroyWarpOptions(psWO_Dup);
-
-    return eErr;
+    return poWarper->Initialize( (GDALWarpOptions *) psWO );
 }
 
 /************************************************************************/
@@ -869,11 +857,6 @@ CPLErr VRTWarpedDataset::XMLInit( CPLXMLNode *psTree, const char *pszVRTPath )
     psWO = GDALDeserializeWarpOptions( psOptionsTree );
     if( psWO == NULL )
         return CE_Failure;
-
-    /* Avoid errors when adding an alpha band, but source dataset has */
-    /* no alpha band (#4571) */
-    if (CSLFetchNameValue( psWO->papszWarpOptions, "INIT_DEST" ) == NULL)
-        psWO->papszWarpOptions = CSLSetNameValue(psWO->papszWarpOptions, "INIT_DEST", "0");
 
     this->eAccess = GA_Update;
 

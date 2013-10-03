@@ -86,7 +86,6 @@ SRS_PT_GEOSTATIONARY_SATELLITE = _osr.SRS_PT_GEOSTATIONARY_SATELLITE
 SRS_PT_GOODE_HOMOLOSINE = _osr.SRS_PT_GOODE_HOMOLOSINE
 SRS_PT_IGH = _osr.SRS_PT_IGH
 SRS_PT_GNOMONIC = _osr.SRS_PT_GNOMONIC
-SRS_PT_HOTINE_OBLIQUE_MERCATOR_AZIMUTH_CENTER = _osr.SRS_PT_HOTINE_OBLIQUE_MERCATOR_AZIMUTH_CENTER
 SRS_PT_HOTINE_OBLIQUE_MERCATOR = _osr.SRS_PT_HOTINE_OBLIQUE_MERCATOR
 SRS_PT_HOTINE_OBLIQUE_MERCATOR_TWO_POINT_NATURAL_ORIGIN = _osr.SRS_PT_HOTINE_OBLIQUE_MERCATOR_TWO_POINT_NATURAL_ORIGIN
 SRS_PT_LABORDE_OBLIQUE_MERCATOR = _osr.SRS_PT_LABORDE_OBLIQUE_MERCATOR
@@ -663,10 +662,6 @@ class SpatialReference(_object):
         """ImportFromMICoordSys(self, char pszCoordSys) -> OGRErr"""
         return _osr.SpatialReference_ImportFromMICoordSys(self, *args)
 
-    def ImportFromOzi(self, *args):
-        """ImportFromOzi(self, char datum, char proj, char projParms) -> OGRErr"""
-        return _osr.SpatialReference_ImportFromOzi(self, *args)
-
     def ExportToWkt(self, *args):
         """ExportToWkt(self) -> OGRErr"""
         return _osr.SpatialReference_ExportToWkt(self, *args)
@@ -759,9 +754,5 @@ class CoordinateTransformation(_object):
 CoordinateTransformation_swigregister = _osr.CoordinateTransformation_swigregister
 CoordinateTransformation_swigregister(CoordinateTransformation)
 
-
-def CreateCoordinateTransformation(*args):
-  """CreateCoordinateTransformation(SpatialReference src, SpatialReference dst) -> CoordinateTransformation"""
-  return _osr.CreateCoordinateTransformation(*args)
 
 

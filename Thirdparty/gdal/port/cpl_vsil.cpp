@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_vsil.cpp 25627 2013-02-10 10:17:19Z rouault $
+ * $Id: cpl_vsil.cpp 23506 2011-12-10 13:43:59Z rouault $
  *
  * Project:  VSI Virtual File System
  * Purpose:  Implementation VSI*L File API and other file system access
@@ -29,11 +29,10 @@
  ****************************************************************************/
 
 #include "cpl_vsi_virtual.h"
-#include "cpl_multiproc.h"
 #include "cpl_string.h"
 #include <string>
 
-CPL_CVSID("$Id: cpl_vsil.cpp 25627 2013-02-10 10:17:19Z rouault $");
+CPL_CVSID("$Id: cpl_vsil.cpp 23506 2011-12-10 13:43:59Z rouault $");
 
 /************************************************************************/
 /*                             VSIReadDir()                             */
@@ -66,160 +65,6 @@ char **VSIReadDir(const char *pszPath)
 
     return poFSHandler->ReadDir( pszPath );
 }
-
-/************************************************************************/
-/*                             VSIReadRecursive()                       */
-/************************************************************************/
-
-typedef struct
-{
-    char **papszFiles;
-    int nCount;
-    int i;
-    char* pszPath;
-    char* pszDisplayedPath;
-}  VSIReadDirRecursiveTask;
-
-/**
- * \brief Read names in a directory recursively.
- *
- * This function abstracts access to directory contents and subdirectories.
- * It returns a list of strings containing the names of files and directories 
- * in this directory and all subdirectories.  The resulting string list becomes
- * the responsibility of the application and should be freed with CSLDestroy()
- *  when no longer needed.
- *
- * Note that no error is issued via CPLError() if the directory path is
- * invalid, though NULL is returned.
- * 
- * @param pszPathIn the relative, or absolute path of a directory to read.  
- * UTF-8 encoded.
- *
- * @return The list of entries in the directory and subdirectories 
- * or NULL if the directory doesn't exist.  Filenames are returned in UTF-8 
- * encoding.
- * @since GDAL 1.10.0
- *
- */
-
-char **VSIReadDirRecursive( const char *pszPathIn )
-{
-    CPLStringList oFiles = NULL;
-    char **papszFiles = NULL;
-    VSIStatBufL psStatBuf;
-    CPLString osTemp1, osTemp2;
-    int i = 0;
-    int nCount = -1;
-
-    std::vector<VSIReadDirRecursiveTask> aoStack;
-    char* pszPath = CPLStrdup(pszPathIn);
-    char* pszDisplayedPath = NULL;
-
-    while(TRUE)
-    {
-        if( nCount < 0 )
-        {
-            // get listing
-            papszFiles = VSIReadDir( pszPath );
-
-            // get files and directories inside listing
-            nCount = papszFiles ? CSLCount( papszFiles ) : 0;
-            i = 0;
-        }
-
-        for ( ; i < nCount; i++ )
-        {
-            // build complete file name for stat
-            osTemp1.clear();
-            osTemp1.append( pszPath );
-            osTemp1.append( "/" );
-            osTemp1.append( papszFiles[i] );
-
-            // if is file, add it
-            if ( VSIStatL( osTemp1.c_str(), &psStatBuf ) != 0 )
-                continue;
-
-            if( VSI_ISREG( psStatBuf.st_mode ) )
-            {
-                if( pszDisplayedPath )
-                {
-                    osTemp1.clear();
-                    osTemp1.append( pszDisplayedPath );
-                    osTemp1.append( "/" );
-                    osTemp1.append( papszFiles[i] );
-                    oFiles.AddString( osTemp1 );
-                }
-                else
-                    oFiles.AddString( papszFiles[i] );
-            }
-            else if ( VSI_ISDIR( psStatBuf.st_mode ) )
-            {
-                // add directory entry
-                osTemp2.clear();
-                if( pszDisplayedPath )
-                {
-                    osTemp2.append( pszDisplayedPath );
-                    osTemp2.append( "/" );
-                }
-                osTemp2.append( papszFiles[i] );
-                osTemp2.append( "/" );
-                oFiles.AddString( osTemp2.c_str() );
-
-                VSIReadDirRecursiveTask sTask;
-                sTask.papszFiles = papszFiles;
-                sTask.nCount = nCount;
-                sTask.i = i;
-                sTask.pszPath = CPLStrdup(pszPath);
-                sTask.pszDisplayedPath = pszDisplayedPath ? CPLStrdup(pszDisplayedPath) : NULL;
-                aoStack.push_back(sTask);
-
-                CPLFree(pszPath);
-                pszPath = CPLStrdup( osTemp1.c_str() );
-
-                char* pszDisplayedPathNew;
-                if( pszDisplayedPath )
-                    pszDisplayedPathNew = CPLStrdup( CPLSPrintf("%s/%s", pszDisplayedPath, papszFiles[i]) );
-                else
-                    pszDisplayedPathNew = CPLStrdup( papszFiles[i] );
-                CPLFree(pszDisplayedPath);
-                pszDisplayedPath = pszDisplayedPathNew;
-
-                i = 0;
-                papszFiles = NULL;
-                nCount = -1;
-
-                break;
-            }
-        }
-
-        if( nCount >= 0 )
-        {
-            CSLDestroy( papszFiles );
-
-            if( aoStack.size() )
-            {
-                int iLast = (int)aoStack.size() - 1;
-                CPLFree(pszPath);
-                CPLFree(pszDisplayedPath);
-                nCount = aoStack[iLast].nCount;
-                papszFiles = aoStack[iLast].papszFiles;
-                i = aoStack[iLast].i + 1;
-                pszPath = aoStack[iLast].pszPath;
-                pszDisplayedPath = aoStack[iLast].pszDisplayedPath;
-
-                aoStack.resize(iLast);
-            }
-            else
-                break;
-        }
-    }
-
-    CPLFree(pszPath);
-    CPLFree(pszDisplayedPath);
-
-    return oFiles.StealList();
-}
-
 
 /************************************************************************/
 /*                             CPLReadDir()                             */
@@ -888,35 +733,13 @@ VSIFileManager::~VSIFileManager()
 /************************************************************************/
 
 static VSIFileManager *poManager = NULL;
-static void* hVSIFileManagerMutex = NULL;
 
 VSIFileManager *VSIFileManager::Get()
 
 {
-    static volatile int nConstructerPID = 0;
-    if( poManager != NULL )
-    {
-        if( nConstructerPID != 0 )
-        {
-            int nCurrentPID = (int)CPLGetPID();
-            if( nConstructerPID != nCurrentPID )
-            {
-                //printf("Thread %d: Waiting for VSIFileManager to be finished by other thread.\n", nCurrentPID);
-                {
-                    CPLMutexHolder oHolder( &hVSIFileManagerMutex );
-                }
-                //printf("Thread %d: End of wait for VSIFileManager construction to be finished\n", nCurrentPID);
-                CPLAssert(nConstructerPID == 0);
-            }
-        }
-        return poManager;
-    }
-
-    CPLMutexHolder oHolder2( &hVSIFileManagerMutex );
+    
     if( poManager == NULL )
     {
-        nConstructerPID = (int)CPLGetPID();
-        //printf("Thread %d: VSIFileManager in construction\n", nConstructerPID);
         poManager = new VSIFileManager;
         VSIInstallLargeFileHandler();
         VSIInstallSubFileHandler();
@@ -927,14 +750,11 @@ VSIFileManager *VSIFileManager::Get()
 #endif
 #ifdef HAVE_CURL
         VSIInstallCurlFileHandler();
-        VSIInstallCurlStreamingFileHandler();
 #endif
         VSIInstallStdinHandler();
         VSIInstallStdoutHandler();
         VSIInstallSparseFileHandler();
         VSIInstallTarFileHandler();
-        //printf("Thread %d: VSIFileManager construction finished\n", nConstructerPID);
-        nConstructerPID = 0;
     }
     
     return poManager;
@@ -1001,12 +821,6 @@ void VSICleanupFileManager()
     {
         delete poManager;
         poManager = NULL;
-    }
-
-    if( hVSIFileManagerMutex != NULL )
-    {
-        CPLDestroyMutex(hVSIFileManagerMutex);
-        hVSIFileManagerMutex = NULL;
     }
 }
 

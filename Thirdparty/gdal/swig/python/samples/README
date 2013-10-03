@@ -7,8 +7,8 @@ Script list:
 assemblepoly.py		Script demonstrates how to assemble polygons from
 			arcs.  Demonstrates various aspects of OGR Python API.
 
-attachpct.py		Simple command line program for copying the color table of a
-                    raster into another raster.
+attachpct.py		Simple command line program for translating ESRI .prj files 
+			into WKT.
 
 fft.py			Script to perform forward and inverse two-dimensional
 			fast Fourier transform.
@@ -85,17 +85,8 @@ gdal_ls.py              Display the list of files in a virtual directory,
 
 gdal_cp.py              Copy a virtual file
 
-crs2crs2grid.py 	A script to produce PROJ.4 grid shift files from HTDP program.
-			http://trac.osgeo.org/proj/wiki/HTDPGrids
-
-ogrupdate.py            Update a target datasource with the features of a source datasource. Contrary to ogr2ogr,
-                        this script tries to match features between the datasources,
-                        to decide whether to create a new feature, or to update an existing one.
-
-ogr_layer_algebra.py    Application for executing OGR layer algebra operations.
-
-gdalpythonserver.py     A Python script that can be used as the value of GDAL_API_PROXY_SERVER config. option
-                        Redirects on GDAL implementation, but could be used to implement a Python GDAL driver.
+gdal_edit.py            Edit in place various information of an existing GDAL dataset
+                        (projection, geotransform, nodata, metadata)
 
 ------------------------------------------------------------------------------
 Ports of .c/.cpp utilities

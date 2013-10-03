@@ -129,8 +129,6 @@ docs:
 	cp frmts/wms/frmt_wms_*.xml html
 	cp frmts/wms/frmt_twms_*.xml html
 
-.PHONY: man
-
 man:
 # Generate man pages
 	(cat Doxyfile ; echo "ENABLED_SECTIONS=man"; echo "INPUT=apps swig/python/scripts"; echo "FILE_PATTERNS=*.cpp *.dox"; echo "GENERATE_HTML=NO"; echo "GENERATE_MAN=YES") | doxygen -
@@ -179,7 +177,7 @@ ifneq ($(BINDINGS),)
 	(cd swig; $(MAKE) install)
 endif
 	for f in LICENSE.TXT data/*.* ; do $(INSTALL_DATA) $$f $(DESTDIR)$(INST_DATA) ; done
-	$(LIBTOOL_FINISH) $(DESTDIR)$(INST_LIB)
+	$(LIBTOOL_FINISH) $(INST_LIB)
 
 
 ifeq ($(HAVE_LIBTOOL),yes)
@@ -197,8 +195,6 @@ ifeq ($(MACOSX_FRAMEWORK),yes)
 	rm -f $(DESTDIR)$(INST_LIB)/libgdal.$(GDAL_VERSION_MAJOR).dylib
 	rm -f $(DESTDIR)$(INST_LIB)/libgdal.dylib
 	rm -f $(DESTDIR)$(INST_LIB)/libgdal.la
-else
-	$(INSTALL_DIR) $(DESTDIR)$(INST_LIB)/gdalplugins
 endif
 
 else
@@ -221,7 +217,6 @@ else
 	 ln -s $(GDAL_SLIB_B).$(GDAL_VER) $(GDAL_SLIB_B).$(GDAL_VERSION_MAJOR))
 	(cd $(DESTDIR)$(INST_LIB) ; \
 	 ln -s $(GDAL_SLIB_B).$(GDAL_VERSION_MAJOR) $(GDAL_SLIB_B))
-	$(INSTALL_DIR) $(DESTDIR)$(INST_LIB)/gdalplugins
 endif
 
 else

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: kml.h 23978 2012-02-14 20:42:34Z rouault $
+ * $Id: kml.h 23589 2011-12-17 14:21:01Z rouault $
  *
  * Project:  KML Driver
  * Purpose:  Class for reading, parsing and handling a kmlfile.
@@ -71,9 +71,7 @@ public:
 	virtual bool isFeatureContainer(std::string const& elem) const;
 	virtual bool isContainer(std::string const& elem) const;
 	virtual bool isRest(std::string const& elem) const;
-    virtual void findLayers(KMLNode* poNode, int bKeepEmptyContainers);
-
-    bool hasOnlyEmpty() const;
+    virtual void findLayers(KMLNode* poNode);
 
 	void parse();
 	void print(unsigned short what = 3);

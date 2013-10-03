@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrreclayer.cpp 25185 2012-10-27 19:40:46Z rouault $
+ * $Id: ogrreclayer.cpp 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  EPIInfo .REC Reader
  * Purpose:  Implements OGRRECLayer class.
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrreclayer.cpp 25185 2012-10-27 19:40:46Z rouault $");
+CPL_CVSID("$Id: ogrreclayer.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
 
 /************************************************************************/
 /*                            OGRRECLayer()                             */
@@ -76,8 +76,6 @@ OGRRECLayer::OGRRECLayer( const char *pszLayerNameIn,
 
         // Extract field width. 
         panFieldWidth[nFieldCount] = atoi( RECGetField( pszLine, 37, 4 ) );
-        if( panFieldWidth[nFieldCount] < 0 )
-            return;
 
         // Is this an real, integer or string field?  Default to string.
         nTypeCode = atoi(RECGetField(pszLine,33,4));
@@ -124,9 +122,6 @@ OGRRECLayer::OGRRECLayer( const char *pszLayerNameIn,
         poFeatureDefn->AddFieldDefn( &oField );
         nFieldCount++;
     }
-
-    if( nFieldCount == 0 )
-        return;
 
     nRecordLength = panFieldOffset[nFieldCount-1]+panFieldWidth[nFieldCount-1];
     bIsValid = TRUE;
@@ -193,7 +188,7 @@ OGRFeature * OGRRECLayer::GetNextUnfilteredFeature()
             return NULL;
         }
 
-        if( *pszLine == 0 || *pszLine == 26 /* Cntl-Z - DOS EOF */ )
+        if( *pszLine == 26 /* Cntl-Z - DOS EOF */ )
         {
             CPLFree( pszRecord );
             return NULL;

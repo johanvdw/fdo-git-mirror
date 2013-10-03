@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gmlreader.h 25120 2012-10-13 22:38:57Z rouault $
+ * $Id: gmlreader.h 23547 2011-12-12 16:29:27Z rouault $
  *
  * Project:  GML Reader
  * Purpose:  Public Declarations for OGR free GML Reader code.
@@ -31,7 +31,6 @@
 #define _GMLREADER_H_INCLUDED
 
 #include "cpl_port.h"
-#include "cpl_vsi.h"
 #include "cpl_minixml.h"
 
 #include <vector>
@@ -88,9 +87,6 @@ public:
     int         GetAttributeIndex() const { return m_nIndex; }
 
     void        AnalysePropertyValue( const GMLProperty* psGMLProperty );
-
-    static bool IsSimpleType( GMLPropertyType eType )
-    { return eType == GMLPT_String || eType == GMLPT_Integer || eType == GMLPT_Real; }
 };
 
 /************************************************************************/
@@ -135,8 +131,7 @@ public:
     const char *GetGeometryElement() const { return m_pszGeometryElement; }
     void        SetGeometryElement( const char *pszElementName );
 
-    const char *GetName() const { return m_pszName; }
-    void        SetName(const char* pszNewName);
+    const char *GetName() const { return m_pszName; } 
     int         GetPropertyCount() const { return m_nPropertyCount; }
     GMLPropertyDefn *GetProperty( int iIndex ) const;
     int GetPropertyIndex( const char *pszName ) const;
@@ -155,7 +150,6 @@ public:
     int         GetFeatureCount();
     void        SetFeatureCount( int );
 
-    int         HasExtents() const { return m_bHaveExtents; }
     void        SetExtents( double dfXMin, double dfXMax, 
                             double dFYMin, double dfYMax );
     int         GetExtents( double *pdfXMin, double *pdfXMax, 
@@ -230,7 +224,6 @@ public:
     virtual void SetClassListLocked( int bFlag ) = 0;
 
     virtual void SetSourceFile( const char *pszFilename ) = 0;
-    virtual void SetFP( VSILFILE* fp ) { }
     virtual const char* GetSourceFileName() = 0;
 
     virtual int  GetClassCount() const = 0;
@@ -260,7 +253,6 @@ public:
 
     virtual int HasStoppedParsing() = 0;
 
-    virtual void  SetGlobalSRSName( const char* pszGlobalSRSName ) {}
     virtual const char* GetGlobalSRSName() = 0;
     virtual int CanUseGlobalSRSName() = 0;
 

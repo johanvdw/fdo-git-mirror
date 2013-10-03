@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_string.cpp 25044 2012-10-04 01:54:26Z rcoup $
+ * $Id: cpl_string.cpp 23407 2011-11-21 19:35:16Z rouault $
  *
  * Name:     cpl_string.cpp
  * Project:  CPL - Common Portability Library
@@ -54,7 +54,7 @@
 #  include <wce_string.h>
 #endif
 
-CPL_CVSID("$Id: cpl_string.cpp 25044 2012-10-04 01:54:26Z rcoup $");
+CPL_CVSID("$Id: cpl_string.cpp 23407 2011-11-21 19:35:16Z rouault $");
 
 /*=====================================================================
                     StringList manipulation functions.
@@ -1539,7 +1539,7 @@ char *CPLEscapeString( const char *pszInput, int nLength,
         }
         pszOutput[iOut] = '\0';
     }
-    else if( nScheme == CPLES_XML || nScheme == CPLES_XML_BUT_QUOTES )
+    else if( nScheme == CPLES_XML )
     {
         int iOut = 0, iIn;
 
@@ -1567,7 +1567,7 @@ char *CPLEscapeString( const char *pszInput, int nLength,
                 pszOutput[iOut++] = 'p';
                 pszOutput[iOut++] = ';';
             }
-            else if( pszInput[iIn] == '"' && nScheme != CPLES_XML_BUT_QUOTES )
+            else if( pszInput[iIn] == '"' )
             {
                 pszOutput[iOut++] = '&';
                 pszOutput[iOut++] = 'q';
@@ -1629,6 +1629,8 @@ char *CPLEscapeString( const char *pszInput, int nLength,
                     pszOutput[iOut++] = '\"';
                     pszOutput[iOut++] = '\"';
                 }
+                else if( pszInput[iIn] == 13 )
+                    /* drop DOS LF's in strings. */;
                 else
                     pszOutput[iOut++] = pszInput[iIn];
             }
@@ -1680,7 +1682,7 @@ char *CPLUnescapeString( const char *pszInput, int *pnLength, int nScheme )
     pszOutput = (char *) CPLMalloc(4 * strlen(pszInput)+1);
     pszOutput[0] = '\0';
 
-    if( nScheme == CPLES_XML || nScheme == CPLES_XML_BUT_QUOTES  )
+    if( nScheme == CPLES_XML )
     {
         char ch;
         for( iIn = 0; (ch = pszInput[iIn]) != '\0'; iIn++ )
@@ -1979,7 +1981,7 @@ CPLValueType CPLGetValueType(const char* pszValue)
 {
     /*
     doubles : "+25.e+3", "-25.e-3", "25.e3", "25e3", " 25e3 "
-    not doubles: "25e 3", "25e.3", "-2-5e3", "2-5e3", "25.25.3", "-3d"
+    not doubles: "25e 3", "25e.3", "-2-5e3", "2-5e3", "25.25.3"
     */
 
     int bFoundDot = FALSE;
@@ -1990,15 +1992,12 @@ CPLValueType CPLGetValueType(const char* pszValue)
     if (pszValue == NULL)
         return CPL_VALUE_STRING;
 
-    /* Skip leading spaces */
-    while( isspace( (unsigned char)*pszValue ) )
-        pszValue ++;
-
-    if (*pszValue == '\0')
-        return CPL_VALUE_STRING;
-
     /* Skip leading + or - */
     if (*pszValue == '+' || *pszValue == '-')
+        pszValue ++;
+
+    /* Skip leading spaces */
+    while( isspace( (unsigned char)*pszValue ) )
         pszValue ++;
 
     for(; *pszValue != '\0'; pszValue++ )
@@ -2040,10 +2039,6 @@ CPLValueType CPLGetValueType(const char* pszValue)
         else if (*pszValue == 'D' || *pszValue == 'd'
                  || *pszValue == 'E' || *pszValue == 'e' )
         {
-            if (!(pszValue[1] == '+' || pszValue[1] == '-' ||
-                  isdigit(pszValue[1])))
-                return CPL_VALUE_STRING;
-
             bIsReal = TRUE;
             if (!bFoundExponent)
                 bFoundExponent = TRUE;

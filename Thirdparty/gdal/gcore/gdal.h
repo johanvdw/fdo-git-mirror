@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal.h 25545 2013-01-25 17:55:47Z warmerdam $
+ * $Id: gdal.h 23431 2011-11-27 15:02:24Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  GDAL Core C/Public declarations.
@@ -40,7 +40,6 @@
 #include "gdal_version.h"
 #include "cpl_port.h"
 #include "cpl_error.h"
-#include "cpl_progress.h"
 #endif
 
 /* -------------------------------------------------------------------- */
@@ -179,6 +178,19 @@ typedef void *GDALRasterAttributeTableH;
 /** Opaque type used for the C bindings of the C++ GDALAsyncReader class */
 typedef void *GDALAsyncReaderH;
 
+/* -------------------------------------------------------------------- */
+/*      Callback "progress" function.                                   */
+/* -------------------------------------------------------------------- */
+
+typedef int (CPL_STDCALL *GDALProgressFunc)(double dfComplete, const char *pszMessage, void *pProgressArg);
+
+int CPL_DLL CPL_STDCALL GDALDummyProgress( double, const char *, void *);
+int CPL_DLL CPL_STDCALL GDALTermProgress( double, const char *, void *);
+int CPL_DLL CPL_STDCALL GDALScaledProgress( double, const char *, void *);
+void CPL_DLL * CPL_STDCALL GDALCreateScaledProgress( double, double,
+                                        GDALProgressFunc, void * );
+void CPL_DLL CPL_STDCALL GDALDestroyScaledProgress( void * );
+
 /* ==================================================================== */
 /*      Registration/driver related.                                    */
 /* ==================================================================== */
@@ -200,7 +212,6 @@ typedef struct {
 #define GDAL_DMD_EXTENSION "DMD_EXTENSION"
 #define GDAL_DMD_CREATIONOPTIONLIST "DMD_CREATIONOPTIONLIST" 
 #define GDAL_DMD_CREATIONDATATYPES "DMD_CREATIONDATATYPES" 
-#define GDAL_DMD_SUBDATASETS "DMD_SUBDATASETS" 
 
 #define GDAL_DCAP_CREATE     "DCAP_CREATE"
 #define GDAL_DCAP_CREATECOPY "DCAP_CREATECOPY"

@@ -1,5 +1,5 @@
-#ifndef HEADER_CURL_PINGPONG_H
-#define HEADER_CURL_PINGPONG_H
+#ifndef __PINGPONG_H
+#define __PINGPONG_H
 /***************************************************************************
  *                                  _   _ ____  _
  *  Project                     ___| | | |  _ \| |
@@ -7,7 +7,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2013, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2007, 2009, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -20,9 +20,12 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
+ * $Id: pingpong.h,v 1.1 2009-12-12 21:54:02 bagder Exp $
  ***************************************************************************/
 
-#include "curl_setup.h"
+#include <stdarg.h>
+
+#include "setup.h"
 
 #if !defined(CURL_DISABLE_IMAP) || !defined(CURL_DISABLE_FTP) || \
   !defined(CURL_DISABLE_POP3) || !defined(CURL_DISABLE_SMTP)
@@ -31,13 +34,6 @@
 
 /* forward-declaration, this is defined in urldata.h */
 struct connectdata;
-
-typedef enum {
-  FTPTRANSFER_BODY, /* yes do transfer a body */
-  FTPTRANSFER_INFO, /* do still go through to get info/headers */
-  FTPTRANSFER_NONE, /* don't get anything and don't get info */
-  FTPTRANSFER_LAST  /* end of list marker, never used */
-} curl_pp_transfer;
 
 /*
  * 'pingpong' is the generic struct used for protocols doing server<->client
@@ -61,7 +57,7 @@ struct pingpong {
   struct timeval response; /* set to Curl_tvnow() when a command has been sent
                               off, used to time-out response reading */
   long response_time; /* When no timeout is given, this is the amount of
-                         milliseconds we await for a server response. */
+                         seconds we await for a server response. */
 
   struct connectdata *conn; /* points to the connectdata struct that this
                                belongs to */
@@ -71,17 +67,23 @@ struct pingpong {
 
   CURLcode (*statemach_act)(struct connectdata *conn);
 
-  bool (*endofresp)(struct connectdata *conn, char *ptr, size_t len,
-                    int *code);
+  int (*endofresp)(struct pingpong *pp, int *code);
 };
 
 /*
- * Curl_pp_statemach()
+ * Curl_pp_multi_statemach()
  *
- * called repeatedly until done. Set 'wait' to make it wait a while on the
- * socket if there's no traffic.
+ * called repeatedly until done when the multi interface is used.
  */
-CURLcode Curl_pp_statemach(struct pingpong *pp, bool block);
+CURLcode Curl_pp_multi_statemach(struct pingpong *pp);
+
+/*
+ * Curl_pp_easy_statemach()
+ *
+ * called repeatedly until done when the easy interface is used.
+ */
+CURLcode Curl_pp_easy_statemach(struct pingpong *pp);
+
 
 /* initialize stuff to prepare for reading a fresh new response */
 void Curl_pp_init(struct pingpong *pp);
@@ -99,6 +101,9 @@ long Curl_pp_state_timeout(struct pingpong *pp);
  * the string should not have any CRLF appended, as this function will
  * append the necessary things itself.
  *
+ * NOTE: we build the command in a fixed-length buffer, which sets length
+ * restrictions on the command!
+ *
  * made to never block
  */
 CURLcode Curl_pp_sendf(struct pingpong *pp,
@@ -111,6 +116,9 @@ CURLcode Curl_pp_sendf(struct pingpong *pp,
  * Send the formated string as a command to a pingpong server. Note that
  * the string should not have any CRLF appended, as this function will
  * append the necessary things itself.
+ *
+ * NOTE: we build the command in a fixed-length buffer, which sets length
+ * restrictions on the command!
  *
  * made to never block
  */
@@ -137,14 +145,4 @@ CURLcode Curl_pp_disconnect(struct pingpong *pp);
 int Curl_pp_getsock(struct pingpong *pp, curl_socket_t *socks,
                     int numsocks);
 
-
-/***********************************************************************
- *
- * Curl_pp_moredata()
- *
- * Returns whether there are still more data in the cache and so a call
- * to Curl_pp_readresp() will not block.
- */
-bool Curl_pp_moredata(struct pingpong *pp);
-
-#endif /* HEADER_CURL_PINGPONG_H */
+#endif /* __PINGPONG_H */

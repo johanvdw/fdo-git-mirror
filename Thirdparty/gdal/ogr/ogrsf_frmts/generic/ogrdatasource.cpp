@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrdatasource.cpp 24813 2012-08-20 21:08:33Z rouault $
+ * $Id: ogrdatasource.cpp 23403 2011-11-20 21:01:21Z ajolma $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The generic portions of the OGRDataSource class.
@@ -34,13 +34,8 @@
 #include "ogr_gensql.h"
 #include "ogr_attrind.h"
 #include "cpl_multiproc.h"
-#include "ogrunionlayer.h"
 
-#ifdef SQLITE_ENABLED
-#include "../sqlite/ogrsqliteexecutesql.h"
-#endif
-
-CPL_CVSID("$Id: ogrdatasource.cpp 24813 2012-08-20 21:08:33Z rouault $");
+CPL_CVSID("$Id: ogrdatasource.cpp 23403 2011-11-20 21:01:21Z ajolma $");
 
 /************************************************************************/
 /*                           ~OGRDataSource()                           */
@@ -272,59 +267,15 @@ OGRLayer *OGRDataSource::CopyLayer( OGRLayer *poSrcLayer,
         return NULL;
 
 /* -------------------------------------------------------------------- */
-/*      Add fields.  Default to copy all fields, and make sure to       */
-/*      establish a mapping between indices, rather than names, in      */
-/*      case the target datasource has altered it (e.g. Shapefile       */
-/*      limited to 10 char field names).                                */
+/*      Add fields.  Default to copy all field.                         */
+/*      If only a subset of all fields requested, then output only      */
+/*      the selected fields, and in the order that they were            */
+/*      selected.                                                       */
 /* -------------------------------------------------------------------- */
-    int         nSrcFieldCount = poSrcDefn->GetFieldCount();
-    int         nDstFieldCount = 0;
-    int         iField, *panMap;
-
-    // Initialize the index-to-index map to -1's
-    panMap = (int *) CPLMalloc( sizeof(int) * nSrcFieldCount );
-    for( iField=0; iField < nSrcFieldCount; iField++)
-        panMap[iField] = -1;
-
-    /* Caution : at the time of writing, the MapInfo driver */
-    /* returns NULL until a field has been added */
-    OGRFeatureDefn* poDstFDefn = poDstLayer->GetLayerDefn();
-    if (poDstFDefn)
-        nDstFieldCount = poDstFDefn->GetFieldCount();    
-    for( iField = 0; iField < nSrcFieldCount; iField++ )
-    {
-        OGRFieldDefn* poSrcFieldDefn = poSrcDefn->GetFieldDefn(iField);
-        OGRFieldDefn oFieldDefn( poSrcFieldDefn );
-
-        /* The field may have been already created at layer creation */
-        int iDstField = -1;
-        if (poDstFDefn)
-            iDstField = poDstFDefn->GetFieldIndex(oFieldDefn.GetNameRef());
-        if (iDstField >= 0)
-        {
-            panMap[iField] = iDstField;
-        }
-        else if (poDstLayer->CreateField( &oFieldDefn ) == OGRERR_NONE)
-        {
-            /* now that we've created a field, GetLayerDefn() won't return NULL */
-            if (poDstFDefn == NULL)
-                poDstFDefn = poDstLayer->GetLayerDefn();
-
-            /* Sanity check : if it fails, the driver is buggy */
-            if (poDstFDefn != NULL &&
-                poDstFDefn->GetFieldCount() != nDstFieldCount + 1)
-            {
-                CPLError(CE_Warning, CPLE_AppDefined,
-                         "The output driver has claimed to have added the %s field, but it did not!",
-                         oFieldDefn.GetNameRef() );
-            }
-            else
-            {
-                panMap[iField] = nDstFieldCount;
-                nDstFieldCount ++;
-            }
-        }
-    }
+    int         iField;
+    
+    for( iField = 0; iField < poSrcDefn->GetFieldCount(); iField++ )
+        poDstLayer->CreateField( poSrcDefn->GetFieldDefn(iField) );
 
 /* -------------------------------------------------------------------- */
 /*      Check if the destination layer supports transactions and set a  */
@@ -355,7 +306,7 @@ OGRLayer *OGRDataSource::CopyLayer( OGRLayer *poSrcLayer,
         CPLErrorReset();
         poDstFeature = OGRFeature::CreateFeature( poDstLayer->GetLayerDefn() );
 
-        if( poDstFeature->SetFrom( poFeature, panMap, TRUE ) != OGRERR_NONE )
+        if( poDstFeature->SetFrom( poFeature, TRUE ) != OGRERR_NONE )
         {
             CPLError( CE_Failure, CPLE_AppDefined,
                       "Unable to translate feature %ld from layer %s.\n",
@@ -404,7 +355,7 @@ OGRLayer *OGRDataSource::CopyLayer( OGRLayer *poSrcLayer,
             papoDstFeature[nFeatCount] =
                         OGRFeature::CreateFeature( poDstLayer->GetLayerDefn() );
 
-            if( papoDstFeature[nFeatCount]->SetFrom( poFeature, panMap, TRUE ) != OGRERR_NONE )
+            if( papoDstFeature[nFeatCount]->SetFrom( poFeature, TRUE ) != OGRERR_NONE )
             {
                 OGRFeature::DestroyFeature( poFeature );
                 CPLError( CE_Failure, CPLE_AppDefined,
@@ -446,9 +397,6 @@ OGRLayer *OGRDataSource::CopyLayer( OGRLayer *poSrcLayer,
       }
       CPLFree(papoDstFeature);
     }
-
-    CPLFree(panMap);
-
     return poDstLayer;
 }
 
@@ -1120,7 +1068,7 @@ OGRErr OGRDataSource::ProcessSQLAlterTableRenameColumn( const char *pszSQLComman
         CPLError( CE_Failure, CPLE_AppDefined,
                   "Syntax error in ALTER TABLE RENAME COLUMN command.\n"
                   "Was '%s'\n"
-                  "Should be of form 'ALTER TABLE <layername> RENAME [COLUMN] <columnname> TO <newname>'",
+                  "Should be of form 'ALTER TABLE <layername> RENAME [COLUMN] <columnname> <columntype>'",
                   pszSQLCommand );
         return OGRERR_FAILURE;
     }
@@ -1302,16 +1250,14 @@ OGRLayer * OGRDataSource::ExecuteSQL( const char *pszStatement,
 {
     swq_select *psSelectInfo = NULL;
 
-    if( pszDialect != NULL && EQUAL(pszDialect, "SQLite") )
-    {
-#ifdef SQLITE_ENABLED
-        return OGRSQLiteExecuteSQL( this, pszStatement, poSpatialFilter, pszDialect );
-#else
-        CPLError(CE_Failure, CPLE_NotSupported,
-                 "The SQLite driver needs to be compiled to support the SQLite SQL dialect");
-        return NULL;
-#endif
-    }
+    (void) pszDialect;
+
+    swq_field_list sFieldList;
+    int            nFIDIndex = 0;
+    OGRGenSQLResultsLayer *poResults = NULL;
+    char *pszWHERE = NULL;
+
+    memset( &sFieldList, 0, sizeof(sFieldList) );
 
 /* -------------------------------------------------------------------- */
 /*      Handle CREATE INDEX statements specially.                       */
@@ -1393,77 +1339,6 @@ OGRLayer * OGRDataSource::ExecuteSQL( const char *pszStatement,
         delete psSelectInfo;
         return NULL;
     }
-
-/* -------------------------------------------------------------------- */
-/*      If there is no UNION ALL, build result layer.                   */
-/* -------------------------------------------------------------------- */
-    if( psSelectInfo->poOtherSelect == NULL )
-    {
-        return BuildLayerFromSelectInfo(psSelectInfo,
-                                        poSpatialFilter,
-                                        pszDialect);
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Build result union layer.                                       */
-/* -------------------------------------------------------------------- */
-    int nSrcLayers = 0;
-    OGRLayer** papoSrcLayers = NULL;
-
-    do
-    {
-        swq_select* psNextSelectInfo = psSelectInfo->poOtherSelect;
-        psSelectInfo->poOtherSelect = NULL;
-
-        OGRLayer* poLayer = BuildLayerFromSelectInfo(psSelectInfo,
-                                                     poSpatialFilter,
-                                                     pszDialect);
-        if( poLayer == NULL )
-        {
-            /* Each source layer owns an independant select info */
-            for(int i=0;i<nSrcLayers;i++)
-                delete papoSrcLayers[i];
-            CPLFree(papoSrcLayers);
-
-            /* So we just have to destroy the remaining select info */
-            delete psNextSelectInfo;
-
-            return NULL;
-        }
-        else
-        {
-            papoSrcLayers = (OGRLayer**) CPLRealloc(papoSrcLayers,
-                                sizeof(OGRLayer*) * (nSrcLayers + 1));
-            papoSrcLayers[nSrcLayers] = poLayer;
-            nSrcLayers ++;
-
-            psSelectInfo = psNextSelectInfo;
-        }
-    }
-    while( psSelectInfo != NULL );
-
-    return new OGRUnionLayer("SELECT",
-                                nSrcLayers,
-                                papoSrcLayers,
-                                TRUE);
-}
-
-/************************************************************************/
-/*                        BuildLayerFromSelectInfo()                    */
-/************************************************************************/
-
-OGRLayer* OGRDataSource::BuildLayerFromSelectInfo(void* psSelectInfoIn,
-                                                  OGRGeometry *poSpatialFilter,
-                                                  const char *pszDialect)
-{
-    swq_select* psSelectInfo = (swq_select*) psSelectInfoIn;
-
-    swq_field_list sFieldList;
-    int            nFIDIndex = 0;
-    OGRGenSQLResultsLayer *poResults = NULL;
-    char *pszWHERE = NULL;
-
-    memset( &sFieldList, 0, sizeof(sFieldList) );
 
 /* -------------------------------------------------------------------- */
 /*      Validate that all the source tables are recognised, count       */
@@ -1618,7 +1493,7 @@ OGRLayer* OGRDataSource::BuildLayerFromSelectInfo(void* psSelectInfoIn,
 /*      Everything seems OK, try to instantiate a results layer.        */
 /* -------------------------------------------------------------------- */
 
-    poResults = new OGRGenSQLResultsLayer( this, psSelectInfo,
+    poResults = new OGRGenSQLResultsLayer( this, psSelectInfo, 
                                            poSpatialFilter,
                                            pszWHERE,
                                            pszDialect );

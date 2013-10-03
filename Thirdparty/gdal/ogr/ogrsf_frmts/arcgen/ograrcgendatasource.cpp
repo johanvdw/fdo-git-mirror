@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ograrcgendatasource.cpp 25447 2013-01-04 20:30:09Z rouault $
+ * $Id: ograrcgendatasource.cpp 23339 2011-11-06 12:36:29Z rouault $
  *
  * Project:  Arc/Info Generate Translator
  * Purpose:  Implements OGRARCGENDataSource class
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ograrcgendatasource.cpp 25447 2013-01-04 20:30:09Z rouault $");
+CPL_CVSID("$Id: ograrcgendatasource.cpp 23339 2011-11-06 12:36:29Z rouault $");
 
 /************************************************************************/
 /*                          OGRARCGENDataSource()                          */
@@ -136,22 +136,12 @@ int OGRARCGENDataSource::Open( const char * pszFilename, int bUpdateIn)
 
     char** papszTokens = CSLTokenizeString2( szFirstLine, " ,", 0 );
     int nTokens = CSLCount(papszTokens);
+    CSLDestroy(papszTokens);
     if (nTokens != 1 && nTokens != 3 && nTokens != 4)
     {
         VSIFCloseL(fp);
-        CSLDestroy(papszTokens);
         return FALSE;
     }
-    for(int i=0;i<nTokens;i++)
-    {
-        if( CPLGetValueType(papszTokens[i]) == CPL_VALUE_STRING )
-        {
-            VSIFCloseL(fp);
-            CSLDestroy(papszTokens);
-            return FALSE;
-        }
-    }
-    CSLDestroy(papszTokens);
 
     /* Go to end of file, and count the number of END keywords */
     /* If there's 1, it's a point layer */

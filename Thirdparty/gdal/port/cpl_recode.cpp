@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_recode.cpp 24555 2012-06-10 09:49:55Z rouault $
+ * $Id: cpl_recode.cpp 22600 2011-06-28 13:36:36Z warmerdam $
  *
  * Name:     cpl_recode.cpp
  * Project:  CPL - Common Portability Library
@@ -25,10 +25,9 @@
 
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: cpl_recode.cpp 24555 2012-06-10 09:49:55Z rouault $");
+CPL_CVSID("$Id: cpl_recode.cpp 22600 2011-06-28 13:36:36Z warmerdam $");
 
 #ifdef CPL_RECODE_ICONV
-extern void CPLClearRecodeIconvWarningFlags();
 extern char *CPLRecodeIconv( const char *, const char *, const char * );
 extern char *CPLRecodeFromWCharIconv( const wchar_t *,
                                       const char *, const char * );
@@ -36,7 +35,6 @@ extern wchar_t *CPLRecodeToWCharIconv( const char *,
                                        const char *, const char * );
 #endif /* CPL_RECODE_ICONV */
 
-extern void CPLClearRecodeStubWarningFlags();
 extern char *CPLRecodeStub( const char *, const char *, const char * );
 extern char *CPLRecodeFromWCharStub( const wchar_t *,
                                      const char *, const char * );
@@ -324,14 +322,3 @@ int CPLEncodingCharSize( const char *pszEncoding )
         return -1;
 }
 
-/************************************************************************/
-/*                    CPLClearRecodeWarningFlags()                      */
-/************************************************************************/
-
-void CPLClearRecodeWarningFlags()
-{
-#ifdef CPL_RECODE_ICONV
-    CPLClearRecodeIconvWarningFlags();
-#endif
-    CPLClearRecodeStubWarningFlags();
-}

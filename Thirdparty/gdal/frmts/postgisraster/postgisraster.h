@@ -34,16 +34,12 @@
 
 // General defines
 
-#define DEFAULT_HOST            "localhost"
-#define DEFAULT_PORT            "5432"
+#define DEFAULT_HOST			"localhost"
+#define DEFAULT_PORT			"5432"
 #define DEFAULT_SCHEMA          "public"
-#define DEFAULT_COLUMN          "rast"
-#define DEFAULT_USER            "postgres"
-#define DEFAULT_PASSWORD        "postgres"
-
-#define DEFAULT_BLOCK_X_SIZE    256
-#define DEFAULT_BLOCK_Y_SIZE    256
-
+#define DEFAULT_COLUMN			"rast"
+#define DEFAULT_USER			"postgres"
+#define DEFAULT_PASSWORD		"postgres"
 
 #define POSTGIS_RASTER_VERSION         (GUInt16)0
 #define RASTER_HEADER_SIZE              61
@@ -56,7 +52,6 @@
     (raster + RASTER_HEADER_SIZE + nband * BAND_SIZE(nodatasize, datasize) - datasize)
 
 #define FLT_NEQ(x, y) (fabs(x - y) > FLT_EPSILON)
-#define FLT_EQ(x, y) (fabs(x - y) <= FLT_EPSILON)
 
 
 /* Working modes */
@@ -65,32 +60,6 @@
 #define ONE_RASTER_PER_TABLE 2
 #define BROWSE_SCHEMA 3
 #define BROWSE_DATABASE 4
-
-/* Easily working with georef arrays (taken from gdalbuiltvrt.cpp) */
-#define GEOTRSFRM_TOPLEFT_X            0
-#define GEOTRSFRM_WE_RES               1
-#define GEOTRSFRM_ROTATION_PARAM1      2
-#define GEOTRSFRM_TOPLEFT_Y            3
-#define GEOTRSFRM_ROTATION_PARAM2      4
-#define GEOTRSFRM_NS_RES               5
-
-/* Taken from gdalbuiltvrt.cpp */
-typedef enum
-{
-    LOWEST_RESOLUTION,
-    HIGHEST_RESOLUTION,
-    AVERAGE_RESOLUTION,
-    USER_RESOLUTION
-} ResolutionStrategy;
-
-/**
- * OPTIMIZATION:
- * To construct the mosaic of tiles, we should check the pixel size of all tiles, 
- * in order to determine the dataset's pixel size. This can be really heavy. So, 
- * we define this number as the number of tiles that will be taken into account to
- * do it. If set to 0, all the tiles are taken
- **/ 
-#define MAX_TILES   3 
 
 class PostGISRasterRasterBand;
 
@@ -116,43 +85,39 @@ public:
 class PostGISRasterDataset : public GDALDataset {
     friend class PostGISRasterRasterBand;
 private:
-    char* pszOriginalConnectionString;
     char** papszSubdatasets;
     double adfGeoTransform[6];
     int nSrid;
     PGconn* poConn;
     GBool bRegularBlocking;
-    GBool bAllTilesSnapToSameGrid;  // TODO: future use?
-    GBool bRegisteredInRasterColumns;// TODO: future use?
+    GBool bAllTilesSnapToSameGrid;
+    GBool bRegisteredInRasterColumns;
     char* pszSchema;
     char* pszTable;
     char* pszColumn;
     char* pszWhere;
     char* pszProjection;
-    ResolutionStrategy resolutionStrategy;
     int nMode;
-    int nTiles;
-    double xmin, ymin, xmax, ymax;
-    GBool bBlocksCached;// TODO: future use?
+    int nBlockXSize;
+    int nBlockYSize;
+    GBool bBlocksCached;
     GBool SetRasterProperties(const char *);
     GBool BrowseDatabase(const char *, char *);
+    GBool SetRasterBands();
     GBool SetOverviewCount();
-    GBool GetRasterMetadata(char *, double, double, double *, double *, int *, int *);
 
 public:
-    PostGISRasterDataset(ResolutionStrategy inResolutionStrategy = AVERAGE_RESOLUTION);
+    PostGISRasterDataset();
     virtual ~PostGISRasterDataset();
     static GDALDataset* Open(GDALOpenInfo *);
-    static GDALDataset* CreateCopy(const char *, GDALDataset *, 
-        int, char **, GDALProgressFunc, void *);
-    static GBool InsertRaster(PGconn *, PostGISRasterDataset *, 
-        const char *, const char *, const char *);
-    static CPLErr Delete(const char*);
     char ** GetMetadata(const char *);
     const char* GetProjectionRef();
     CPLErr SetProjection(const char*);
     CPLErr SetGeoTransform(double *);
     CPLErr GetGeoTransform(double *);
+
+    virtual CPLErr IRasterIO( GDALRWFlag, int, int, int, int,
+        void *, int, int, GDALDataType, int, int *, int, int, int );
 };
 
 /******************************************************************************
@@ -161,36 +126,34 @@ public:
 class PostGISRasterRasterBand : public GDALRasterBand {
     friend class PostGISRasterDataset;
 private:
-    GBool bHasNoDataValue;
     double dfNoDataValue;
     int nOverviewFactor;
     GBool bIsOffline;
-    int nOverviewCount; 
+    int nOverviewCount;
     char* pszSchema;
     char* pszTable;
     char* pszColumn;
+    char* pszWhere;
     PostGISRasterRasterBand ** papoOverviews;
-    GDALDataType TranslateDataType(const char *);
-    GDALColorInterp eBandInterp;
+    void NullBlock(void *);
 
 public:
 
     PostGISRasterRasterBand(PostGISRasterDataset *poDS, int nBand, GDALDataType hDataType,
-            GBool bHasNoDataValue, double dfNodata, GBool bSignedByte, int nBitDepth, int nFactor,
-            int nBlockXSize, int nBlockYSize, GBool bIsOffline = false, char * inPszSchema = NULL,
-            char * inPszTable = NULL, char * inPszColumn = NULL);
+            double dfNodata, GBool bSignedByte, int nBitDepth, int nFactor,
+            GBool bIsOffline, char * pszSchema = NULL, char * pszTable = NULL,
+            char * pszColumn = NULL);
 
     virtual ~PostGISRasterRasterBand();
 
     virtual double GetNoDataValue(int *pbSuccess = NULL);
     virtual CPLErr SetNoDataValue(double);
-    virtual CPLErr IRasterIO(GDALRWFlag, int, int, int, int, void *, int, int, GDALDataType, 
-        int, int);
+    virtual void GetBlockSize(int *, int *);
     virtual CPLErr IReadBlock(int, int, void *);
     int GetBand();
     GDALDataset* GetDataset();
+    virtual int HasArbitraryOverviews();
     virtual int GetOverviewCount();
     virtual GDALRasterBand * GetOverview(int);
-    virtual GDALColorInterp GetColorInterpretation();
 };
 

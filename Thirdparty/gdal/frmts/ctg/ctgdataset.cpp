@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ctgdataset.cpp 25311 2012-12-15 12:48:14Z rouault $
+ * $Id: ctgdataset.cpp 21774 2011-02-21 19:33:56Z rouault $
  *
  * Project:  CTG driver
  * Purpose:  GDALDataset driver for CTG dataset.
@@ -30,7 +30,7 @@
 #include "gdal_pam.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: ctgdataset.cpp 25311 2012-12-15 12:48:14Z rouault $");
+CPL_CVSID("$Id: ctgdataset.cpp 21774 2011-02-21 19:33:56Z rouault $");
 
 CPL_C_START
 void    GDALRegister_CTG(void);
@@ -117,6 +117,8 @@ class CTGDataset : public GDALPamDataset
     friend class CTGRasterBand;
 
     VSILFILE   *fp;
+
+    char        szField[11];
 
     int         nNWEasting, nNWNorthing, nCellSize, nUTMZone;
     char       *pszProjection;

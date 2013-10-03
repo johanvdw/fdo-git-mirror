@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: wmsdriver.h 25776 2013-03-20 20:46:48Z rouault $
+ * $Id: wmsdriver.h 23192 2011-10-06 20:31:54Z rouault $
  *
  * Project:  WMS Client Driver
  * Purpose:  Implementation of Dataset and RasterBand classes for WMS
@@ -108,11 +108,6 @@ public:
     virtual void GetCapabilities(GDALWMSMiniDriverCapabilities *caps);
     virtual void ImageRequest(CPLString *url, const GDALWMSImageRequestInfo &iri);
     virtual void TiledImageRequest(CPLString *url, const GDALWMSImageRequestInfo &iri, const GDALWMSTiledImageRequestInfo &tiri);
-    virtual void GetTiledImageInfo(CPLString *url,
-                                              const GDALWMSImageRequestInfo &iri,
-                                              const GDALWMSTiledImageRequestInfo &tiri,
-                                              int nXInBlock,
-                                              int nYInBlock);
 
 /* Return data projection in WKT format, NULL or empty string if unknown */
     virtual const char *GetProjectionInWKT();
@@ -215,17 +210,12 @@ public:
 
     const GDALWMSDataWindow *WMSGetDataWindow() const;
     void WMSSetClamp(bool flag);
+    void WMSSetOverviewCount(int count);
     void WMSSetBlockSize(int x, int y);
     void WMSSetRasterSize(int x, int y);
     void WMSSetDataType(GDALDataType type);
     void WMSSetDataWindow(GDALWMSDataWindow &window);
     void WMSSetBandsCount(int count);
-    void SetColorTable(GDALColorTable *pct) { m_poColorTable=pct; }
-
-    void WMSSetNoDataValue(const char * pszNoData);
-    void WMSSetMinValue(const char* pszMin);
-    void WMSSetMaxValue(const char* pszMax);
-
     void mSetBand(int i, GDALRasterBand *band) { SetBand(i,band); };
     GDALWMSRasterBand *mGetBand(int i) { return reinterpret_cast<GDALWMSRasterBand *>(GetRasterBand(i)); };
 
@@ -254,8 +244,7 @@ protected:
     GDALWMSMiniDriverCapabilities m_mini_driver_caps;
     GDALWMSCache *m_cache;
     CPLString m_projection;
-    GDALColorTable *m_poColorTable;
-    std::vector<double> vNoData, vMin, vMax;
+    int m_overview_count;
     GDALDataType m_data_type;
     int m_block_size_x, m_block_size_y;
     GDALWMSRasterIOHint m_hint;
@@ -270,7 +259,6 @@ protected:
     int m_zeroblock_on_serverexceptions;
     CPLString m_osUserAgent;
     CPLString m_osReferer;
-    CPLString m_osUserPwd;
 
     GDALWMSDataWindow m_default_data_window;
     int m_default_block_size_x, m_default_block_size_y;
@@ -285,22 +273,10 @@ protected:
 class GDALWMSRasterBand : public GDALPamRasterBand {
     friend class GDALWMSDataset;
 
-    char**  BuildHTTPRequestOpts();
-    void    ComputeRequestInfo( GDALWMSImageRequestInfo &iri,
-                                GDALWMSTiledImageRequestInfo &tiri,
-                                int x, int y);
-
-    CPLString osMetadataItem;
-    CPLString osMetadataItemURL;
-
 public:
     GDALWMSRasterBand(GDALWMSDataset *parent_dataset, int band, double scale);
     virtual ~GDALWMSRasterBand();
     void AddOverview(double scale);
-    virtual double GetNoDataValue( int * );
-    virtual double GetMinimum( int * );
-    virtual double GetMaximum( int * );
-    virtual GDALColorTable *GetColorTable();
     virtual CPLErr AdviseRead(int x0, int y0, int sx, int sy, int bsx, int bsy, GDALDataType bdt, char **options);
 
     virtual GDALColorInterp GetColorInterpretation();
@@ -310,9 +286,6 @@ public:
     virtual int HasArbitraryOverviews();
     virtual int GetOverviewCount();
     virtual GDALRasterBand *GetOverview(int n);
-
-    virtual const char *GetMetadataItem( const char * pszName,
-                                         const char * pszDomain = "" );
 
 protected:
     CPLErr ReadBlocks(int x, int y, void *buffer, int bx0, int by0, int bx1, int by1, int advise_read);

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_vrt.h 25110 2012-10-13 13:53:53Z rouault $
+ * $Id: ogr_vrt.h 23575 2011-12-14 20:24:08Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions for OGR/VRT driver.
@@ -33,7 +33,6 @@
 #include "ogrsf_frmts.h"
 #include "cpl_error.h"
 #include "cpl_minixml.h"
-#include "ogrlayerpool.h"
 
 #include <vector>
 #include <string>
@@ -69,7 +68,6 @@ class OGRVRTLayer : public OGRLayer
 
     OGRDataSource       *poSrcDS;
     OGRLayer            *poSrcLayer;
-    OGRFeatureDefn      *poSrcFeatureDefn;
     int                 bNeedReset;
     int                 bSrcLayerFromSQL;
     int                 bSrcDSShared;
@@ -103,17 +101,13 @@ class OGRVRTLayer : public OGRLayer
     int                 bUpdate;
 
     OGRFeature         *TranslateFeature( OGRFeature*& , int bUseSrcRegion );
+    OGRErr              createFromShapeBin( GByte *, OGRGeometry **, int );
+    
     OGRFeature         *TranslateVRTFeatureToSrcFeature( OGRFeature* poVRTFeature);
 
     int                 ResetSourceReading();
 
     int                 FullInitialize();
-
-    OGRFeatureDefn     *GetSrcLayerDefn();
-    void                ClipAndAssignSRS(OGRFeature* poFeature);
-
-    int                 nFeatureCount;
-    OGREnvelope         sStaticEnvelope;
 
   public:
                         OGRVRTLayer(OGRVRTDataSource* poDSIn);
@@ -159,14 +153,6 @@ class OGRVRTLayer : public OGRLayer
     virtual OGRErr      DeleteFeature( long nFID );
 
     virtual OGRErr      SyncToDisk();
-
-    virtual const char *GetFIDColumn();
-
-    virtual OGRErr      StartTransaction();
-    virtual OGRErr      CommitTransaction();
-    virtual OGRErr      RollbackTransaction();
-
-    virtual OGRErr      SetIgnoredFields( const char **papszFields );
 };
 
 /************************************************************************/
@@ -175,7 +161,7 @@ class OGRVRTLayer : public OGRLayer
 
 class OGRVRTDataSource : public OGRDataSource
 {
-    OGRLayer          **papoLayers;
+    OGRVRTLayer        **papoLayers;
     int                 nLayers;
     
     char               *pszName;
@@ -186,33 +172,9 @@ class OGRVRTDataSource : public OGRDataSource
 
     std::set<std::string> aosOtherDSNameSet;
 
-    OGRLayer*           InstanciateWarpedLayer(CPLXMLNode *psLTree,
-                                               const char *pszVRTDirectory,
-                                               int bUpdate,
-                                               int nRecLevel);
-    OGRLayer*           InstanciateUnionLayer(CPLXMLNode *psLTree,
-                                               const char *pszVRTDirectory,
-                                               int bUpdate,
-                                               int nRecLevel);
-
-    OGRLayerPool*       poLayerPool;
-
-    OGRVRTDataSource   *poParentDS;
-    int                 bRecursionDetected;
-
   public:
                         OGRVRTDataSource();
                         ~OGRVRTDataSource();
-
-    OGRLayer*           InstanciateLayer(CPLXMLNode *psLTree,
-                                    const char *pszVRTDirectory,
-                                    int bUpdate,
-                                    int nRecLevel = 0);
-
-    OGRLayer*           InstanciateLayerInternal(CPLXMLNode *psLTree,
-                                            const char *pszVRTDirectory,
-                                            int bUpdate,
-                                            int nRecLevel);
 
     int                 Initialize( CPLXMLNode *psXML, const char *pszName,
                                     int bUpdate );
@@ -226,12 +188,6 @@ class OGRVRTDataSource : public OGRDataSource
     /* Anti-recursion mechanism for standard Open */
     void                SetCallLevel(int nCallLevelIn) { nCallLevel = nCallLevelIn; }
     int                 GetCallLevel() { return nCallLevel; }
-
-    void                SetParentDS(OGRVRTDataSource* poParentDSIn) { poParentDS = poParentDSIn; }
-    OGRVRTDataSource*   GetParentDS() { return poParentDS; }
-
-    void                SetRecursionDetected() { bRecursionDetected = TRUE; }
-    int                 GetRecursionDetected() { return bRecursionDetected; }
 
     /* Anti-recursion mechanism for shared Open */
     void                AddForbiddenNames(const char* pszOtherDSName);
@@ -252,7 +208,6 @@ class OGRVRTDriver : public OGRSFDriver
     int         TestCapability( const char * );
 };
 
-OGRwkbGeometryType OGRVRTGetGeometryType(const char* pszGType, int* pbError);
 
 #endif /* ndef _OGR_VRT_H_INCLUDED */
 

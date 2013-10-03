@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ili1readerp.h 24116 2012-03-13 16:31:27Z pka $
+ * $Id: ili1readerp.h 16865 2009-04-27 12:49:49Z chaitanya $
  *
  * Project:  Interlis 1 Reader
  * Purpose:  Private Declarations for Reader code.
@@ -51,9 +51,6 @@ private:
     OGRILI1Layer *curLayer;
     OGRILI1Layer *metaLayer;
     double       arcIncr;
-    char         codeBlank;
-    char         codeUndefined;
-    char         codeContinue;
 
 public:
                  ILI1Reader();
@@ -78,7 +75,6 @@ public:
     const char*  GetLayerNameString(const char* topicname, const char* tablename);
     const char*  GetLayerName(IOM_BASKET model, IOM_OBJECT table);
     void         AddCoord(OGRILI1Layer* layer, IOM_BASKET model, IOM_OBJECT modelele, IOM_OBJECT typeobj);
-    void         AddEnumTable(OGRILI1Layer* layer, IOM_BASKET model, IOM_OBJECT enumeration);
     OGRILI1Layer* AddGeomTable(const char* datalayername, const char* geomname, OGRwkbGeometryType eType);
     void         AddField(OGRILI1Layer* layer, IOM_BASKET model, IOM_OBJECT obj);
     unsigned int GetCoordDim(IOM_BASKET model, IOM_OBJECT typeobj);

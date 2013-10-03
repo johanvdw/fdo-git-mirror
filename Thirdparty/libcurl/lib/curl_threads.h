@@ -20,8 +20,9 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
+ * $Id: curl_threads.h,v 1.1 2010-01-25 23:46:27 yangtse Exp $
  ***************************************************************************/
-#include "curl_setup.h"
+#include "setup.h"
 
 #if defined(USE_THREADS_POSIX)
 #  define CURL_STDCALL

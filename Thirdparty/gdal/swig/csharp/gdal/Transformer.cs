@@ -90,12 +90,6 @@ public class Transformer : IDisposable {
     return ret;
   }
 
-  public int TransformGeolocations(Band xBand, Band yBand, Band zBand, Gdal.GDALProgressFuncDelegate callback, string callback_data, string[] options) {
-    int ret = GdalPINVOKE.Transformer_TransformGeolocations(swigCPtr, Band.getCPtr(xBand), Band.getCPtr(yBand), Band.getCPtr(zBand), callback, callback_data, (options != null)? new GdalPINVOKE.StringListMarshal(options)._ar : null);
-    if (GdalPINVOKE.SWIGPendingException.Pending) throw GdalPINVOKE.SWIGPendingException.Retrieve();
-    return ret;
-  }
-
 }
 
 }

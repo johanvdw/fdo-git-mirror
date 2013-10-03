@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: pngdataset.cpp 25571 2013-01-27 00:28:04Z rouault $
+ * $Id: pngdataset.cpp 23033 2011-09-03 18:46:11Z rouault $
  *
  * Project:  PNG Driver
  * Purpose:  Implement GDAL PNG Support
@@ -49,7 +49,7 @@
 #include "cpl_string.h"
 #include <setjmp.h>
 
-CPL_CVSID("$Id: pngdataset.cpp 25571 2013-01-27 00:28:04Z rouault $");
+CPL_CVSID("$Id: pngdataset.cpp 23033 2011-09-03 18:46:11Z rouault $");
 
 CPL_C_START
 void	GDALRegister_PNG(void);
@@ -141,6 +141,8 @@ class PNGDataset : public GDALPamDataset
     virtual void FlushCache( void );
 
     virtual char  **GetMetadata( const char * pszDomain = "" );
+    virtual const char *GetMetadataItem( const char * pszName,
+                                         const char * pszDomain = "" );
 
     // semi-private.
     jmp_buf     sSetJmpContext;
@@ -837,6 +839,21 @@ char  **PNGDataset::GetMetadata( const char * pszDomain )
 }
 
 /************************************************************************/
+/*                       GetMetadataItem()                              */
+/************************************************************************/
+
+const char *PNGDataset::GetMetadataItem( const char * pszName,
+                                         const char * pszDomain )
+{
+    if (fpImage == NULL)
+        return NULL;
+    if (eAccess == GA_ReadOnly && !bHasReadXMPMetadata &&
+        (pszDomain != NULL && EQUAL(pszDomain, "xml:XMP")))
+        CollectXMPMetadata();
+    return GDALPamDataset::GetMetadataItem(pszName, pszDomain);
+}
+
+/************************************************************************/
 /*                              Identify()                              */
 /************************************************************************/
 
@@ -920,10 +937,7 @@ GDALDataset *PNGDataset::Open( GDALOpenInfo * poOpenInfo )
     png_set_error_fn( poDS->hPNG, &poDS->sSetJmpContext, png_gdal_error, png_gdal_warning );
 
     if( setjmp( poDS->sSetJmpContext ) != 0 )
-    {
-        delete poDS;
         return NULL;
-    }
 
 /* -------------------------------------------------------------------- */
 /*	Read pre-image data after ensuring the file is rewound.         */
@@ -1073,6 +1087,8 @@ GDALDataset *PNGDataset::Open( GDALOpenInfo * poOpenInfo )
 /*      Extract any text chunks as "metadata".                          */
 /* -------------------------------------------------------------------- */
     poDS->CollectMetadata();
+
+    poDS->CollectXMPMetadata();
 
 /* -------------------------------------------------------------------- */
 /*      More metadata.                                                  */

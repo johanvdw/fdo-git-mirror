@@ -48,8 +48,7 @@
  *
  */
 
-#include <openssl/crypto.h>
-#include "modes_lcl.h"
+#include "modes.h"
 #include <string.h>
 
 #ifndef MODES_DEBUG
@@ -58,6 +57,14 @@
 # endif
 #endif
 #include <assert.h>
+
+#define STRICT_ALIGNMENT
+#if defined(__i386) || defined(__i386__) || \
+    defined(__x86_64) || defined(__x86_64__) || \
+    defined(_M_IX86) || defined(_M_AMD64) || defined(_M_X64) || \
+    defined(__s390__) || defined(__s390x__)
+#  undef STRICT_ALIGNMENT
+#endif
 
 /* The input and output encrypted as though 128bit cfb mode is being
  * used.  The extra state information to record how much of the
@@ -89,15 +96,15 @@ void CRYPTO_cfb128_encrypt(const unsigned char *in, unsigned char *out,
 #endif
 		while (len>=16) {
 			(*block)(ivec, ivec, key);
-			for (; n<16; n+=sizeof(size_t)) {
+			for (n=0; n<16; n+=sizeof(size_t)) {
 				*(size_t*)(out+n) =
 				*(size_t*)(ivec+n) ^= *(size_t*)(in+n);
 			}
 			len -= 16;
 			out += 16;
 			in  += 16;
-			n = 0;
 		}
+		n = 0;
 		if (len) {
 			(*block)(ivec, ivec, key);
 			while (len--) {
@@ -134,7 +141,7 @@ void CRYPTO_cfb128_encrypt(const unsigned char *in, unsigned char *out,
 #endif
 		while (len>=16) {
 			(*block)(ivec, ivec, key);
-			for (; n<16; n+=sizeof(size_t)) {
+			for (n=0; n<16; n+=sizeof(size_t)) {
 				size_t t = *(size_t*)(in+n);
 				*(size_t*)(out+n) = *(size_t*)(ivec+n) ^ t;
 				*(size_t*)(ivec+n) = t;
@@ -142,8 +149,8 @@ void CRYPTO_cfb128_encrypt(const unsigned char *in, unsigned char *out,
 			len -= 16;
 			out += 16;
 			in  += 16;
-			n = 0;
 		}
+		n = 0;
 		if (len) {
 			(*block)(ivec, ivec, key);
 			while (len--) {

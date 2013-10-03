@@ -1,5 +1,5 @@
-#ifndef HEADER_CURL_CURLX_H
-#define HEADER_CURL_CURLX_H
+#ifndef __CURLX_H
+#define __CURLX_H
 /***************************************************************************
  *                                  _   _ ____  _
  *  Project                     ___| | | |  _ \| |
@@ -20,6 +20,7 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
+ * $Id: curlx.h,v 1.7 2009-07-09 21:47:24 bagder Exp $
  ***************************************************************************/
 
 /*
@@ -55,14 +56,6 @@
 #include "nonblock.h"
 /* "nonblock.h" provides curlx_nonblock() */
 
-#include "warnless.h"
-/* "warnless.h" provides functions:
-
-  curlx_ultous()
-  curlx_ultouc()
-  curlx_uztosi()
-*/
-
 /* Now setup curlx_ * names for the functions that are to become curlx_ and
    be removed from a future libcurl official API:
    curlx_getenv
@@ -89,7 +82,7 @@
 
 #ifdef ENABLE_CURLX_PRINTF
 /* If this define is set, we define all "standard" printf() functions to use
-   the curlx_* version instead. It makes the source code transparent and
+   the curlx_* version instead. It makes the source code transparant and
    easier to understand/patch. Undefine them first in case _MPRINTF_REPLACE
    is set. */
 # undef printf
@@ -115,5 +108,4 @@
 # define vaprintf curlx_mvaprintf
 #endif /* ENABLE_CURLX_PRINTF */
 
-#endif /* HEADER_CURL_CURLX_H */
-
+#endif /* __CURLX_H */

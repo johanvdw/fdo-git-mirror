@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: iso19115_srs.cpp 24759 2012-08-11 15:34:29Z rouault $
+ * $Id: iso19115_srs.cpp 17985 2009-11-10 13:39:46Z rouault $
  *
  * Project:  BAG Driver
  * Purpose:  Implements code to parse ISO 19115 metadata to extract a
@@ -33,7 +33,7 @@
 #include "cpl_minixml.h"
 #include "cpl_error.h"
 
-CPL_CVSID("$Id: iso19115_srs.cpp 24759 2012-08-11 15:34:29Z rouault $");
+CPL_CVSID("$Id: iso19115_srs.cpp 17985 2009-11-10 13:39:46Z rouault $");
 
 /************************************************************************/
 /*                     OGR_SRS_ImportFromISO19115()                     */
@@ -94,20 +94,6 @@ OGRErr OGR_SRS_ImportFromISO19115( OGRSpatialReference *poThis,
         int nZone = atoi(CPLGetXMLValue( psRSI, "MD_CRS.projectionParameters.MD_ProjectionParameters.zone", "0" ));
 
         poThis->SetUTM( ABS(nZone), nZone > 0 );
-    }
-    else if( EQUAL(pszProjection,"Geodetic") )
-    {
-        const char *pszEllipsoid = 
-            CPLGetXMLValue( psRSI, "MD_CRS.ellipsoid.RS_Identifier.code", "" );
-
-        if( !EQUAL(pszDatum, "WGS84") ||
-            !EQUAL(pszEllipsoid, "WGS84") )
-        {
-            CPLError( CE_Failure, CPLE_AppDefined,
-                      "ISO 19115 parser does not support custom GCS." );
-            CPLDestroyXMLNode( psRoot );
-            return OGRERR_FAILURE;
-        }
     }
     else 
     {

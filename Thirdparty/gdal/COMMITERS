@@ -117,8 +117,8 @@ chaitanya     Chaitanya Kumar CH
 rprinceley    Robin Princeley              ESRI branches.
               rprinceley at esri.com
 
-jorgearevalo  Jorge Arevalo		   PostGIS Raster driver.
-	      jorgearevalo at libregis.org
+jorgearevalo  Jorge Arevalo		   WKT Raster driver.
+	      jorgearevalo at gis4free.org
 
 martinl       Martin Landa                 OGR: VFK and GRASS drivers
               landa.martin at gmail.com
@@ -142,7 +142,6 @@ aboudreault   Alan Boudreault
               aboudreault at mapgears.com  mitab, DebianGIS Packaging
               
 rburhum       Ragi Yaser Burhum            OGR: ArcObjects, filegdb
-              ragi at burhum.com
 
 kirk          Kirk McKelvey                mrsid, raster
               kmckelvey@lizardtech.com
@@ -156,15 +155,6 @@ pramsey       Paul Ramsey                  OGR: FGDB, PostGIS
 etourigny     Etienne Tourigny             netcdf, hdf
               etourigny.dev at gmail dot com
               (old osgeo id etiennesky)
-              
-bishop        Dmitry Baryshnikov            postgis, hdf, geotiff, mitab, shp
-              polimax at mail.ru
-
-rcoup         Robert Coup                  OGR: FGDB
-              robert@coup.net.nz
-
-dzwarg        David Zwarg                  PostGIS Raster
-              dzwarg@azavea.com
 
 ===============
 Past developers

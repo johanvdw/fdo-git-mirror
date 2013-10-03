@@ -29,7 +29,6 @@
 using kmldom::SimpleFieldPtr;
 using kmldom::SchemaPtr;
 using kmldom::KmlFactory;
-using kmldom::FeaturePtr;
 using kmldom::PlacemarkPtr;
 
 /******************************************************************************
@@ -66,7 +65,7 @@ void field2kml (
 
 void kml2field (
     OGRFeature * poOgrFeat,
-    FeaturePtr poKmlFeature );
+    PlacemarkPtr poKmlPlacemark );
 
 /******************************************************************************
  function create a simplefield from a FieldDefn
@@ -83,25 +82,4 @@ SimpleFieldPtr FieldDef2kml (
 void kml2FeatureDef (
     SchemaPtr poKmlSchema,
     OGRFeatureDefn *poOgrFeatureDefn);
-
-/*******************************************************************************
- * function to fetch the field config options
- * 
-*******************************************************************************/
-
-struct fieldconfig {
-	const char *namefield;
-    const char *descfield;
-    const char *tsfield;
-    const char *beginfield;
-    const char *endfield;
-    const char *altitudeModefield;
-    const char *tessellatefield;
-    const char *extrudefield;
-    const char *visibilityfield;
-    const char *drawOrderfield;
-    const char *iconfield;
-};
-
-void get_fieldconfig( struct fieldconfig *oFC );
 

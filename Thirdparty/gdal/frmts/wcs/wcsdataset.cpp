@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: wcsdataset.cpp 25494 2013-01-13 12:55:17Z etourigny $
+ * $Id: wcsdataset.cpp 22618 2011-06-29 20:02:57Z rouault $
  *
  * Project:  WCS Client Driver
  * Purpose:  Implementation of Dataset and RasterBand classes for WCS.
@@ -33,7 +33,7 @@
 #include "cpl_http.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: wcsdataset.cpp 25494 2013-01-13 12:55:17Z etourigny $");
+CPL_CVSID("$Id: wcsdataset.cpp 22618 2011-06-29 20:02:57Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -2122,9 +2122,7 @@ GDALDataset *WCSDataset::Open( GDALOpenInfo * poOpenInfo )
     const char *pszVersion = CPLGetXMLValue( psService, "Version", "1.0.0" );
     int nVersion;
 
-    if (EQUAL(pszVersion, "1.1.2") )
-        nVersion = 112;
-    else if( EQUAL(pszVersion,"1.1.1") )
+    if( EQUAL(pszVersion,"1.1.1") )
         nVersion = 111;
     else if( EQUAL(pszVersion,"1.1.0") )
         nVersion = 110;
@@ -2389,7 +2387,6 @@ void GDALRegister_WCS()
         poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, 
                                    "frmt_wcs.html" );
         poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
-        poDriver->SetMetadataItem( GDAL_DMD_SUBDATASETS, "YES" );
         
         poDriver->pfnOpen = WCSDataset::Open;
         poDriver->pfnIdentify = WCSDataset::Identify;

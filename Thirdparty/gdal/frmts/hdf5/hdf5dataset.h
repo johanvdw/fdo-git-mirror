@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hdf5dataset.h 25775 2013-03-20 20:38:14Z rouault $
+ * $Id: hdf5dataset.h 23035 2011-09-04 10:28:41Z antonio $
  *
  * Project:  Hierarchical Data Format Release 5 (HDF5)
  * Purpose:  Header file for HDF5 datasets reader.
@@ -85,24 +85,6 @@ class HDF5Dataset : public GDALPamDataset
 
   GDALDataType GetDataType(hid_t);
   const char * GetDataTypeName(hid_t);
-
-  /**
-   * Reads an array of double attributes from the HDF5 metadata.
-   * It reads the attributes directly on it's binary form directly,
-   * thus avoiding string conversions.
-   *
-   * Important: It allocates the memory for the attributes internally,
-   * so the caller must free the returned array after using it.
-   * @param pszAttrName Name of the attribute to be read.
-   * 			the attribute name must be the form:
-   * 					root attribute name
-   * 					SUBDATASET/subdataset attribute name
-   * @param pdfValues pointer wich will store the array of doubles read.
-   * @param nLen it stores the length of the array read. If NULL it doesn't inform
-   *        the lenght of the array.
-   * @return CPLErr CE_None in case of success, CE_Failure in case of failure
-   */
-  CPLErr HDF5ReadDoubleAttr(const char* pszAttrName,double **pdfValues,int *nLen=NULL);
 
   public:
 

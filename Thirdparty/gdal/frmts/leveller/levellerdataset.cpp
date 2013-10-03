@@ -34,7 +34,7 @@
 #include "gdal_pam.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: levellerdataset.cpp 25572 2013-01-27 00:46:10Z rouault $");
+CPL_CVSID("$Id: levellerdataset.cpp 23060 2011-09-05 17:58:30Z rouault $");
 
 CPL_C_START
 void	GDALRegister_Leveller(void);
@@ -254,7 +254,7 @@ class LevellerDataset : public GDALPamDataset
 	char*		m_pszFilename;
     char*		m_pszProjection;
 
-    //char		m_szUnits[8];
+    char		m_szUnits[8];
 	char		m_szElevUnits[8];
     double		m_dElevScale;	// physical-to-logical scaling.
     double		m_dElevBase;	// logical offset.

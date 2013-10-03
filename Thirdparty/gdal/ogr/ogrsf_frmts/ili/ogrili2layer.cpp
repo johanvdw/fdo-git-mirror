@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrili2layer.cpp 23895 2012-02-04 11:21:18Z rouault $
+ * $Id: ogrili2layer.cpp 13906 2008-03-01 13:08:28Z rouault $
  *
  * Project:  Interlis 2 Translator
  * Purpose:  Implements OGRILI2Layer class.
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrili2layer.cpp 23895 2012-02-04 11:21:18Z rouault $");
+CPL_CVSID("$Id: ogrili2layer.cpp 13906 2008-03-01 13:08:28Z rouault $");
 
 /************************************************************************/
 /*                           OGRILI2Layer()                              */
@@ -55,8 +55,6 @@ OGRILI2Layer::OGRILI2Layer( const char * pszName,
     poFeatureDefn->SetGeomType( eReqType );
 
     bWriter = bWriterIn;
-
-    listFeatureIt = listFeature.begin();
 }
 
 /************************************************************************/

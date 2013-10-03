@@ -1,30 +1,12 @@
-#ifndef HEADER_CURL_CONFIG_VXWORKS_H
-#define HEADER_CURL_CONFIG_VXWORKS_H
-/***************************************************************************
- *                                  _   _ ____  _
- *  Project                     ___| | | |  _ \| |
- *                             / __| | | | |_) | |
- *                            | (__| |_| |  _ <| |___
- *                             \___|\___/|_| \_\_____|
- *
- * Copyright (C) 1998 - 2013, Daniel Stenberg, <daniel@haxx.se>, et al.
- *
- * This software is licensed as described in the file COPYING, which
- * you should have received as part of this distribution. The terms
- * are also available at http://curl.haxx.se/docs/copyright.html.
- *
- * You may opt to use, copy, modify, merge, publish, distribute and/or sell
- * copies of the Software, and permit persons to whom the Software is
- * furnished to do so, under the terms of the COPYING file.
- *
- * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
- * KIND, either express or implied.
- *
- ***************************************************************************/
+#ifndef __LIB_CONFIG_VXWORKS_H
+#define __LIB_CONFIG_VXWORKS_H
 
 /* =============================================================== */
-/*               Hand crafted config file for VxWorks              */
+/*   lib/config-vxworks.h - Hand crafted config file for VxWorks   */
 /* =============================================================== */
+
+/* when building libcurl itself */
+/* #undef BUILDING_LIBCURL */
 
 /* Location of default ca bundle */
 /* #undef CURL_CA_BUNDLE */
@@ -71,11 +53,20 @@
 /* to disable verbose strings */
 /* #undef CURL_DISABLE_VERBOSE_STRINGS */
 
-/* Definition to make a library symbol externally visible. */
+/* to make a symbol visible */
 /* #undef CURL_EXTERN_SYMBOL */
 
-/* Use Windows LDAP implementation */
+/* to enable hidden symbols */
+/* #undef CURL_HIDDEN_SYMBOLS */
+
+/* W$ LDAP with non-W$ compiler */
+/* #undef CURL_LDAP_HYBRID */
+
+/* Use W$ LDAP implementation */
 /* #undef CURL_LDAP_WIN */
+
+/* when not building a shared library */
+/* #undef CURL_STATICLIB */
 
 /* your Entropy Gathering Daemon socket pathname */
 /* #undef EGD_SOCKET */
@@ -460,6 +451,9 @@
 /* Define to 1 if you have the `pipe' function. */
 #define HAVE_PIPE 1
 
+/* if you have the function PK11_CreateGenericObject */
+/* #undef HAVE_PK11_CREATEGENERICOBJECT */
+
 /* Define to 1 if you have a working poll function. */
 /* #undef HAVE_POLL */
 
@@ -571,6 +565,9 @@
 /* Define to 1 if you have the strcasecmp function. */
 #define HAVE_STRCASECMP 1
 
+/* Define to 1 if you have the strcasestr function. */
+/* #undef HAVE_STRCASESTR */
+
 /* Define to 1 if you have the strcmpi function. */
 /* #undef HAVE_STRCMPI */
 
@@ -588,6 +585,9 @@
 
 /* Define to 1 if you have the <string.h> header file. */
 #define HAVE_STRING_H 1
+
+/* Define to 1 if you have the strlcat function. */
+/* #undef HAVE_STRLCAT */
 
 /* Define to 1 if you have the `strlcpy' function. */
 /* #undef HAVE_STRLCPY */
@@ -727,6 +727,9 @@
 /* if you have the zlib.h header file */
 #define HAVE_ZLIB_H 1
 
+/* Define to 1 if you are building a native Windows target. */
+/* #undef NATIVE_WINDOWS */
+
 /* Define to 1 if you need the lber.h header file even with ldap.h */
 /* #undef NEED_LBER_H */
 
@@ -844,9 +847,6 @@
 /* The size of `off_t', as computed by sizeof. */
 #define SIZEOF_OFF_T 8
 
-/* The size of `short', as computed by sizeof. */
-#define SIZEOF_SHORT 2
-
 /* The size of `size_t', as computed by sizeof. */
 #define SIZEOF_SIZE_T 4
 
@@ -931,4 +931,4 @@
 /* the signed version of size_t */
 /* #undef ssize_t */
 
-#endif /* HEADER_CURL_CONFIG_VXWORKS_H */
+#endif /* __LIB_CONFIG_VXWORKS_H */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: coasp_dataset.cpp 25311 2012-12-15 12:48:14Z rouault $
+ * $Id: coasp_dataset.cpp 20996 2010-10-28 18:38:15Z rouault $
  *
  * Project:  DRDC Configurable Airborne SAR Processor (COASP) data reader
  * Purpose:  Support in GDAL for the DRDC COASP format data, both Metadata
@@ -38,7 +38,7 @@
 #include "cpl_vsi.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: coasp_dataset.cpp 25311 2012-12-15 12:48:14Z rouault $");
+CPL_CVSID("$Id: coasp_dataset.cpp 20996 2010-10-28 18:38:15Z rouault $");
 
 CPL_C_START
 void    GDALRegister_COASP(void);
@@ -158,7 +158,7 @@ GDAL_GCP *COASPMetadataGeorefGridItem::GetItemValue()
 
 COASPMetadataReader::COASPMetadataReader(char *pszFname) 
 {
-	this->fp = NULL;
+	this->fp = fp;
 	this->nCurrentItem = 0;
 	this->papszMetadata = CSLLoad(pszFname);
 	this->nMetadataCount = CSLCount(this->papszMetadata);
@@ -255,6 +255,7 @@ class COASPDataset : public GDALDataset
 	VSILFILE *fpBinVV;
 
 	char *pszFileName; /* line and mission ID, mostly, i.e. l27p7 */
+	char *pszPrefix; /* file name prefix */
 
 	int nGCPCount;
 	GDAL_GCP *pasGCP;

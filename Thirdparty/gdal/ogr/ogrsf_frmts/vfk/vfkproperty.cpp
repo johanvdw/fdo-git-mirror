@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: vfkproperty.cpp 25702 2013-03-07 17:17:54Z martinl $
+ * $Id: vfkproperty.cpp 18566 2010-01-16 16:36:45Z martinl $
  *
  * Project:  VFK Reader - Property definition
  * Purpose:  Implements VFKProperty class.
@@ -70,7 +70,7 @@ VFKProperty::VFKProperty(const char *pszValue)
 /*!
   \brief Set VFK property (string)
 */
-VFKProperty::VFKProperty(CPLString const& strValue)
+VFKProperty::VFKProperty(std::string const& strValue)
     : m_bIsNull(FALSE), m_nValue(0), m_dValue(0.0), m_strValue(strValue)
 {
 }

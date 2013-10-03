@@ -55,11 +55,7 @@ package Geo::GDAL;
 *UseExceptions = *Geo::GDALc::UseExceptions;
 *DontUseExceptions = *Geo::GDALc::DontUseExceptions;
 *Debug = *Geo::GDALc::Debug;
-*SetErrorHandler = *Geo::GDALc::SetErrorHandler;
 *Error = *Geo::GDALc::Error;
-*GOA2GetAuthorizationURL = *Geo::GDALc::GOA2GetAuthorizationURL;
-*GOA2GetRefreshToken = *Geo::GDALc::GOA2GetRefreshToken;
-*GOA2GetAccessToken = *Geo::GDALc::GOA2GetAccessToken;
 *PushErrorHandler = *Geo::GDALc::PushErrorHandler;
 *PopErrorHandler = *Geo::GDALc::PopErrorHandler;
 *ErrorReset = *Geo::GDALc::ErrorReset;
@@ -70,9 +66,8 @@ package Geo::GDAL;
 *PushFinderLocation = *Geo::GDALc::PushFinderLocation;
 *PopFinderLocation = *Geo::GDALc::PopFinderLocation;
 *FinderClean = *Geo::GDALc::FinderClean;
-*FindFile = *Geo::GDALc::FindFile;
-*ReadDir = *Geo::GDALc::ReadDir;
-*ReadDirRecursive = *Geo::GDALc::ReadDirRecursive;
+*_FindFile = *Geo::GDALc::_FindFile;
+*_ReadDir = *Geo::GDALc::_ReadDir;
 *SetConfigOption = *Geo::GDALc::SetConfigOption;
 *GetConfigOption = *Geo::GDALc::GetConfigOption;
 *CPLBinaryToHex = *Geo::GDALc::CPLBinaryToHex;
@@ -120,6 +115,7 @@ package Geo::GDAL;
 *GDAL_GCP_get_Id = *Geo::GDALc::GDAL_GCP_get_Id;
 *GDAL_GCP_set_Id = *Geo::GDALc::GDAL_GCP_set_Id;
 *GCPsToGeoTransform = *Geo::GDALc::GCPsToGeoTransform;
+*TermProgress_nocb = *Geo::GDALc::TermProgress_nocb;
 *_ComputeMedianCutPCT = *Geo::GDALc::_ComputeMedianCutPCT;
 *_DitherRGB2PCT = *Geo::GDALc::_DitherRGB2PCT;
 *_ReprojectImage = *Geo::GDALc::_ReprojectImage;
@@ -574,7 +570,6 @@ sub DESTROY {
 
 *TransformPoint = *Geo::GDALc::Transformer_TransformPoint;
 *_TransformPoints = *Geo::GDALc::Transformer__TransformPoints;
-*TransformGeolocations = *Geo::GDALc::Transformer_TransformGeolocations;
 sub DISOWN {
     my $self = shift;
     my $ptr = tied(%$self);
@@ -592,6 +587,7 @@ sub ACQUIRE {
 
 package Geo::GDAL;
 
+*TermProgress = *Geo::GDALc::TermProgress;
 
     use strict;
     use Carp;
@@ -599,18 +595,12 @@ package Geo::GDAL;
     use Geo::GDAL::Const;
     use Geo::OGR;
     use Geo::OSR;
-    # $VERSION is the Perl module (CPAN) version number, which must be
-    # an increasing floating point number.  $GDAL_VERSION is the
-    # version number of the GDAL that this module is a part of. It is
-    # used in build time to check the version of GDAL against which we
-    # build.  For GDAL 1.9.2 and below $VERSION is made by dropping
-    # the second point.  Hoping that there will not be GDAL 1.9.10, we
-    # set the $VERSION of GDAL 1.10 to 1.991. Thus GDAL 1.10.1 would
-    # have $VERSION 1.9911 and GDAL 1.11 would have $VERSION 1.992
-    # etc.  GDAL 2.0 should then get VERSION 2.000 and 2.1 should get
-    # 2.001 etc.
-    our $VERSION = '1.991';
-    our $GDAL_VERSION = '1.10.0';
+    # The three first numbers of the module version and the library
+    # version should match. GDAL version is available in runtime but
+    # it is needed here for the build time when it is compared against
+    # the version of GDAL against which we build.
+    our $VERSION = '1.90';
+    our $GDAL_VERSION = '1.9.0';
     use vars qw/
 	%TYPE_STRING2INT %TYPE_INT2STRING
 	%ACCESS_STRING2INT %ACCESS_INT2STRING
@@ -674,7 +664,7 @@ package Geo::GDAL;
 	return (-2147483648,2147483647) if $t =~ /Int32$/; # also CInt
 	return (-4294967295.0,4294967295.0) if $t =~ /Float32$/; # also CFloat
 	return (-4294967295.0,4294967295.0) if $t =~ /Float64$/; # also CFloat
-	croak "GDAL does not support data type '$t'";
+	croak "unsupported data type: $t";
     }
     sub DataTypeIsComplex {
 	my $t = shift;
@@ -692,7 +682,7 @@ package Geo::GDAL;
 	return 'l' if $t =~ /^Int32$/;
 	return 'f' if $t =~ /^Float32$/;
 	return 'd' if $t =~ /^Float64$/;
-	croak "data type '$t' is not known in Geo::GDAL::PackCharacter";
+	croak "unsupported data type: $t";
     }
     sub Drivers {
 	my @drivers;
@@ -760,6 +750,19 @@ package Geo::GDAL;
 	$_[3] = $RESAMPLING_STRING2INT{$_[3]} if $_[3] and exists $RESAMPLING_STRING2INT{$_[3]};
 	return _AutoCreateWarpedVRT(@_);
     }
+    sub FindFile {
+	my $a = _FindFile(@_);
+	$a = decode('utf8', $a); # GDAL returns utf8
+	return $a;
+    }
+    sub ReadDir {
+	return unless defined wantarray;
+	my $a = _ReadDir(@_);
+	for (@$a) {
+	    $_ = decode('utf8', $_); # GDAL returns utf8
+	}
+	return wantarray ? @$a : $a;
+    }
 
     package Geo::GDAL::MajorObject;
     use vars qw/@DOMAINS/;
@@ -774,8 +777,7 @@ package Geo::GDAL;
     }
     sub Metadata {
 	my $self = shift;
-	my $metadata;
-	$metadata = shift if ref $_[0];
+	my $metadata = shift if ref $_[0];
 	my $domain = shift;
 	$domain = '' unless defined $domain;
 	SetMetadata($self, $metadata, $domain) if defined $metadata;
@@ -885,7 +887,6 @@ package Geo::GDAL;
     }
     sub GetRasterBand {
 	my($self, $index) = @_;
-	$index = 1 unless defined $index;
 	my $band = _GetRasterBand($self, $index);
 	$BANDS{tied(%{$band})} = $self;
 	return $band;
@@ -921,9 +922,9 @@ package Geo::GDAL;
     }
 
     package Geo::GDAL::Band;
-    use strict;
     use Carp;
-    use Scalar::Util 'blessed';
+    use UNIVERSAL qw(isa);
+    use strict;
     use vars qw/
         @COLOR_INTERPRETATIONS
 	%COLOR_INTERPRETATION_STRING2INT %COLOR_INTERPRETATION_INT2STRING @DOMAINS
@@ -1058,7 +1059,7 @@ package Geo::GDAL;
 			ProgressData => undef);
 	my %params = @_;
 	for (keys %params) {
-	    carp "unknown parameter $_ in Geo::GDAL::Band::GetHistogram" unless exists $defaults{$_};
+	    croak "unknown parameter: $_" unless exists $defaults{$_};
 	}
 	for (keys %defaults) {
 	    $params{$_} = $defaults{$_} unless defined $params{$_};
@@ -1081,7 +1082,7 @@ package Geo::GDAL;
 			callback => undef,
 			callback_data => undef);
 	my %params;
-	if (!defined($_[0]) or (blessed($_[0]) and $_[0]->isa('Geo::OGR::DataSource'))) {
+	if (!defined($_[0]) or isa($_[0], 'Geo::OGR::DataSource')) {
 	    ($params{DataSource}, $params{LayerConstructor},
 	     $params{ContourInterval}, $params{ContourBase},
 	     $params{FixedLevels}, $params{NoDataValue}, 
@@ -1091,27 +1092,17 @@ package Geo::GDAL;
 	    %params = @_;
 	}
 	for (keys %params) {
-	    carp "unknown parameter $_ in Geo::GDAL::Band::Contours" unless exists $defaults{$_};
+	    croak "unknown parameter: $_" unless exists $defaults{$_};
 	}
 	for (keys %defaults) {
 	    $params{$_} = $defaults{$_} unless defined $params{$_};
 	}
 	$params{DataSource} = Geo::OGR::GetDriver('Memory')->CreateDataSource('ds') 
 	    unless defined $params{DataSource};
-	$params{LayerConstructor}->{Schema} = {} unless $params{LayerConstructor}->{Schema};
-	$params{LayerConstructor}->{Schema}{Fields} = [] unless $params{LayerConstructor}->{Schema}{Fields};
-	my %fields;
-	unless ($params{IDField} =~ /^[+-]?\d+$/ or $fields{$params{IDField}}) {
-	    push @{$params{LayerConstructor}->{Schema}{Fields}}, {Name => $params{IDField}, Type => 'Integer'};
-	}
-	unless ($params{ElevField} =~ /^[+-]?\d+$/ or $fields{$params{ElevField}}) {
-	    my $type = $self->DataType() =~ /Float/ ? 'Real' : 'Integer';
-	    push @{$params{LayerConstructor}->{Schema}{Fields}}, {Name => $params{ElevField}, Type => $type};
-	}
 	my $layer = $params{DataSource}->CreateLayer($params{LayerConstructor});
 	my $schema = $layer->GetLayerDefn;
 	for ('IDField', 'ElevField') {
-	    $params{$_} = $schema->GetFieldIndex($params{$_}) unless $params{$_} =~ /^[+-]?\d+$/;
+	    $params{$_} = $schema->GetFieldIndex($params{ElevField}) unless $params{ElevField} =~ /^[+-]?\d+$/;
 	}
 	$params{callback_data} = 1 if $params{callback} and not defined $params{callback_data};
 	ContourGenerate($self, $params{ContourInterval}, $params{ContourBase}, $params{FixedLevels},
@@ -1120,7 +1111,7 @@ package Geo::GDAL;
 	return $layer;
     }
     sub FillNodata {
-      croak 'usage: Geo::GDAL::Band->FillNodata($mask)' unless blessed($_[1]) and $_[1]->isa('Geo::GDAL::Band');
+      croak 'usage: FillNodata($mask)' unless isa($_[1], 'Geo::GDAL::Band');
       $_[2] = 10 unless defined $_[2];
       $_[3] = 0 unless defined $_[3];
       $_[4] = undef unless defined $_[4];

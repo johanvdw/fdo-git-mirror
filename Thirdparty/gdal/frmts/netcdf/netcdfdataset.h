@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: netcdfdataset.h 24588 2012-06-16 16:31:05Z rouault $
+ * $Id: netcdfdataset.h 23627 2011-12-22 02:40:39Z etourigny $
  *
  * Project:  netCDF read/write Driver
  * Purpose:  GDAL bindings over netCDF library.
@@ -46,34 +46,14 @@
 /************************************************************************/
 
 /* -------------------------------------------------------------------- */
-/*      Creation and Configuration Options                              */
-/* -------------------------------------------------------------------- */
-
-/* Creation options
-
-   FORMAT=NC/NC2/NC4/NC4C (COMPRESS=DEFLATE sets FORMAT=NC4C)
-   COMPRESS=NONE/DEFLATE (default: NONE)
-   ZLEVEL=[1-9] (default: 1)
-   WRITE_BOTTOMUP=YES/NO (default: YES)
-   WRITE_GDAL_TAGS=YES/NO (default: YES)
-   WRITE_LONLAT=YES/NO/IF_NEEDED (default: YES for geographic, NO for projected)
-   TYPE_LONLAT=float/double (default: double for geographic, float for projected)
-   PIXELTYPE=DEFAULT/SIGNEDBYTE (use SIGNEDBYTE to get a signed Byte Band)
-*/
-
-/* Config Options
-
-   GDAL_NETCDF_BOTTOMUP=YES/NO overrides bottom-up value on import
-   GDAL_NETCDF_CONVERT_LAT_180=YES/NO convert longitude values from ]180,360] to [-180,180]
-*/
-
-/* -------------------------------------------------------------------- */
 /*      Driver-specific defines                                         */
 /* -------------------------------------------------------------------- */
 
 /* NETCDF driver defs */
 #define NCDF_MAX_STR_LEN     8192
 #define NCDF_CONVENTIONS_CF  "CF-1.5"
+#define NCDF_GDAL             GDALVersionInfo("--version")
+#define NCDF_NBDIM           2
 #define NCDF_SPATIAL_REF     "spatial_ref"
 #define NCDF_GEOTRANSFORM    "GeoTransform"
 #define NCDF_DIMNAME_X       "x"
@@ -118,9 +98,8 @@ __FILE__, __FUNCTION__, __LINE__ ); }
 #endif
 #endif
 
-
 /* -------------------------------------------------------------------- */
-/*       CF-1 or NUG (NetCDF User's Guide) defs                         */
+/*       CF or NUG (NetCDF User's Guide) defs                           */
 /* -------------------------------------------------------------------- */
 
 /* CF: http://cf-pcmdi.llnl.gov/documents/cf-conventions/1.5/cf-conventions.html */
@@ -135,15 +114,12 @@ __FILE__, __FUNCTION__, __LINE__ ); }
 #define CF_UNITS_D           SRS_UA_DEGREE
 #define CF_PROJ_X_COORD      "projection_x_coordinate"
 #define CF_PROJ_Y_COORD      "projection_y_coordinate"
-#define CF_PROJ_X_COORD_LONG_NAME "x coordinate of projection"
-#define CF_PROJ_Y_COORD_LONG_NAME "y coordinate of projection"
 #define CF_GRD_MAPPING_NAME  "grid_mapping_name"
 #define CF_GRD_MAPPING       "grid_mapping"
 #define CF_COORDINATES       "coordinates"
 /* #define CF_AXIS            "axis" */
 /* #define CF_BOUNDS          "bounds" */
 /* #define CF_ORIG_UNITS      "original_units" */
-
 
 /* -------------------------------------------------------------------- */
 /*      CF-1 convention standard variables related to                   */
@@ -191,59 +167,6 @@ __FILE__, __FUNCTION__, __LINE__ ); }
 #define CF_PP_SEMI_MAJOR_AXIS        "semi_major_axis"
 #define CF_PP_SEMI_MINOR_AXIS        "semi_minor_axis"
 #define CF_PP_VERT_PERSP             "vertical_perspective" /*not used yet */
-
-
-/* -------------------------------------------------------------------- */
-/*         CF-1 Coordinate Type Naming (Chapter 4.  Coordinate Types )  */
-/* -------------------------------------------------------------------- */
-static const char* papszCFLongitudeVarNames[] = { "lon", "longitude", NULL };
-static const char* papszCFLongitudeAttribNames[] = { "units", CF_STD_NAME, "axis", NULL };
-static const char* papszCFLongitudeAttribValues[] = { "degrees_east", "longitude", "X", NULL };
-static const char* papszCFLatitudeVarNames[] = { "lat", "latitude", NULL };
-static const char* papszCFLatitudeAttribNames[] = { "units", CF_STD_NAME, "axis", NULL };
-static const char* papszCFLatitudeAttribValues[] = { "degrees_north", "latitude", "Y", NULL };
- 
-static const char* papszCFProjectionXVarNames[] = { "x", "xc", NULL };
-static const char* papszCFProjectionXAttribNames[] = { CF_STD_NAME, NULL };
-static const char* papszCFProjectionXAttribValues[] = { CF_PROJ_X_COORD, NULL };
-static const char* papszCFProjectionYVarNames[] = { "y", "yc", NULL };
-static const char* papszCFProjectionYAttribNames[] = { CF_STD_NAME, NULL };
-static const char* papszCFProjectionYAttribValues[] = { CF_PROJ_Y_COORD, NULL };
-
-static const char* papszCFVerticalAttribNames[] = { "axis", "positive", "positive", NULL };
-static const char* papszCFVerticalAttribValues[] = { "Z", "up", "down", NULL };
-static const char* papszCFVerticalUnitsValues[] = { 
-    /* units of pressure */
-    "bar", "bars", "millibar", "millibars", "decibar", "decibars", 
-    "atmosphere", "atmospheres", "atm", "pascal", "pascals", "Pa", "hPa",
-    /* units of length */
-    "meter", "meters", "m", "kilometer", "kilometers", "km", 
-    /* dimensionless vertical coordinates */
-    "level", "layer", "sigma_level",
-    NULL };
-/* dimensionless vertical coordinates */
-static const char* papszCFVerticalStandardNameValues[] = { 
-    "atmosphere_ln_pressure_coordinate", "atmosphere_sigma_coordinate",
-    "atmosphere_hybrid_sigma_pressure_coordinate", 
-    "atmosphere_hybrid_height_coordinate",
-    "atmosphere_sleve_coordinate", "ocean_sigma_coordinate",
-    "ocean_s_coordinate", "ocean_sigma_z_coordinate",
-    "ocean_double_sigma_coordinate", "atmosphere_ln_pressure_coordinate",
-    "atmosphere_sigma_coordinate", 
-    "atmosphere_hybrid_sigma_pressure_coordinate",
-    "atmosphere_hybrid_height_coordinate",
-    "atmosphere_sleve_coordinate", "ocean_sigma_coordinate",
-    "ocean_s_coordinate", "ocean_sigma_z_coordinate",
-    "ocean_double_sigma_coordinate", NULL };
-
-static const char* papszCFTimeAttribNames[] = { "axis", NULL };
-static const char* papszCFTimeAttribValues[] = { "T", NULL };
-static const char* papszCFTimeUnitsValues[] = { 
-    "days since", "day since", "d since", 
-    "hours since", "hour since", "h since", "hr since", 
-    "minutes since", "minute since", "min since", 
-    "seconds since", "second since", "sec since", "s since", 
-    NULL };
 
 
 /* -------------------------------------------------------------------- */
@@ -675,8 +598,6 @@ class netCDFDataset : public GDALPamDataset
     int           nFormat;
     int           bIsGdalFile; /* was this file created by GDAL? */
     int           bIsGdalCfFile; /* was this file created by the (new) CF-compliant driver? */
-    char         *pszCFProjection;
-    char         *pszCFCoordinates;
 
     /* projection/GT */
     double       adfGeoTransform[6];
@@ -692,7 +613,6 @@ class netCDFDataset : public GDALPamDataset
     int          bSetProjection; 
     int          bSetGeoTransform;
     int          bAddedProjectionVars;
-    int          bAddedGridMappingRef;
 
     /* create vars */
     char         **papszCreationOptions;
@@ -708,11 +628,12 @@ class netCDFDataset : public GDALPamDataset
 
     char **      FetchStandardParallels( const char *pszGridMappingValue );
 
+    
+    /* new */
     void ProcessCreationOptions( );
     int DefVarDeflate( int nVarId, int bChunking=TRUE );
     CPLErr AddProjectionVars( GDALProgressFunc pfnProgress=GDALDummyProgress, 
                               void * pProgressData=NULL );
-    void AddGridMappingRef(); 
 
     int GetDefineMode() { return bDefineMode; }
     int SetDefineMode( int bNewDefineMode );
@@ -722,14 +643,6 @@ class netCDFDataset : public GDALPamDataset
     void  CreateSubDatasetList( );
 
     void  SetProjectionFromVar( int );
-
-    int ProcessCFGeolocation( int );
-    CPLErr Set1DGeolocation( int nVarId, const char *szDimName );
-    double * Get1DGeolocation( const char *szDimName, int &nVarLen );
-
-  protected:
-
-    CPLXMLNode *SerializeToXML( const char *pszVRTPath );
 
   public:
 

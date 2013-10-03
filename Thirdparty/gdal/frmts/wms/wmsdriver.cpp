@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: wmsdriver.cpp 25494 2013-01-13 12:55:17Z etourigny $
+ * $Id: wmsdriver.cpp 22576 2011-06-24 13:14:21Z warmerdam $
  *
  * Project:  WMS Client Driver
  * Purpose:  Implementation of Dataset and RasterBand classes for WMS
@@ -860,18 +860,14 @@ void GDALRegister_WMS() {
     GDALDriver *driver;
     if (GDALGetDriverByName("WMS") == NULL) {
         driver = new GDALDriver();
-
         driver->SetDescription("WMS");
         driver->SetMetadataItem(GDAL_DMD_LONGNAME, "OGC Web Map Service");
         driver->SetMetadataItem(GDAL_DMD_HELPTOPIC, "frmt_wms.html");
         driver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
-        driver->SetMetadataItem( GDAL_DMD_SUBDATASETS, "YES" );
-
         driver->pfnOpen = GDALWMSDataset::Open;
         driver->pfnIdentify = GDALWMSDataset::Identify;
         driver->pfnUnloadDriver = GDALDeregister_WMS;
         driver->pfnCreateCopy = GDALWMSDataset::CreateCopy;
-
         GetGDALDriverManager()->RegisterDriver(driver);
 
         GDALWMSMiniDriverManager *const mdm = GetGDALWMSMiniDriverManager();

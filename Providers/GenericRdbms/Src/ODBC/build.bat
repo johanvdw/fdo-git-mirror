@@ -135,7 +135,7 @@ if "%TYPEACTION%"=="install" goto install_files
 echo %MSACTION% %TYPEBUILD% ODBC provider dlls
 SET FDOACTIVEBUILD=%cd%\Odbc%VCBEXTENSION%
 cscript //Nologo //job:prepare ../../preparebuilds.wsf
-msbuild Odbc%VCBEXTENSION%_temp.sln /t:%MSACTION% /p:Configuration=%TYPEBUILD% /p:Platform=%TYPEPLATFORM% %EXTRA_MSBUILD_PROPERTIES% /nologo /consoleloggerparameters:NoSummary /maxcpucount:4
+msbuild Odbc%VCBEXTENSION%_temp.sln /t:%MSACTION% /p:Configuration=%TYPEBUILD% /p:Platform=%TYPEPLATFORM% %EXTRA_MSBUILD_PROPERTIES% /nologo /consoleloggerparameters:NoSummary
 SET FDOERROR=%errorlevel%
 if exist Odbc%VCBEXTENSION%_temp.sln del /Q /F Odbc%VCBEXTENSION%_temp.sln
 if "%FDOERROR%"=="1" goto error
@@ -184,19 +184,13 @@ pushd ..\..\
 echo Creating ODBC provider html and chm documentation
 if exist "Docs\HTML\ODBC" rmdir /S /Q "Docs\HTML\ODBC"
 if not exist "Docs\HTML\ODBC" mkdir "Docs\HTML\ODBC"
-copy ..\..\DocResources\geospatial.css Docs\HTML\ODBC
 copy ..\..\DocResources\geospatial.js Docs\HTML\ODBC
 copy ..\..\DocResources\osgeo.css Docs\HTML\ODBC
-if exist ..\..\DocResources\comment.htm copy ..\..\DocResources\comment.htm Docs\HTML\ODBC
-if exist ..\..\DocResources\comment.js copy ..\..\DocResources\comment.js Docs\HTML\ODBC
 if exist Docs\ODBC_Provider_API.chm attrib -r Docs\ODBC_Provider_API.chm
 if exist "Docs\HTML\ODBC_managed" rmdir /S /Q "Docs\HTML\ODBC_managed"
 if not exist "Docs\HTML\ODBC_managed" mkdir "Docs\HTML\ODBC_managed"
-copy ..\..\DocResources\geospatial.css Docs\HTML\ODBC_managed
 copy ..\..\DocResources\geospatial.js Docs\HTML\ODBC_managed
 copy ..\..\DocResources\osgeo.css Docs\HTML\ODBC_managed
-if exist ..\..\DocResources\comment.htm copy ..\..\DocResources\comment.htm Docs\HTML\ODBC_managed
-if exist ..\..\DocResources\comment.js copy ..\..\DocResources\comment.js Docs\HTML\ODBC_managed
 if exist Docs\ODBC_Provider_API_managed.chm attrib -r Docs\ODBC_Provider_API_managed.chm
 pushd Docs\doc_src
 doxygen Doxyfile_ODBC

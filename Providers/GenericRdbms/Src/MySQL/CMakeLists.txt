@@ -9,10 +9,10 @@ set( FdoMySQL_LIB_SRCS
    stdafx.cpp
 )
 
-add_library( FdoMySQL-${FDO_VERSION} SHARED ${FdoMySQL_LIB_SRCS} )
+add_library( FdoMySQL SHARED ${FdoMySQL_LIB_SRCS} )
 
 if( CMAKE_COMPILER_IS_GNUCXX )
-	target_link_libraries( FdoMySQL-${FDO_VERSION}
+	target_link_libraries( FdoMySQL
 		-Wl,-whole-archive
 		FdoRdbms
 		rdbi
@@ -32,12 +32,10 @@ if( CMAKE_COMPILER_IS_GNUCXX )
 		SmPhCfgGrd
 		SmPhGrd
 		SmPhRdGrd
-        ProvidersCommon
-    	SchemaMgr
 		-Wl,-no-whole-archive
  	)
 else( CMAKE_COMPILER_IS_GNUCXX )
-	target_link_libraries( FdoMySQL-${FDO_VERSION}
+	target_link_libraries( FdoMySQL
 		FdoRdbms
 		rdbi
 		mysqldr
@@ -56,18 +54,20 @@ else( CMAKE_COMPILER_IS_GNUCXX )
 		SmPhCfgGrd
 		SmPhGrd
 		SmPhRdGrd
-        ProvidersCommon
-    	SchemaMgr
  	)
 endif( CMAKE_COMPILER_IS_GNUCXX )
 
-target_link_libraries( FdoMySQL-${FDO_VERSION}
+target_link_libraries( FdoMySQL
 	${MYSQL_LIBRARIES}
 	${ZLIB_LIBRARIES}
-	FDO-${FDO_VERSION}
-	ExpressionEngine-${FDO_VERSION}
-	SchemaMgr_OV-${FDO_VERSION}
-)
+	FDO
+	ExpressionEngine
+	ProvidersCommon
+	SchemaMgr_OV
+	SchemaMgr
+	)
 
-install( TARGETS FdoMySQL-${FDO_VERSION} DESTINATION ${LIB_INSTALL_DIR} )
+set_target_properties( FdoMySQL PROPERTIES VERSION ${FDO_VERSION} SOVERSION ${FDO_VERSION_MAJOR} )
+
+install( TARGETS FdoMySQL DESTINATION ${LIB_INSTALL_DIR} )
 

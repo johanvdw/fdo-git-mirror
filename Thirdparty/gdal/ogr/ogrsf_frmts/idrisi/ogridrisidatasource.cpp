@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogridrisidatasource.cpp 24397 2012-05-07 20:11:28Z rouault $
+ * $Id: ogridrisidatasource.cpp 23040 2011-09-04 14:42:12Z rouault $
  *
  * Project:  Idrisi Translator
  * Purpose:  Implements OGRIdrisiDataSource class
@@ -32,7 +32,7 @@
 #include "cpl_string.h"
 #include "idrisi.h"
 
-CPL_CVSID("$Id: ogridrisidatasource.cpp 24397 2012-05-07 20:11:28Z rouault $");
+CPL_CVSID("$Id: ogridrisidatasource.cpp 23040 2011-09-04 14:42:12Z rouault $");
 
 /************************************************************************/
 /*                        OGRIdrisiDataSource()                         */
@@ -183,9 +183,7 @@ int OGRIdrisiDataSource::Open( const char * pszFilename, int bUpdateIn)
     const char *pszMinY       = CSLFetchNameValue( papszVDC, "min. Y      " );
     const char *pszMaxY       = CSLFetchNameValue( papszVDC, "max. Y      " );
 
-    OGRIdrisiLayer* poLayer = new OGRIdrisiLayer(pszFilename,
-                                                 CPLGetBasename(pszFilename),
-                                                 fpVCT, eType, pszWTKString);
+    OGRIdrisiLayer* poLayer = new OGRIdrisiLayer(CPLGetBasename(pszFilename), fpVCT, eType, pszWTKString);
     papoLayers = (OGRLayer**) CPLMalloc(sizeof(OGRLayer*));
     papoLayers[nLayers ++] = poLayer;
 

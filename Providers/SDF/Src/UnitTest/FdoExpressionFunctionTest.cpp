@@ -471,25 +471,25 @@ void FdoExpressionFunctionTest::RunOptimizerTest2()
 
     FdoPtr<FdoFgfGeometryFactory> gf = FdoFgfGeometryFactory::GetInstance ();
     // create the filter which force an empty result
-    // If the condition do not overlap, then replace it with a filter that returns 0 features.
+	// If the condition do not overlap, then replace it with a filter that returns 0 features.
 #ifdef _WIN32
-    double small_dbl  =(double)(-9223372036854775807i64 - 1);
+	double small_dbl  =(double)(-9223372036854775807i64 - 1);
 #else
-    double small_dbl  =(double)(-9223372036854775807LL - 1);
+	double small_dbl  =(double)(-9223372036854775807LL - 1);
 #endif
-    double coords[] = { small_dbl, small_dbl, 
-                        small_dbl, small_dbl, 
-                        small_dbl, small_dbl, 
-                        small_dbl, small_dbl, 
-                        small_dbl, small_dbl }; 
+	double coords[] = { small_dbl, small_dbl, 
+						small_dbl, small_dbl, 
+						small_dbl, small_dbl, 
+						small_dbl, small_dbl, 
+						small_dbl, small_dbl }; 
 
-    FdoPtr<FdoILinearRing> outer = gf->CreateLinearRing(0, 10, coords);
+	FdoPtr<FdoILinearRing> outer = gf->CreateLinearRing(0, 10, coords);
 
-    FdoPtr<FdoIPolygon> poly = gf->CreatePolygon(outer, NULL);
+	FdoPtr<FdoIPolygon> poly = gf->CreatePolygon(outer, NULL);
 
-    FdoPtr<FdoByteArray> polyfgf = gf->GetFgf(poly);
-    FdoPtr<FdoGeometryValue> gv = FdoGeometryValue::Create(polyfgf);
-    FdoPtr<FdoFilter> emptyFlt = FdoSpatialCondition::Create(L"Geometry", FdoSpatialOperations_EnvelopeIntersects, gv);
+	FdoPtr<FdoByteArray> polyfgf = gf->GetFgf(poly);
+	FdoPtr<FdoGeometryValue> gv = FdoGeometryValue::Create(polyfgf);
+	FdoPtr<FdoFilter> emptyFlt = FdoSpatialCondition::Create(L"Geometry", FdoSpatialOperations_EnvelopeIntersects, gv);
 
 
     // last rectangle is inside left rectangle only, so result filter should the one which produces empty results
@@ -763,20 +763,16 @@ void FdoExpressionFunctionTest::RunEmbeddedIntersectsTest ()
 
     try {
 
-#ifdef _WIN32
     wchar_t fullpath[1024];
-#else
-    wchar_t fullpath[PATH_MAX];
-#endif
 
 #ifdef _WIN32
     _wfullpath(fullpath, EE_HOSPITAL_TEST_FILE, 1024);
 #else
-    char cpath[PATH_MAX];
-    char cfullpath[PATH_MAX];
-    wcstombs(cpath, EE_HOSPITAL_TEST_FILE, PATH_MAX);
+    char cpath[1024];
+    char cfullpath[1024];
+    wcstombs(cpath, EE_HOSPITAL_TEST_FILE, 1024);
     realpath(cpath, cfullpath);
-    mbstowcs(fullpath, cfullpath, PATH_MAX);
+    mbstowcs(fullpath, cfullpath, 1024);
 #endif
 
     std::wstring connStr = std::wstring(L"File=") + fullpath;
@@ -864,20 +860,16 @@ void FdoExpressionFunctionTest::RunEmbeddedIntersectsTest2 ()
 
     try {
 
-#ifdef _WIN32
     wchar_t fullpath[1024];
-#else
-    wchar_t fullpath[PATH_MAX];
-#endif
 
 #ifdef _WIN32
     _wfullpath(fullpath, EE_HOSPITAL_TEST_FILE, 1024);
 #else
-    char cpath[PATH_MAX];
-    char cfullpath[PATH_MAX];
-    wcstombs(cpath, EE_HOSPITAL_TEST_FILE, PATH_MAX);
+    char cpath[1024];
+    char cfullpath[1024];
+    wcstombs(cpath, EE_HOSPITAL_TEST_FILE, 1024);
     realpath(cpath, cfullpath);
-    mbstowcs(fullpath, cfullpath, PATH_MAX);
+    mbstowcs(fullpath, cfullpath, 1024);
 #endif
 
     std::wstring connStr = std::wstring(L"File=") + fullpath;

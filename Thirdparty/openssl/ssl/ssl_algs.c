@@ -73,9 +73,6 @@ int SSL_library_init(void)
 #endif
 #ifndef OPENSSL_NO_RC4
 	EVP_add_cipher(EVP_rc4());
-#if !defined(OPENSSL_NO_MD5) && (defined(__x86_64) || defined(__x86_64__))
-	EVP_add_cipher(EVP_rc4_hmac_md5());
-#endif
 #endif  
 #ifndef OPENSSL_NO_RC2
 	EVP_add_cipher(EVP_rc2_cbc());
@@ -88,13 +85,6 @@ int SSL_library_init(void)
 	EVP_add_cipher(EVP_aes_128_cbc());
 	EVP_add_cipher(EVP_aes_192_cbc());
 	EVP_add_cipher(EVP_aes_256_cbc());
-	EVP_add_cipher(EVP_aes_128_gcm());
-	EVP_add_cipher(EVP_aes_256_gcm());
-#if !defined(OPENSSL_NO_SHA) && !defined(OPENSSL_NO_SHA1)
-	EVP_add_cipher(EVP_aes_128_cbc_hmac_sha1());
-	EVP_add_cipher(EVP_aes_256_cbc_hmac_sha1());
-#endif
-
 #endif
 #ifndef OPENSSL_NO_CAMELLIA
 	EVP_add_cipher(EVP_camellia_128_cbc());
@@ -114,14 +104,6 @@ int SSL_library_init(void)
 	EVP_add_digest(EVP_sha1()); /* RSA with sha1 */
 	EVP_add_digest_alias(SN_sha1,"ssl3-sha1");
 	EVP_add_digest_alias(SN_sha1WithRSAEncryption,SN_sha1WithRSA);
-#endif
-#ifndef OPENSSL_NO_SHA256
-	EVP_add_digest(EVP_sha224());
-	EVP_add_digest(EVP_sha256());
-#endif
-#ifndef OPENSSL_NO_SHA512
-	EVP_add_digest(EVP_sha384());
-	EVP_add_digest(EVP_sha512());
 #endif
 #if !defined(OPENSSL_NO_SHA) && !defined(OPENSSL_NO_DSA)
 	EVP_add_digest(EVP_dss1()); /* DSA with sha1 */

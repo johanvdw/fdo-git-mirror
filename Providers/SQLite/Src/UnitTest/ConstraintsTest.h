@@ -23,20 +23,19 @@
 #include <Fdo.h>
 #include <TestCommonConstraints.h>
 
-#define DBG(x)        //x
-#define DBG_MAX(x)        //x
+#define DBG(x)		//x
+#define DBG_MAX(x)		//x
 
 class ConstraintsTest : TestCommonConstraints
 {
-    CPPUNIT_TEST_SUB_SUITE( ConstraintsTest, TestCommonConstraints );
-    CPPUNIT_TEST_SUITE_END();
+	CPPUNIT_TEST_SUB_SUITE( ConstraintsTest, TestCommonConstraints );
+	CPPUNIT_TEST_SUITE_END();
 
 public:
-    ConstraintsTest(void);
+	ConstraintsTest(void);
     virtual ~ConstraintsTest(void);
 
     virtual FdoString* GetDefaultSchemaName(void);
-
 protected:
     virtual void CreateConnection( Context& context, FdoBoolean recreateDb = false );
     virtual FdoBoolean FdoValidatesData();
@@ -54,7 +53,6 @@ protected:
     virtual void TestRestrictCheckConstraints(void) {};
     virtual void TestCheckConstraintsData(void) {};
     virtual void TestDateTimeConstraints(void) {};
-    virtual void TestBaseReferences(void) {};
 };
 
-#endif    //CONSTRAINTSTEST_H
+#endif	//CONSTRAINTSTEST_H

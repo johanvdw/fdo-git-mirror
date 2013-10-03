@@ -1,6 +1,6 @@
 /*-*-C++-*-*/
 /******************************************************************************
- * $Id: ogr_tiger.h 23871 2012-02-02 03:24:07Z warmerdam $
+ * $Id: ogr_tiger.h 23423 2011-11-26 18:40:30Z rouault $
  *
  * Project:  TIGER/Line Translator
  * Purpose:  Main declarations for Tiger translator.
@@ -132,7 +132,7 @@ protected:
 
   char                *pszModule;
   char                *pszShortModule;
-  VSILFILE            *fpPrimary;
+  FILE                *fpPrimary;
 
   OGRFeatureDefn      *poFeatureDefn;
 
@@ -142,7 +142,7 @@ protected:
   int                 OpenFile( const char *, const char * );
   void                EstablishFeatureCount();
 
-  static int          EstablishRecordLength( VSILFILE * );
+  static int          EstablishRecordLength( FILE * );
 
   void                SetupVersion();
 
@@ -172,7 +172,7 @@ public:
   int                 WriteField( OGRFeature *, const char *, char *,
                                   int, int, char, char );
   int                 WriteRecord( char *pachRecord, int nRecLen,
-                                   const char *pszType, VSILFILE *fp = NULL );
+                                   const char *pszType, FILE *fp = NULL );
   int                 WritePoint( char *pachRecord, int nStart,
                                   double dfX, double dfY );
 
@@ -204,10 +204,10 @@ public:
 
 class TigerCompleteChain : public TigerFileBase
 {
-  VSILFILE           *fpShape;
+  FILE               *fpShape;
   int                *panShapeRecordId;
 
-  VSILFILE               *fpRT3;
+  FILE               *fpRT3;
   int                 bUsingRT3;
   int                 nRT1RecOffset;
 
@@ -357,7 +357,7 @@ class TigerPolygon : public TigerFileBase
   const TigerRecordInfo    *psRTAInfo;
   const TigerRecordInfo    *psRTSInfo;
 
-  VSILFILE               *fpRTS;
+  FILE               *fpRTS;
   int                 bUsingRTS;
   int                 nRTSRecLen;
 

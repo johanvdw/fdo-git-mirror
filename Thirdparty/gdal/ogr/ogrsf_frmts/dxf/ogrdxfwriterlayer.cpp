@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrdxfwriterlayer.cpp 24991 2012-09-29 10:13:28Z rouault $
+ * $Id: ogrdxfwriterlayer.cpp 22779 2011-07-23 18:53:29Z warmerdam $
  *
  * Project:  DXF Translator
  * Purpose:  Implements OGRDXFWriterLayer - the OGRLayer class used for
@@ -33,7 +33,7 @@
 #include "cpl_string.h"
 #include "ogr_featurestyle.h"
 
-CPL_CVSID("$Id: ogrdxfwriterlayer.cpp 24991 2012-09-29 10:13:28Z rouault $");
+CPL_CVSID("$Id: ogrdxfwriterlayer.cpp 22779 2011-07-23 18:53:29Z warmerdam $");
 
 #ifndef PI
 #define PI  3.14159265358979323846
@@ -50,7 +50,6 @@ OGRDXFWriterLayer::OGRDXFWriterLayer( OGRDXFWriterDS *poDS, VSILFILE *fp )
     this->poDS = poDS;
 
     nNextAutoID = 1;
-    bWriteHatch = CSLTestBoolean(CPLGetConfigOption("DXF_WRITE_HATCH", "YES"));
 
     poFeatureDefn = new OGRFeatureDefn( "entities" );
     poFeatureDefn->Reference();
@@ -254,26 +253,6 @@ OGRErr OGRDXFWriterLayer::WriteINSERT( OGRFeature *poFeature )
     WriteValue( 100, "AcDbEntity" );
     WriteValue( 100, "AcDbBlockReference" );
     WriteValue( 2, poFeature->GetFieldAsString("BlockName") );
-
-    // Write style symbol color
-    OGRStyleTool *poTool = NULL;
-    OGRStyleMgr oSM;
-    if( poFeature->GetStyleString() != NULL )
-    {
-        oSM.InitFromFeature( poFeature );
-
-        if( oSM.GetPartCount() > 0 )
-            poTool = oSM.GetPart(0);
-    }
-    if( poTool && poTool->GetType() == OGRSTCSymbol )
-    {
-        OGRStyleSymbol *poSymbol = (OGRStyleSymbol *) poTool;
-        GBool  bDefault;
-
-        if( poSymbol->Color(bDefault) != NULL && !bDefault )
-            WriteValue( 62, ColorStringToDXFColor( poSymbol->Color(bDefault) ) );
-    }
-    delete poTool;
     
 /* -------------------------------------------------------------------- */
 /*      Write location.                                                 */
@@ -328,26 +307,6 @@ OGRErr OGRDXFWriterLayer::WritePOINT( OGRFeature *poFeature )
     WriteCore( poFeature );
     WriteValue( 100, "AcDbEntity" );
     WriteValue( 100, "AcDbPoint" );
-
-    // Write style pen color
-    OGRStyleTool *poTool = NULL;
-    OGRStyleMgr oSM;
-    if( poFeature->GetStyleString() != NULL )
-    {
-        oSM.InitFromFeature( poFeature );
-
-        if( oSM.GetPartCount() > 0 )
-            poTool = oSM.GetPart(0);
-    }
-    if( poTool && poTool->GetType() == OGRSTCPen )
-    {
-        OGRStylePen *poPen = (OGRStylePen *) poTool;
-        GBool  bDefault;
-
-        if( poPen->Color(bDefault) != NULL && !bDefault )
-            WriteValue( 62, ColorStringToDXFColor( poPen->Color(bDefault) ) );
-    }
-    delete poTool;
 
     OGRPoint *poPoint = (OGRPoint *) poFeature->GetGeometryRef();
 
@@ -859,14 +818,6 @@ OGRErr OGRDXFWriterLayer::WriteHATCH( OGRFeature *poFeature,
     WriteCore( poFeature );
     WriteValue( 100, "AcDbEntity" );
     WriteValue( 100, "AcDbHatch" );
-
-    WriteValue( 10, 0 ); // elevation point X. 0 for DXF
-    WriteValue( 20, 0 ); // elevation point Y
-    WriteValue( 30, 0 ); // elevation point Z
-    WriteValue(210, 0 ); // extrusion direction X
-    WriteValue(220, 0 ); // extrusion direction Y
-    WriteValue(230,1.0); // extrusion direction Z
-
     WriteValue( 2, "SOLID" ); // fill pattern
     WriteValue( 70, 1 ); // solid fill
     WriteValue( 71, 0 ); // associativity 
@@ -884,16 +835,6 @@ OGRErr OGRDXFWriterLayer::WriteHATCH( OGRFeature *poFeature,
         if( oSM.GetPartCount() > 0 )
             poTool = oSM.GetPart(0);
     }
-    // Write style brush fore color
-    if( poTool && poTool->GetType() == OGRSTCBrush )
-    {
-        OGRStyleBrush *poBrush = (OGRStyleBrush *) poTool;
-        GBool  bDefault;
-
-        if( poBrush->ForeColor(bDefault) != NULL && !bDefault )
-            WriteValue( 62, ColorStringToDXFColor( poBrush->ForeColor(bDefault) ) );
-    }
-    delete poTool;
 
 /* -------------------------------------------------------------------- */
 /*      Handle a PEN tool to control drawing color and width.           */
@@ -994,13 +935,7 @@ OGRErr OGRDXFWriterLayer::WriteHATCH( OGRFeature *poFeature,
             WriteValue( 10, poLR->getX(iVert) );
             WriteValue( 20, poLR->getY(iVert) );
         }
-
-        WriteValue( 97, 0 ); // 0 source boundary objects
     }
-
-    WriteValue( 75, 0 ); // hatch style = Hatch "odd parity" area (Normal style)
-    WriteValue( 76, 1 ); // hatch pattern type = predefined
-    WriteValue( 98, 0 ); // 0 seed points
     
     return OGRERR_NONE;
 
@@ -1053,15 +988,7 @@ OGRErr OGRDXFWriterLayer::CreateFeature( OGRFeature *poFeature )
     OGRwkbGeometryType eGType = wkbNone;
     
     if( poGeom != NULL )
-    {
-        if( !poGeom->IsEmpty() )
-        {
-            OGREnvelope sEnvelope;
-            poGeom->getEnvelope(&sEnvelope);
-            poDS->UpdateExtent(&sEnvelope);
-        }
         eGType = wkbFlatten(poGeom->getGeometryType());
-    }
 
     if( eGType == wkbPoint )
     {
@@ -1097,12 +1024,7 @@ OGRErr OGRDXFWriterLayer::CreateFeature( OGRFeature *poFeature )
 
     else if( eGType == wkbPolygon 
              || eGType == wkbMultiPolygon )
-    {
-        if( bWriteHatch )
-            return WriteHATCH( poFeature );
-        else
-            return WritePOLYLINE( poFeature );
-    }
+        return WriteHATCH( poFeature );
 
     // Explode geometry collections into multiple entities.
     else if( eGType == wkbGeometryCollection )

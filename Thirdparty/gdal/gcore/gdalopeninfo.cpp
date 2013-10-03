@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalopeninfo.cpp 23717 2012-01-07 14:58:34Z rouault $
+ * $Id: gdalopeninfo.cpp 21991 2011-03-20 16:45:19Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of GDALOpenInfo class.
@@ -34,7 +34,7 @@
 #include <unistd.h>
 #endif
 
-CPL_CVSID("$Id: gdalopeninfo.cpp 23717 2012-01-07 14:58:34Z rouault $");
+CPL_CVSID("$Id: gdalopeninfo.cpp 21991 2011-03-20 16:45:19Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -178,15 +178,6 @@ retry:
         {
             CPLString osDir = CPLGetDirname( pszFilename );
             papszSiblingFiles = VSIReadDir( osDir );
-
-            /* Small optimization to avoid unnecessary stat'ing from PAux or ENVI */
-            /* drivers. The MBTiles driver needs no companion file. */
-            if( papszSiblingFiles == NULL &&
-                strncmp(pszFilename, "/vsicurl/", 9) == 0 &&
-                EQUAL(CPLGetExtension( pszFilename ),"mbtiles") )
-            {
-                papszSiblingFiles = CSLAddString( NULL, CPLGetFilename(pszFilename) );
-            }
         }
     }
     else

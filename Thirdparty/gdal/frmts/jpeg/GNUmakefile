@@ -19,6 +19,13 @@ OBJ	=	jpgdataset.o vsidataio.o
 XTRA_OPT	=	
 endif
 
+ifeq ($(TIFF_SETTING),internal)
+ifeq ($(RENAME_INTERNAL_LIBTIFF_SYMBOLS),yes)
+XTRA_OPT 	:=	$(XTRA_OPT) -DRENAME_INTERNAL_LIBTIFF_SYMBOLS
+endif
+XTRA_OPT	:=	$(XTRA_OPT) -I../gtiff/libtiff
+endif
+
 ifeq ($(JPEG12_ENABLED),yes)
 XTRA_OPT_12 	=	-Ilibjpeg12 -DDEFAULT_MAX_MEM=500000000L
 XTRA_OPT := -DJPEG_DUAL_MODE_8_12 $(XTRA_OPT)
@@ -31,6 +38,10 @@ OBJ :=	jcapimin12.o jcapistd12.o jccoefct12.o jccolor12.o jcdctmgr12.o jchuff12.
         jfdctint12.o jidctflt12.o jidctfst12.o jidctint12.o jidctred12.o jquant112.o \
         jquant212.o jutils12.o jmemmgr12.o jmemansi12.o \
 	$(OBJ) jpgdataset_12.o 
+endif
+
+ifeq ($(LIBZ_SETTING),internal) 
+  XTRA_OPT :=   $(XTRA_OPT) -I../zlib 
 endif
 
 CPPFLAGS	:=	$(XTRA_OPT) $(GDAL_INCLUDE) $(CPPFLAGS)

@@ -24,13 +24,13 @@ set( TestCommon_STAT_SRCS
    Src/stdafx.cpp
 )
 
-add_library( TestCommon STATIC ${TestCommon_STAT_SRCS} )
+add_library( TestCommon SHARED ${TestCommon_STAT_SRCS} )
 
 set_target_properties( TestCommon PROPERTIES VERSION ${FDO_VERSION} SOVERSION ${FDO_VERSION_MAJOR} )
-
+install( TARGETS TestCommon DESTINATION ${LIB_INSTALL_DIR} )
 target_link_libraries( TestCommon 
-	FDO-${FDO_VERSION}
+	FDO
 	ProvidersCommon
 	${CPPUNIT_LIBRARIES}
-)
+	)
 

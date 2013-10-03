@@ -1,5 +1,5 @@
 /*****************************************************************************
-* $Id: IntergraphBand.h 25785 2013-03-23 11:34:53Z rouault $
+* $Id: IntergraphBand.h 16211 2009-01-31 22:15:18Z rouault $
 *
 * Project:  Intergraph Raster Format support
 * Purpose:  Read selected types of Intergraph Raster Format
@@ -57,8 +57,6 @@ protected:
     INGR_HeaderOne  hHeaderOne;
     INGR_HeaderTwoA hHeaderTwo;
     INGR_TileHeader hTileDir;
-    
-    int             nRLEOffset;
 
 public:
     IntergraphRasterBand( IntergraphDataset *poDS, 

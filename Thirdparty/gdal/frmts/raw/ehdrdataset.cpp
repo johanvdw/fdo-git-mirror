@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ehdrdataset.cpp 25701 2013-03-07 14:28:02Z rouault $
+ * $Id: ehdrdataset.cpp 21783 2011-02-21 22:32:11Z rouault $
  *
  * Project:  ESRI .hdr Driver
  * Purpose:  Implementation of EHdrDataset
@@ -31,7 +31,7 @@
 #include "ogr_spatialref.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ehdrdataset.cpp 25701 2013-03-07 14:28:02Z rouault $");
+CPL_CVSID("$Id: ehdrdataset.cpp 21783 2011-02-21 22:32:11Z rouault $");
 
 CPL_C_START
 void	GDALRegister_EHdr(void);
@@ -113,8 +113,6 @@ class EHdrRasterBand : public RawRasterBand
     int            nPixelOffsetBits;
     int            nLineOffsetBits;
 
-    int            bNoDataSet;
-    double         dfNoData;
     double         dfMin;
     double         dfMax;
     double         dfMean;
@@ -136,7 +134,6 @@ class EHdrRasterBand : public RawRasterBand
     virtual CPLErr IReadBlock( int, int, void * );
     virtual CPLErr IWriteBlock( int, int, void * );
 
-    virtual double GetNoDataValue( int *pbSuccess = NULL );
     virtual double GetMinimum( int *pbSuccess = NULL );
     virtual double GetMaximum(int *pbSuccess = NULL );
     virtual CPLErr GetStatistics( int bApproxOK, int bForce,
@@ -161,8 +158,6 @@ EHdrRasterBand::EHdrRasterBand( GDALDataset *poDS,
 : RawRasterBand( poDS, nBand, fpRaw, nImgOffset, nPixelOffset, nLineOffset, 
                          eDataType, bNativeOrder, TRUE ),
   nBits(nBits),
-  bNoDataSet(FALSE),
-  dfNoData(0),
   dfMin(0),
   dfMax(0),
   minmaxmeanstddev(0)
@@ -1084,32 +1079,32 @@ GDALDataset *EHdrDataset::Open( GDALOpenInfo * poOpenInfo )
                  || EQUAL(papszTokens[0],"xllcorner") 
                  || EQUAL(papszTokens[0],"xllcenter") )
         {
-            dfULXMap = CPLAtofM(papszTokens[1]);
+            dfULXMap = atof(papszTokens[1]);
             if( EQUAL(papszTokens[0],"xllcorner") )
                 bCenter = FALSE;
         }
         else if( EQUAL(papszTokens[0],"ulymap") )
         {
-            dfULYMap = CPLAtofM(papszTokens[1]);
+            dfULYMap = atof(papszTokens[1]);
         }
         else if( EQUAL(papszTokens[0],"yllcorner") 
                  || EQUAL(papszTokens[0],"yllcenter") )
         {
-            dfYLLCorner = CPLAtofM(papszTokens[1]);
+            dfYLLCorner = atof(papszTokens[1]);
             if( EQUAL(papszTokens[0],"yllcorner") )
                 bCenter = FALSE;
         }
         else if( EQUAL(papszTokens[0],"xdim") )
         {
-            dfXDim = CPLAtofM(papszTokens[1]);
+            dfXDim = atof(papszTokens[1]);
         }
         else if( EQUAL(papszTokens[0],"ydim") )
         {
-            dfYDim = CPLAtofM(papszTokens[1]);
+            dfYDim = atof(papszTokens[1]);
         }
         else if( EQUAL(papszTokens[0],"cellsize") )
         {
-            dfXDim = dfYDim = CPLAtofM(papszTokens[1]);
+            dfXDim = dfYDim = atof(papszTokens[1]);
         }
         else if( EQUAL(papszTokens[0],"nbands") )
         {
@@ -1123,7 +1118,7 @@ GDALDataset *EHdrDataset::Open( GDALOpenInfo * poOpenInfo )
         else if( EQUAL(papszTokens[0],"NODATA_value") 
                  || EQUAL(papszTokens[0],"NODATA") )
         {
-            dfNoData = CPLAtofM(papszTokens[1]);
+            dfNoData = atof(papszTokens[1]);
             bNoDataSet = TRUE;
         }
         else if( EQUAL(papszTokens[0],"NBITS") )
@@ -1147,13 +1142,13 @@ GDALDataset *EHdrDataset::Open( GDALOpenInfo * poOpenInfo )
         else if( EQUAL(papszTokens[0],"MinValue") ||
                  EQUAL(papszTokens[0],"MIN_VALUE") )
         {
-            dfMin = CPLAtofM(papszTokens[1]);
+            dfMin = atof(papszTokens[1]);
             bHasMin = TRUE;
         }
         else if( EQUAL(papszTokens[0],"MaxValue") ||
                  EQUAL(papszTokens[0],"MAX_VALUE") )
         {
-            dfMax = CPLAtofM(papszTokens[1]);
+            dfMax = atof(papszTokens[1]);
             bHasMax = TRUE;
         }
 
@@ -1365,8 +1360,8 @@ GDALDataset *EHdrDataset::Open( GDALOpenInfo * poOpenInfo )
 #endif        
                                 nBits);
 
-        poBand->bNoDataSet = bNoDataSet;
-        poBand->dfNoData = dfNoData;
+        if( bNoDataSet )
+            poBand->SetNoDataValue( dfNoData );
 
         if( bHasMin && bHasMax )
         {
@@ -1868,21 +1863,6 @@ GDALDataset *EHdrDataset::CreateCopy( const char * pszFilename,
     CSLDestroy( papszAdjustedOptions );
 
     return poOutDS;
-}
-    
-/************************************************************************/
-/*                        GetNoDataValue()                              */
-/************************************************************************/
-
-double EHdrRasterBand::GetNoDataValue( int *pbSuccess )
-{
-    if( pbSuccess )
-        *pbSuccess = bNoDataSet;
-
-    if( bNoDataSet )
-        return dfNoData;
-
-    return RawRasterBand::GetNoDataValue( pbSuccess );
 }
     
 /************************************************************************/

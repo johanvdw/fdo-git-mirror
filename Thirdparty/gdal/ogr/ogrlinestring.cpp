@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrlinestring.cpp 24519 2012-05-30 21:28:53Z rouault $
+ * $Id: ogrlinestring.cpp 22464 2011-05-29 21:33:41Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRLineString geometry class.
@@ -31,7 +31,7 @@
 #include "ogr_p.h"
 #include <assert.h>
 
-CPL_CVSID("$Id: ogrlinestring.cpp 24519 2012-05-30 21:28:53Z rouault $");
+CPL_CVSID("$Id: ogrlinestring.cpp 22464 2011-05-29 21:33:41Z rouault $");
 
 /************************************************************************/
 /*                           OGRLineString()                            */
@@ -366,10 +366,7 @@ void OGRLineString::setNumPoints( int nNewPointCount )
 void OGRLineString::setPoint( int iPoint, OGRPoint * poPoint )
 
 {
-    if (poPoint->getCoordinateDimension() < 3)
-        setPoint( iPoint, poPoint->getX(), poPoint->getY() );
-    else
-        setPoint( iPoint, poPoint->getX(), poPoint->getY(), poPoint->getZ() );
+    setPoint( iPoint, poPoint->getX(), poPoint->getY(), poPoint->getZ() );
 }
 
 /************************************************************************/
@@ -668,39 +665,6 @@ void OGRLineString::getPoints( void* pabyX, int nXStride,
         for(i=0;i<nPointCount;i++)
         {
             *(double*)((char*)pabyZ + i * nZStride) = (padfZ) ? padfZ[i] : 0.0;
-        }
-    }
-}
-
-/************************************************************************/
-/*                           reversePoints()                            */
-/************************************************************************/
-
-/**
- * \brief Reverse point order. 
- *
- * This method updates the points in this line string in place 
- * reversing the point ordering (first for last, etc).  
- */
-
-void OGRLineString::reversePoints()
-
-{
-    int i;
-
-    for( i = 0; i < nPointCount/2; i++ )
-    {
-        OGRRawPoint sPointTemp = paoPoints[i];
-
-        paoPoints[i] = paoPoints[nPointCount-i-1];
-        paoPoints[nPointCount-i-1] = sPointTemp;
-
-        if( padfZ )
-        {
-            double dfZTemp = padfZ[i];
-
-            padfZ[i] = padfZ[nPointCount-i-1];
-            padfZ[nPointCount-i-1] = dfZTemp;
         }
     }
 }

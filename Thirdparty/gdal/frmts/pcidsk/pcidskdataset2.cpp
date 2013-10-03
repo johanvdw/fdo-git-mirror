@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: pcidskdataset2.cpp 24941 2012-09-18 22:31:13Z rouault $
+ * $Id: pcidskdataset2.cpp 23650 2011-12-28 20:59:01Z rouault $
  *
  * Project:  PCIDSK Database File
  * Purpose:  Read/write PCIDSK Database File used by the PCI software, using
@@ -34,7 +34,7 @@
 #include "cpl_string.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: pcidskdataset2.cpp 24941 2012-09-18 22:31:13Z rouault $");
+CPL_CVSID("$Id: pcidskdataset2.cpp 23650 2011-12-28 20:59:01Z rouault $");
 
 using namespace PCIDSK;
 
@@ -728,11 +728,8 @@ CPLErr PCIDSK2Band::SetMetadata( char **papszMD,
             char *pszItemName = NULL;
 
             pszItemValue = CPLParseNameValue( papszMD[iItem], &pszItemName);
-            if( pszItemName != NULL )
-            {
-                poChannel->SetMetadataValue( pszItemName, pszItemValue );
-                CPLFree( pszItemName );
-            }
+            poChannel->SetMetadataValue( pszItemName, pszItemValue );
+            CPLFree( pszItemName );
         }
         return CE_None;
     }
@@ -767,8 +764,6 @@ CPLErr PCIDSK2Band::SetMetadataItem( const char *pszName,
 
     try
     {
-        if( !pszValue )
-          pszValue = "";
         poChannel->SetMetadataValue( pszName, pszValue );
         return CE_None;
     }
@@ -1132,11 +1127,8 @@ CPLErr PCIDSK2Dataset::SetMetadata( char **papszMD,
             char *pszItemName = NULL;
 
             pszItemValue = CPLParseNameValue( papszMD[iItem], &pszItemName);
-            if( pszItemName != NULL )
-            {
-                poFile->SetMetadataValue( pszItemName, pszItemValue );
-                CPLFree( pszItemName );
-            }
+            poFile->SetMetadataValue( pszItemName, pszItemValue );
+            CPLFree( pszItemName );
         }
         return CE_None;
     }

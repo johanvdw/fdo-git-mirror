@@ -783,9 +783,6 @@ SWIGINTERN OGRErr OSRSpatialReferenceShadow_ImportFromERM(OSRSpatialReferenceSha
 SWIGINTERN OGRErr OSRSpatialReferenceShadow_ImportFromMICoordSys(OSRSpatialReferenceShadow *self,char const *pszCoordSys){
     return OSRImportFromMICoordSys( self, pszCoordSys );
   }
-SWIGINTERN OGRErr OSRSpatialReferenceShadow_ImportFromOzi(OSRSpatialReferenceShadow *self,char const *datum,char const *proj,char const *projParms){
-    return OSRImportFromOzi( self, datum, proj, projParms );
-  }
 SWIGINTERN OGRErr OSRSpatialReferenceShadow_ExportToWkt(OSRSpatialReferenceShadow *self,char **argout){
     return OSRExportToWkt( self, argout );
   }
@@ -856,12 +853,6 @@ SWIGINTERN void OSRCoordinateTransformationShadow_TransformPoints(OSRCoordinateT
         return;
     OCTTransform( self, nCount, x, y, z );
   }
-
-  OSRCoordinateTransformationShadow *CreateCoordinateTransformation( OSRSpatialReferenceShadow *src, OSRSpatialReferenceShadow *dst ) {
-    OSRCoordinateTransformationShadow *obj = (OSRCoordinateTransformationShadow*) OCTNewCoordinateTransformation( src, dst );
-    return obj;
-}
-
 
 #ifdef __cplusplus
 extern "C" {
@@ -5648,73 +5639,6 @@ SWIGEXPORT int SWIGSTDCALL CSharp_SpatialReference_ImportFromMICoordSys(void * j
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_SpatialReference_ImportFromOzi(void * jarg1, char * jarg2, char * jarg3, char * jarg4) {
-  int jresult ;
-  OSRSpatialReferenceShadow *arg1 = (OSRSpatialReferenceShadow *) 0 ;
-  char *arg2 = (char *) 0 ;
-  char *arg3 = (char *) 0 ;
-  char *arg4 = (char *) 0 ;
-  OGRErr result;
-  
-  arg1 = (OSRSpatialReferenceShadow *)jarg1; 
-  arg2 = (char *)jarg2; 
-  arg3 = (char *)jarg3; 
-  arg4 = (char *)jarg4; 
-  {
-    if (!arg2) {
-      {
-        SWIG_CSharpException(SWIG_ValueError, "Received a NULL pointer."); return 0; 
-      };
-    }
-  }
-  {
-    if (!arg3) {
-      {
-        SWIG_CSharpException(SWIG_ValueError, "Received a NULL pointer."); return 0; 
-      };
-    }
-  }
-  {
-    if (!arg4) {
-      {
-        SWIG_CSharpException(SWIG_ValueError, "Received a NULL pointer."); return 0; 
-      };
-    }
-  }
-  {
-    CPLErrorReset();
-    result = (OGRErr)OSRSpatialReferenceShadow_ImportFromOzi(arg1,(char const *)arg2,(char const *)arg3,(char const *)arg4);
-    CPLErr eclass = CPLGetLastErrorType();
-    if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-      SWIG_CSharpException(SWIG_RuntimeError, CPLGetLastErrorMsg());
-      
-      
-      
-    }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-  }
-  {
-    /* %typemap(out,fragment="OGRErrMessages",canthrow=1) OGRErr */
-    jresult = result;
-  }
-  {
-    /* %typemap(ret) OGRErr */
-    
-  }
-  return jresult;
-}
-
-
 SWIGEXPORT int SWIGSTDCALL CSharp_SpatialReference_ExportToWkt(void * jarg1, void * jarg2) {
   int jresult ;
   OSRSpatialReferenceShadow *arg1 = (OSRSpatialReferenceShadow *) 0 ;
@@ -6611,41 +6535,6 @@ SWIGEXPORT void SWIGSTDCALL CSharp_CoordinateTransformation_TransformPoints(void
     
     
   }
-}
-
-
-SWIGEXPORT void * SWIGSTDCALL CSharp_CreateCoordinateTransformation(void * jarg1, void * jarg2) {
-  void * jresult ;
-  OSRSpatialReferenceShadow *arg1 = (OSRSpatialReferenceShadow *) 0 ;
-  OSRSpatialReferenceShadow *arg2 = (OSRSpatialReferenceShadow *) 0 ;
-  OSRCoordinateTransformationShadow *result = 0 ;
-  
-  arg1 = (OSRSpatialReferenceShadow *)jarg1; 
-  arg2 = (OSRSpatialReferenceShadow *)jarg2; 
-  {
-    CPLErrorReset();
-    result = (OSRCoordinateTransformationShadow *)CreateCoordinateTransformation(arg1,arg2);
-    CPLErr eclass = CPLGetLastErrorType();
-    if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-      SWIG_CSharpException(SWIG_RuntimeError, CPLGetLastErrorMsg());
-      
-      
-      
-    }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-  }
-  jresult = (void *)result; 
-  return jresult;
 }
 
 

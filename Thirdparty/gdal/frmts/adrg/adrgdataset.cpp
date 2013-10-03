@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: adrgdataset.cpp 25843 2013-04-02 22:35:21Z rouault $
+ * $Id: adrgdataset.cpp 20996 2010-10-28 18:38:15Z rouault $
  *
  * Purpose:  ADRG reader
  * Author:   Even Rouault, even.rouault at mines-paris.org
@@ -31,7 +31,7 @@
 #include "cpl_string.h"
 #include "iso8211.h"
 
-CPL_CVSID("$Id: adrgdataset.cpp 25843 2013-04-02 22:35:21Z rouault $");
+CPL_CVSID("$Id: adrgdataset.cpp 20996 2010-10-28 18:38:15Z rouault $");
 
 #define N_ELEMENTS(x)  (sizeof(x)/sizeof(x[0]))
 
@@ -356,8 +356,7 @@ static unsigned int WriteLongitude(VSILFILE* fd, double val)
     int ddd = (int)val;
     int mm = (int)((val - ddd) * 60);
     double ssdotss = ((val - ddd) * 60 - mm) * 60;
-    sprintf(str, "%c%03d%02d%05.2f", sign, ddd, mm, ssdotss);
-    CPLAssert((int)strlen(str) == 11);
+    sprintf(str, "%c%03d%02d%02.2f", sign, ddd, mm, ssdotss);
     VSIFWriteL(str, 1, 11, fd);
     return 11;
 }
@@ -370,8 +369,7 @@ static unsigned int WriteLatitude(VSILFILE* fd, double val)
     int dd = (int)val;
     int mm = (int)((val - dd) * 60);
     double ssdotss = ((val - dd) * 60 - mm) * 60;
-    sprintf(str, "%c%02d%02d%05.2f", sign, dd, mm, ssdotss);
-    CPLAssert((int)strlen(str) == 10);
+    sprintf(str, "%c%02d%02d%02.2f", sign, dd, mm, ssdotss);
     VSIFWriteL(str, 1, 10, fd);
     return 10;
 }
@@ -788,6 +786,7 @@ DDFRecord* ADRGDataset::FindRecordInGENForIMG(DDFModule& module,
         
     DDFField* field;
     DDFFieldDefn *fieldDefn;
+    DDFSubfieldDefn* subfieldDefn;
     
     /* Now finds the record */
     while (TRUE)
@@ -809,9 +808,15 @@ DDFRecord* ADRGDataset::FindRecordInGENForIMG(DDFModule& module,
                 continue;
             }
 
-            const char* RTY = record->GetStringSubfield("001", 0, "RTY", 0);
-            if( RTY == NULL )
+            subfieldDefn = fieldDefn->GetSubfield(0);
+            if (!(strcmp(subfieldDefn->GetName(), "RTY") == 0 &&
+                  (subfieldDefn->GetFormat())[0] == 'A'))
+            {
                 continue;
+            }
+            
+            const char* RTY = subfieldDefn->ExtractStringData(field->GetSubfieldData(subfieldDefn), 3, NULL);
+            
             /* Ignore overviews */
             if ( strcmp(RTY, "OVV") == 0 )
                 continue;
@@ -828,10 +833,14 @@ DDFRecord* ADRGDataset::FindRecordInGENForIMG(DDFModule& module,
                 continue;
             }
      
-            const char* pszBAD = record->GetStringSubfield("SPR", 0, "BAD", 0);
-            if( pszBAD == NULL || strlen(pszBAD) != 12 )
+            subfieldDefn = fieldDefn->GetSubfield(13);
+            if (!(strcmp(subfieldDefn->GetName(), "BAD") == 0 &&
+                    (subfieldDefn->GetFormat())[0] == 'A'))
+            {
                 continue;
-            CPLString osBAD = pszBAD;
+            } 
+            
+            CPLString osBAD = subfieldDefn->ExtractStringData(field->GetSubfieldData(subfieldDefn), 12, NULL);
             {
                 char* c = (char*) strchr(osBAD.c_str(), ' ');
                 if (c)
@@ -881,8 +890,6 @@ ADRGDataset* ADRGDataset::OpenDataset(
     }
 
     field = record->GetField(1);
-    if( field == NULL )
-        return NULL;
     fieldDefn = field->GetFieldDefn();
 
     if (!(strcmp(fieldDefn->GetName(), "DSI") == 0 &&
@@ -891,18 +898,24 @@ ADRGDataset* ADRGDataset::OpenDataset(
         return NULL;
     }
     
-    const char* pszPTR = record->GetStringSubfield("DSI", 0, "PRT", 0);
-    if( pszPTR == NULL || !EQUAL(pszPTR, "ADRG") )
+    subfieldDefn = fieldDefn->GetSubfield(0);
+    if (!(strcmp(subfieldDefn->GetName(), "PRT") == 0 &&
+         (subfieldDefn->GetFormat())[0] == 'A' &&
+         strcmp(subfieldDefn->ExtractStringData(field->GetSubfieldData(subfieldDefn), 4, NULL), "ADRG") == 0))
+    {
        return NULL;
+    }
     
-    const char* pszNAM = record->GetStringSubfield("DSI", 0, "NAM", 0);
-    if( pszNAM == NULL || strlen(pszNAM) != 8 )
+    subfieldDefn = fieldDefn->GetSubfield(1);
+    if (!(strcmp(subfieldDefn->GetName(), "NAM") == 0 &&
+          (subfieldDefn->GetFormat())[0] == 'A'))
+    {
         return NULL;
-    CPLString osNAM = pszNAM;
+    }
+
+    CPLString osNAM = subfieldDefn->ExtractStringData(field->GetSubfieldData(subfieldDefn), 8, NULL);
     
     field = record->GetField(2);
-    if( field == NULL )
-        return NULL;
     fieldDefn = field->GetFieldDefn();
     
     int isGIN = TRUE;
@@ -914,35 +927,84 @@ ADRGDataset* ADRGDataset::OpenDataset(
         {
             return NULL;
         }
-
-        if( record->GetIntSubfield("GEN", 0, "STR", 0) != 3 )
+        
+        subfieldDefn = fieldDefn->GetSubfield(0);
+        if (!(strcmp(subfieldDefn->GetName(), "STR") == 0 &&
+                (subfieldDefn->GetFormat())[0] == 'I' &&
+                subfieldDefn->ExtractIntData(field->GetSubfieldData(subfieldDefn), 1, NULL) == 3))
+        {
             return NULL;
-
-        SCA = record->GetIntSubfield("GEN", 0, "SCA", 0);
+        }
+        
+        subfieldDefn = fieldDefn->GetSubfield(12);
+        if (!(strcmp(subfieldDefn->GetName(), "SCA") == 0 &&
+                (subfieldDefn->GetFormat())[0] == 'I'))
+        {
+            return NULL;
+        }
+        
+        SCA = subfieldDefn->ExtractIntData(field->GetSubfieldData(subfieldDefn), 9, NULL);
         CPLDebug("ADRG", "SCA=%d", SCA);
-
-        ZNA = record->GetIntSubfield("GEN", 0, "ZNA", 0);
+        
+        subfieldDefn = fieldDefn->GetSubfield(13);
+        if (!(strcmp(subfieldDefn->GetName(), "ZNA") == 0 &&
+                (subfieldDefn->GetFormat())[0] == 'I'))
+        {
+            return NULL;
+        }
+        
+        ZNA = subfieldDefn->ExtractIntData(field->GetSubfieldData(subfieldDefn), 2, NULL);
         CPLDebug("ADRG", "ZNA=%d", ZNA);
-
-        PSP = record->GetFloatSubfield("GEN", 0, "PSP", 0);
+        
+        subfieldDefn = fieldDefn->GetSubfield(14);
+        if (!(strcmp(subfieldDefn->GetName(), "PSP") == 0 &&
+                (subfieldDefn->GetFormat())[0] == 'R'))
+        {
+            return NULL;
+        }
+        
+        PSP = subfieldDefn->ExtractFloatData(field->GetSubfieldData(subfieldDefn), 5, NULL);
         CPLDebug("ADRG", "PSP=%f", PSP);
-
-        ARV = record->GetIntSubfield("GEN", 0, "ARV", 0);
+        
+        subfieldDefn = fieldDefn->GetSubfield(16);
+        if (!(strcmp(subfieldDefn->GetName(), "ARV") == 0 &&
+                (subfieldDefn->GetFormat())[0] == 'I'))
+        {
+            return NULL;
+        }
+        
+        ARV = subfieldDefn->ExtractIntData(field->GetSubfieldData(subfieldDefn), 8, NULL);
         CPLDebug("ADRG", "ARV=%d", ARV);
-
-        BRV = record->GetIntSubfield("GEN", 0, "BRV", 0);
+        
+        subfieldDefn = fieldDefn->GetSubfield(17);
+        if (!(strcmp(subfieldDefn->GetName(), "BRV") == 0 &&
+                (subfieldDefn->GetFormat())[0] == 'I'))
+        {
+            return NULL;
+        }
+        
+        BRV = subfieldDefn->ExtractIntData(field->GetSubfieldData(subfieldDefn), 8, NULL);
         CPLDebug("ADRG", "BRV=%d", BRV);
-
-        const char* pszLSO = record->GetStringSubfield("GEN", 0, "LSO", 0);
-        if( pszLSO == NULL || strlen(pszLSO) != 11 )
+        
+        
+        subfieldDefn = fieldDefn->GetSubfield(18);
+        if (!(strcmp(subfieldDefn->GetName(), "LSO") == 0 &&
+                (subfieldDefn->GetFormat())[0] == 'A'))
+        {
             return NULL;
-        LSO = GetLongitudeFromString(pszLSO);
+        }
+        
+        LSO = GetLongitudeFromString(subfieldDefn->ExtractStringData(field->GetSubfieldData(subfieldDefn), 11, NULL));
         CPLDebug("ADRG", "LSO=%f", LSO);
-
-        const char* pszPSO = record->GetStringSubfield("GEN", 0, "PSO", 0);
-        if( pszPSO == NULL || strlen(pszPSO) != 10 )
+        
+        subfieldDefn = fieldDefn->GetSubfield(19);
+        if (!(strcmp(subfieldDefn->GetName(), "PSO") == 0 &&
+                (subfieldDefn->GetFormat())[0] == 'A'))
+        {
             return NULL;
-        PSO = GetLatitudeFromString(pszPSO);
+        }
+        
+        PSO = GetLatitudeFromString(subfieldDefn->ExtractStringData(field->GetSubfieldData(subfieldDefn), 10, NULL));
         CPLDebug("ADRG", "PSO=%f", PSO);
     }
     else
@@ -953,31 +1015,57 @@ ADRGDataset* ADRGDataset::OpenDataset(
             return NULL;
         }
         
-        if( record->GetIntSubfield("OVI", 0, "STR", 0) != 3 )
+        subfieldDefn = fieldDefn->GetSubfield(0);
+        if (!(strcmp(subfieldDefn->GetName(), "STR") == 0 &&
+                (subfieldDefn->GetFormat())[0] == 'I' &&
+                subfieldDefn->ExtractIntData(field->GetSubfieldData(subfieldDefn), 1, NULL) == 3))
+        {
             return NULL;
+        }
         
-        ARV = record->GetIntSubfield("OVI", 0, "ARV", 0);
+        subfieldDefn = fieldDefn->GetSubfield(1);
+        if (!(strcmp(subfieldDefn->GetName(), "ARV") == 0 &&
+                (subfieldDefn->GetFormat())[0] == 'I'))
+        {
+            return NULL;
+        }
+        
+        ARV = subfieldDefn->ExtractIntData(field->GetSubfieldData(subfieldDefn), 8, NULL);
         CPLDebug("ADRG", "ARV=%d", ARV);
         
-        BRV = record->GetIntSubfield("OVI", 0, "BRV", 0);
+        subfieldDefn = fieldDefn->GetSubfield(2);
+        if (!(strcmp(subfieldDefn->GetName(), "BRV") == 0 &&
+                (subfieldDefn->GetFormat())[0] == 'I'))
+        {
+            return NULL;
+        }
+        
+        BRV = subfieldDefn->ExtractIntData(field->GetSubfieldData(subfieldDefn), 8, NULL);
         CPLDebug("ADRG", "BRV=%d", BRV);
         
-        const char* pszLSO = record->GetStringSubfield("OVI", 0, "LSO", 0);
-        if( pszLSO == NULL || strlen(pszLSO) != 11 )
+        
+        subfieldDefn = fieldDefn->GetSubfield(3);
+        if (!(strcmp(subfieldDefn->GetName(), "LSO") == 0 &&
+                (subfieldDefn->GetFormat())[0] == 'A'))
+        {
             return NULL;
-        LSO = GetLongitudeFromString(pszLSO);
+        }
+        
+        LSO = GetLongitudeFromString(subfieldDefn->ExtractStringData(field->GetSubfieldData(subfieldDefn), 11, NULL));
         CPLDebug("ADRG", "LSO=%f", LSO);
-
-        const char* pszPSO = record->GetStringSubfield("OVI", 0, "PSO", 0);
-        if( pszPSO == NULL || strlen(pszPSO) != 10 )
+        
+        subfieldDefn = fieldDefn->GetSubfield(4);
+        if (!(strcmp(subfieldDefn->GetName(), "PSO") == 0 &&
+                (subfieldDefn->GetFormat())[0] == 'A'))
+        {
             return NULL;
-        PSO = GetLatitudeFromString(pszPSO);
+        }
+        
+        PSO = GetLatitudeFromString(subfieldDefn->ExtractStringData(field->GetSubfieldData(subfieldDefn), 10, NULL));
         CPLDebug("ADRG", "PSO=%f", PSO);
     }
-
+    
     field = record->GetField(3);
-    if( field == NULL )
-        return NULL;
     fieldDefn = field->GetFieldDefn();
     
     if (!(strcmp(fieldDefn->GetName(), "SPR") == 0 &&
@@ -985,49 +1073,78 @@ ADRGDataset* ADRGDataset::OpenDataset(
     {
         return NULL;
     }
-
-    NFL = record->GetIntSubfield("SPR", 0, "NFL", 0);
+    
+    subfieldDefn = fieldDefn->GetSubfield(4);
+    if (!(strcmp(subfieldDefn->GetName(), "NFL") == 0 &&
+            (subfieldDefn->GetFormat())[0] == 'I'))
+    {
+        return NULL;
+    }
+    
+    NFL = subfieldDefn->ExtractIntData(field->GetSubfieldData(subfieldDefn), 3, NULL);
     CPLDebug("ADRG", "NFL=%d", NFL);
-
-    NFC = record->GetIntSubfield("SPR", 0, "NFC", 0);
+    
+    subfieldDefn = fieldDefn->GetSubfield(5);
+    if (!(strcmp(subfieldDefn->GetName(), "NFC") == 0 &&
+            (subfieldDefn->GetFormat())[0] == 'I'))
+    {
+        return NULL;
+    }
+    
+    NFC = subfieldDefn->ExtractIntData(field->GetSubfieldData(subfieldDefn), 3, NULL);
     CPLDebug("ADRG", "NFC=%d", NFC);
-
-    int PNC = record->GetIntSubfield("SPR", 0, "PNC", 0);
+    
+    subfieldDefn = fieldDefn->GetSubfield(6);
+    if (!(strcmp(subfieldDefn->GetName(), "PNC") == 0 &&
+            (subfieldDefn->GetFormat())[0] == 'I'))
+    {
+        return NULL;
+    }
+    
+    int PNC = subfieldDefn->ExtractIntData(field->GetSubfieldData(subfieldDefn), 6, NULL);
     CPLDebug("ADRG", "PNC=%d", PNC);
     if (PNC != 128)
     {
         return NULL;
     }
-
-    int PNL = record->GetIntSubfield("SPR", 0, "PNL", 0);
+    
+    subfieldDefn = fieldDefn->GetSubfield(7);
+    if (!(strcmp(subfieldDefn->GetName(), "PNL") == 0 &&
+            (subfieldDefn->GetFormat())[0] == 'I'))
+    {
+        return NULL;
+    }
+    
+    int PNL = subfieldDefn->ExtractIntData(field->GetSubfieldData(subfieldDefn), 6, NULL);
     CPLDebug("ADRG", "PNL=%d", PNL);
     if (PNL != 128)
     {
         return NULL;
     }
-
-    const char* pszBAD = record->GetStringSubfield("SPR", 0, "BAD", 0);
-    if( pszBAD == NULL || strlen(pszBAD) != 12 )
+    
+    subfieldDefn = fieldDefn->GetSubfield(13);
+    if (!(strcmp(subfieldDefn->GetName(), "BAD") == 0 &&
+            (subfieldDefn->GetFormat())[0] == 'A'))
+    {
         return NULL;
-    osBAD = pszBAD;
+    }
+    
+    osBAD = subfieldDefn->ExtractStringData(field->GetSubfieldData(subfieldDefn), 12, NULL);
     {
         char* c = (char*) strchr(osBAD.c_str(), ' ');
         if (c)
             *c = 0;
     }
     CPLDebug("ADRG", "BAD=%s", osBAD.c_str());
-
+    
     subfieldDefn = fieldDefn->GetSubfield(14);
     if (!(strcmp(subfieldDefn->GetName(), "TIF") == 0 &&
             (subfieldDefn->GetFormat())[0] == 'A'))
     {
         return NULL;
     }
-
-    const char* pszTIF = record->GetStringSubfield("SPR", 0, "TIF", 0);
-    if( pszTIF == NULL)
-        return NULL;
-    TIF = pszTIF[0] == 'Y';
+    
+    TIF = subfieldDefn->ExtractStringData(field->GetSubfieldData(subfieldDefn), 1, NULL)[0] == 'Y';
     CPLDebug("ADRG", "TIF=%d", TIF);
     
     if (TIF)
@@ -1038,8 +1155,6 @@ ADRGDataset* ADRGDataset::OpenDataset(
         }
         
         field = record->GetField(5);
-        if( field == NULL )
-            return NULL;
         fieldDefn = field->GetFieldDefn();
     
         if (!(strcmp(fieldDefn->GetName(), "TIM") == 0))
@@ -1190,6 +1305,7 @@ char** ADRGDataset::GetGENListFromTHF(const char* pszFileName)
     DDFRecord * record;
     DDFField* field;
     DDFFieldDefn *fieldDefn;
+    DDFSubfieldDefn* subfieldDefn;
     int i;
     int nFilenames = 0;
     char** papszFileNames = NULL;
@@ -1216,13 +1332,19 @@ char** ADRGDataset::GetGENListFromTHF(const char* pszFileName)
                 continue;
             }
 
-            const char* RTY = record->GetStringSubfield("001", 0, "RTY", 0);
-            if ( RTY == NULL || !( strcmp(RTY, "TFN") == 0 ))
+            subfieldDefn = fieldDefn->GetSubfield(0);
+            if (!(strcmp(subfieldDefn->GetName(), "RTY") == 0 &&
+                  (subfieldDefn->GetFormat())[0] == 'A'))
             {
                 continue;
             }
             
-            int iVFFFieldInstance = 0;
+            const char* RTY = subfieldDefn->ExtractStringData(field->GetSubfieldData(subfieldDefn), 3, NULL);
+            if (! ( strcmp(RTY, "TFN") == 0 ))
+            {
+                continue;
+            }
+            
             for (i = 1; i < record->GetFieldCount() ; i++)
             {
                 field = record->GetField(i);
@@ -1234,10 +1356,14 @@ char** ADRGDataset::GetGENListFromTHF(const char* pszFileName)
                     continue;
                 }
             
-                const char* pszVFF = record->GetStringSubfield("VFF", iVFFFieldInstance++, "VFF", 0);
-                if( pszVFF == NULL )
+                subfieldDefn = fieldDefn->GetSubfield(0);
+                if (!(strcmp(subfieldDefn->GetName(), "VFF") == 0 &&
+                    (subfieldDefn->GetFormat())[0] == 'A'))
+                {
                     continue;
-                CPLString osSubFileName(pszVFF);
+                }
+                
+                CPLString osSubFileName(subfieldDefn->ExtractStringData(field->GetSubfieldData(subfieldDefn), 300, NULL));
                 char* c = (char*) strchr(osSubFileName.c_str(), ' ');
                 if (c)
                     *c = 0;
@@ -1297,6 +1423,7 @@ char** ADRGDataset::GetIMGListFromGEN(const char* pszFileName,
     DDFRecord * record;
     DDFField* field;
     DDFFieldDefn *fieldDefn;
+    DDFSubfieldDefn* subfieldDefn;
     int nFilenames = 0;
     char** papszFileNames = NULL;
     int nRecordIndex = -1;
@@ -1329,9 +1456,15 @@ char** ADRGDataset::GetIMGListFromGEN(const char* pszFileName,
                 continue;
             }
 
-            const char* RTY = record->GetStringSubfield("001", 0, "RTY", 0);
-            if( RTY == NULL )
+            subfieldDefn = fieldDefn->GetSubfield(0);
+            if (!(strcmp(subfieldDefn->GetName(), "RTY") == 0 &&
+                  (subfieldDefn->GetFormat())[0] == 'A'))
+            {
                 continue;
+            }
+            
+            const char* RTY = subfieldDefn->ExtractStringData(field->GetSubfieldData(subfieldDefn), 3, NULL);
+            
             /* Ignore overviews */
             if ( strcmp(RTY, "OVV") == 0 )
                 continue;
@@ -1340,8 +1473,6 @@ char** ADRGDataset::GetIMGListFromGEN(const char* pszFileName,
                 continue;
 
             field = record->GetField(3);
-            if( field == NULL )
-                continue;
             fieldDefn = field->GetFieldDefn();
             
             if (!(strcmp(fieldDefn->GetName(), "SPR") == 0 &&
@@ -1350,10 +1481,14 @@ char** ADRGDataset::GetIMGListFromGEN(const char* pszFileName,
                 continue;
             }
                         
-            const char* pszBAD = record->GetStringSubfield("SPR", 0, "BAD", 0);
-            if( pszBAD == NULL || strlen(pszBAD) != 12 )
+            subfieldDefn = fieldDefn->GetSubfield(13);
+            if (!(strcmp(subfieldDefn->GetName(), "BAD") == 0 &&
+                  (subfieldDefn->GetFormat())[0] == 'A'))
+            {
                 continue;
-            CPLString osBAD = pszBAD;
+            }
+            
+            CPLString osBAD = subfieldDefn->ExtractStringData(field->GetSubfieldData(subfieldDefn), 12, NULL);
             {
                 char* c = (char*) strchr(osBAD.c_str(), ' ');
                 if (c)
@@ -2237,7 +2372,7 @@ void GDALRegister_ADRG()
         poDriver->SetMetadataItem( GDAL_DMD_EXTENSION, "gen" );
         poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES, 
                                    "Byte" );
-        poDriver->SetMetadataItem( GDAL_DMD_SUBDATASETS, "YES" );
+
         poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
 
         poDriver->pfnOpen = ADRGDataset::Open;

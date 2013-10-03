@@ -78,7 +78,8 @@ noinst_HEADERS = $(libpostgisdr_la_SOURCES) \
 
 INCLUDES = \
   -I../../.. \
-  -I$(FDOPOSTGRESQL)/include \
+  -L$(FDOPOSTGRESQL)/include \
+  -I$(FDOTHIRDPARTY)/pgsql/include \
   -I$(FDOUTILITIES)/Common/Inc \
   -I$(FDO)/Unmanaged/Inc
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: dted_api.c 24603 2012-06-20 18:21:29Z rouault $
+ * $Id: dted_api.c 22606 2011-06-28 20:31:23Z rouault $
  *
  * Project:  DTED Translator
  * Purpose:  Implementation of DTED/CDED access functions.
@@ -30,12 +30,11 @@
 #include "dted_api.h"
 
 #ifndef AVOID_CPL
-CPL_CVSID("$Id: dted_api.c 24603 2012-06-20 18:21:29Z rouault $");
+CPL_CVSID("$Id: dted_api.c 22606 2011-06-28 20:31:23Z rouault $");
 #endif
 
 static int bWarnedTwoComplement = FALSE;
 
-static void DTEDDetectVariantWithMissingColumns(DTEDInfo* psDInfo);
 
 /************************************************************************/
 /*                            DTEDGetField()                            */
@@ -172,7 +171,6 @@ DTEDInfo * DTEDOpen( const char * pszFilename,
     psDInfo->fp = fp;
 
     psDInfo->bUpdate = EQUAL(pszAccess,"r+b");
-    psDInfo->bRewriteHeaders = FALSE;
 
     psDInfo->nUHLOffset = (int)VSIFTellL( fp ) - DTED_UHL_SIZE;
     psDInfo->pachUHLRecord = (char *) CPLMalloc(DTED_UHL_SIZE);
@@ -197,7 +195,7 @@ DTEDInfo * DTEDOpen( const char * pszFilename,
                  "DSI or ACC record missing.  DTED access to\n%s failed.",
                  pszFilename );
         
-        DTEDClose(psDInfo);
+        VSIFCloseL( fp );
         return NULL;
     }
 
@@ -233,20 +231,6 @@ DTEDInfo * DTEDOpen( const char * pszFilename,
 
         psDInfo->nXSize = atoi(DTEDGetField(szResult,psDInfo->pachDSIRecord,563,4));
         psDInfo->nYSize = atoi(DTEDGetField(szResult,psDInfo->pachDSIRecord,567,4));
-    }
-
-    if (psDInfo->nXSize <= 0 || psDInfo->nYSize <= 0)
-    {
-#ifndef AVOID_CPL
-        CPLError( CE_Failure, CPLE_OpenFailed,
-#else
-        fprintf( stderr,
-#endif
-                 "Invalid dimensions : %d x %d.  DTED access to\n%s failed.",
-                 psDInfo->nXSize, psDInfo->nYSize, pszFilename );
-
-        DTEDClose(psDInfo);
-        return NULL;
     }
 
     /* create a scope so I don't need to declare these up top */
@@ -313,146 +297,10 @@ DTEDInfo * DTEDOpen( const char * pszFilename,
     psDInfo->dfULCornerY = dfLLOriginY - 0.5 * psDInfo->dfPixelSizeY
         + psDInfo->nYSize * psDInfo->dfPixelSizeY;
 
-    DTEDDetectVariantWithMissingColumns(psDInfo);
-
     return psDInfo;
 }
 
-/************************************************************************/
-/*               DTEDDetectVariantWithMissingColumns()                  */
-/************************************************************************/
 
-static void DTEDDetectVariantWithMissingColumns(DTEDInfo* psDInfo)
-{
-/* -------------------------------------------------------------------- */
-/*      Some DTED files have only a subset of all possible columns.     */
-/*      They can declare for example 3601 columns, but in the file,     */
-/*      there are just columns 100->500. Detect that situation.         */
-/* -------------------------------------------------------------------- */
-
-    GByte pabyRecordHeader[8];
-    int nFirstDataBlockCount, nFirstLongitudeCount;
-    int nLastDataBlockCount, nLastLongitudeCount;
-    int nSize;
-    int nColByteSize = 12 + psDInfo->nYSize*2;
-
-    VSIFSeekL(psDInfo->fp, psDInfo->nDataOffset, SEEK_SET);
-    if (VSIFReadL(pabyRecordHeader, 1, 8, psDInfo->fp) != 8 ||
-        pabyRecordHeader[0] != 0252)
-    {
-        CPLDebug("DTED", "Cannot find signature of first column");
-        return;
-    }
-
-    nFirstDataBlockCount = (pabyRecordHeader[2] << 8) | pabyRecordHeader[3];
-    nFirstLongitudeCount = (pabyRecordHeader[4] << 8) | pabyRecordHeader[5];
-
-    VSIFSeekL(psDInfo->fp, 0, SEEK_END);
-    nSize = (int)VSIFTellL(psDInfo->fp);
-    if (nSize < 12 + psDInfo->nYSize*2)
-    {
-        CPLDebug("DTED", "File too short");
-        return;
-    }
-
-    VSIFSeekL(psDInfo->fp, nSize - nColByteSize, SEEK_SET);
-    if (VSIFReadL(pabyRecordHeader, 1, 8, psDInfo->fp) != 8 ||
-        pabyRecordHeader[0] != 0252)
-    {
-        CPLDebug("DTED", "Cannot find signature of last column");
-        return;
-    }
-
-    nLastDataBlockCount = (pabyRecordHeader[2] << 8) | pabyRecordHeader[3];
-    nLastLongitudeCount = (pabyRecordHeader[4] << 8) | pabyRecordHeader[5];
-
-    if (nFirstDataBlockCount == 0 &&
-        nFirstLongitudeCount == 0 &&
-        nLastDataBlockCount == psDInfo->nXSize - 1 &&
-        nLastLongitudeCount == psDInfo->nXSize - 1 &&
-        nSize - psDInfo->nDataOffset == psDInfo->nXSize * nColByteSize)
-    {
-        /* This is the most standard form of DTED. Return happily now. */
-        return;
-    }
-
-    /* Well, we have an odd DTED file at that point */
-
-    psDInfo->panMapLogicalColsToOffsets =
-        (int*)CPLMalloc(psDInfo->nXSize * sizeof(int));
-
-    if (nFirstDataBlockCount == 0 &&
-        nLastLongitudeCount - nFirstLongitudeCount ==
-                nLastDataBlockCount - nFirstDataBlockCount &&
-        nSize - psDInfo->nDataOffset ==
-                (nLastLongitudeCount - nFirstLongitudeCount + 1) * nColByteSize)
-    {
-        int i;
-
-        /* Case seen in a real-world file */
-
-        CPLDebug("DTED", "The file only contains data from column %d to column %d.",
-                 nFirstLongitudeCount, nLastLongitudeCount);
-
-        for(i = 0; i < psDInfo->nXSize; i++)
-        {
-            if (i < nFirstLongitudeCount)
-                psDInfo->panMapLogicalColsToOffsets[i] = -1;
-            else if (i <= nLastLongitudeCount)
-                psDInfo->panMapLogicalColsToOffsets[i] =
-                    psDInfo->nDataOffset + (i - nFirstLongitudeCount) * nColByteSize;
-            else
-                psDInfo->panMapLogicalColsToOffsets[i] = -1;
-        }
-    }
-    else
-    {
-        int nPhysicalCols = (nSize - psDInfo->nDataOffset) / nColByteSize;
-        int i;
-
-        /* Theoretical case for now... */
-
-        CPLDebug("DTED", "There columns appear to be in non sequential order. "
-                 "Scanning the whole file.");
-
-        for(i = 0; i < psDInfo->nXSize; i++)
-        {
-            psDInfo->panMapLogicalColsToOffsets[i] = -1;
-        }
-
-        for(i = 0; i < nPhysicalCols; i++)
-        {
-            int nDataBlockCount, nLongitudeCount;
-
-            VSIFSeekL(psDInfo->fp, psDInfo->nDataOffset + i * nColByteSize, SEEK_SET);
-            if (VSIFReadL(pabyRecordHeader, 1, 8, psDInfo->fp) != 8 ||
-                pabyRecordHeader[0] != 0252)
-            {
-                CPLDebug("DTED", "Cannot find signature of physical column %d", i);
-                return;
-            }
-
-            nDataBlockCount = (pabyRecordHeader[2] << 8) | pabyRecordHeader[3];
-            if (nDataBlockCount != i)
-            {
-                CPLDebug("DTED", "Unexpected block count(%d) at physical column %d. "
-                         "Ignoring that and going on...",
-                         nDataBlockCount, i);
-            }
-
-            nLongitudeCount = (pabyRecordHeader[4] << 8) | pabyRecordHeader[5];
-            if (nLongitudeCount < 0 || nLongitudeCount >= psDInfo->nXSize)
-            {
-                CPLDebug("DTED", "Invalid longitude count (%d) at physical column %d",
-                         nLongitudeCount, i);
-                return;
-            }
-
-            psDInfo->panMapLogicalColsToOffsets[nLongitudeCount] =
-                psDInfo->nDataOffset + i * nColByteSize;
-        }
-    }
-}
 
 /************************************************************************/
 /*                            DTEDReadPoint()                           */
@@ -478,19 +326,7 @@ int DTEDReadPoint( DTEDInfo * psDInfo, int nXOff, int nYOff, GInt16* panVal)
         return FALSE;
     }
 
-    if (psDInfo->panMapLogicalColsToOffsets != NULL)
-    {
-        nOffset = psDInfo->panMapLogicalColsToOffsets[nXOff];
-        if( nOffset < 0 )
-        {
-            *panVal = DTED_NODATA_VALUE;
-            return TRUE;
-        }
-    }
-    else
-        nOffset = psDInfo->nDataOffset + nXOff * (12+psDInfo->nYSize*2);
-    nOffset += 8 + 2 * (psDInfo->nYSize-1-nYOff);
-
+    nOffset = psDInfo->nDataOffset + nXOff * (12+psDInfo->nYSize*2) + 8 + 2 * (psDInfo->nYSize-1-nYOff);
     if( VSIFSeekL( psDInfo->fp, nOffset, SEEK_SET ) != 0
         || VSIFReadL( pabyData, 2, 1, psDInfo->fp ) != 1)
     {
@@ -557,27 +393,13 @@ int DTEDReadProfileEx( DTEDInfo * psDInfo, int nColumnOffset,
     int         nOffset;
     int         i;
     GByte       *pabyRecord;
-    int         nLongitudeCount;
 
 /* -------------------------------------------------------------------- */
 /*      Read data record from disk.                                     */
 /* -------------------------------------------------------------------- */
-    if (psDInfo->panMapLogicalColsToOffsets != NULL)
-    {
-        nOffset = psDInfo->panMapLogicalColsToOffsets[nColumnOffset];
-        if( nOffset < 0 )
-        {
-            for( i = 0; i < psDInfo->nYSize; i++ )
-            {
-                panData[i] = DTED_NODATA_VALUE;
-            }
-            return TRUE;
-        }
-    }
-    else
-        nOffset = psDInfo->nDataOffset + nColumnOffset * (12+psDInfo->nYSize*2);
-
     pabyRecord = (GByte *) CPLMalloc(12 + psDInfo->nYSize*2);
+    
+    nOffset = psDInfo->nDataOffset + nColumnOffset * (12+psDInfo->nYSize*2);
 
     if( VSIFSeekL( psDInfo->fp, nOffset, SEEK_SET ) != 0
         || VSIFReadL( pabyRecord, (12+psDInfo->nYSize*2), 1, psDInfo->fp ) != 1)
@@ -592,18 +414,6 @@ int DTEDReadProfileEx( DTEDInfo * psDInfo, int nColumnOffset,
                   nColumnOffset, nOffset );
         CPLFree( pabyRecord );
         return FALSE;
-    }
-
-    nLongitudeCount = (pabyRecord[4] << 8) | pabyRecord[5];
-    if( nLongitudeCount != nColumnOffset )
-    {
-#ifndef AVOID_CPL
-        CPLError( CE_Warning, CPLE_AppDefined,
-#else
-        fprintf( stderr,
-#endif
-                 "Longitude count (%d) of column %d doesn't match expected value.\n",
-                 nLongitudeCount, nColumnOffset );
     }
 
 /* -------------------------------------------------------------------- */
@@ -686,8 +496,8 @@ int DTEDReadProfileEx( DTEDInfo * psDInfo, int nColumnOffset,
             fprintf( stderr,
 #endif
                       "The DTED driver has found a computed and read checksum "
-                      "that do not match at column %d. Computed 0x%X, read 0x%X\n",
-                      nColumnOffset, nCheckSum, fileCheckSum);
+                      "that do not match at column %d.\n",
+                      nColumnOffset);
             CPLFree( pabyRecord );
             return FALSE;
         }
@@ -709,17 +519,6 @@ int DTEDWriteProfile( DTEDInfo * psDInfo, int nColumnOffset,
     int         nOffset;
     int         i, nCheckSum = 0;
     GByte       *pabyRecord;
-
-    if (psDInfo->panMapLogicalColsToOffsets != NULL)
-    {
-#ifndef AVOID_CPL
-        CPLError( CE_Failure, CPLE_NotSupported,
-#else
-        fprintf( stderr,
-#endif
-                 "Write to partial file not supported.\n");
-        return FALSE;
-    }
 
 /* -------------------------------------------------------------------- */
 /*      Format the data record.                                         */
@@ -955,14 +754,6 @@ static void DTEDGetMetadataLocation( DTEDInfo *psDInfo,
         *pnLength = 5;
         break;
 
-     case DTEDMD_PARTIALCELL_DSI:
-        if (bIsWeirdDTED)
-           *ppszLocation = NULL;
-        else
-           *ppszLocation = psDInfo->pachDSIRecord + 289;
-        *pnLength = 2;
-        break;
-
       default:
         *ppszLocation = NULL;
         *pnLength = 0;
@@ -1019,9 +810,17 @@ int DTEDSetMetadata( DTEDInfo *psDInfo, DTEDMetaDataCode eCode,
     strncpy( pszFieldSrc, pszNewValue, 
              MIN((size_t)nFieldLen,strlen(pszNewValue)) );
 
-    /* Turn the flag on, so that the headers are rewritten at file */
-    /* closing */
-    psDInfo->bRewriteHeaders = TRUE;
+/* -------------------------------------------------------------------- */
+/*      Write all headers back to disk.                                 */
+/* -------------------------------------------------------------------- */
+    VSIFSeekL( psDInfo->fp, psDInfo->nUHLOffset, SEEK_SET );
+    VSIFWriteL( psDInfo->pachUHLRecord, 1, DTED_UHL_SIZE, psDInfo->fp );
+
+    VSIFSeekL( psDInfo->fp, psDInfo->nDSIOffset, SEEK_SET );
+    VSIFWriteL( psDInfo->pachDSIRecord, 1, DTED_DSI_SIZE, psDInfo->fp );
+
+    VSIFSeekL( psDInfo->fp, psDInfo->nACCOffset, SEEK_SET );
+    VSIFWriteL( psDInfo->pachACCRecord, 1, DTED_ACC_SIZE, psDInfo->fp );
 
     return TRUE;
 }
@@ -1033,28 +832,11 @@ int DTEDSetMetadata( DTEDInfo *psDInfo, DTEDMetaDataCode eCode,
 void DTEDClose( DTEDInfo * psDInfo )
 
 {
-    if( psDInfo->bRewriteHeaders )
-    {
-/* -------------------------------------------------------------------- */
-/*      Write all headers back to disk.                                 */
-/* -------------------------------------------------------------------- */
-        VSIFSeekL( psDInfo->fp, psDInfo->nUHLOffset, SEEK_SET );
-        VSIFWriteL( psDInfo->pachUHLRecord, 1, DTED_UHL_SIZE, psDInfo->fp );
-
-        VSIFSeekL( psDInfo->fp, psDInfo->nDSIOffset, SEEK_SET );
-        VSIFWriteL( psDInfo->pachDSIRecord, 1, DTED_DSI_SIZE, psDInfo->fp );
-
-        VSIFSeekL( psDInfo->fp, psDInfo->nACCOffset, SEEK_SET );
-        VSIFWriteL( psDInfo->pachACCRecord, 1, DTED_ACC_SIZE, psDInfo->fp );
-    }
-
     VSIFCloseL( psDInfo->fp );
 
     CPLFree( psDInfo->pachUHLRecord );
     CPLFree( psDInfo->pachDSIRecord );
     CPLFree( psDInfo->pachACCRecord );
-
-    CPLFree( psDInfo->panMapLogicalColsToOffsets );
-
+    
     CPLFree( psDInfo );
 }

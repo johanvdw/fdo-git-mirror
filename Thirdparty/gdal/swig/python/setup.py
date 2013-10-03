@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
  
 # Setup script for GDAL Python bindings.
 # Inspired by psycopg2 setup.py file
@@ -7,7 +6,7 @@
 # Howard Butler hobu.inc@gmail.com
 
 
-gdal_version = '1.10.0'
+gdal_version = '1.9.0'
 
 import sys
 import os
@@ -63,41 +62,12 @@ try:
 except ImportError:
     pass
 
-fixer_names = [
-    'lib2to3.fixes.fix_import',
-    'lib2to3.fixes.fix_next',
-    'lib2to3.fixes.fix_renames',
-    'lib2to3.fixes.fix_unicode',
-    'lib2to3.fixes.fix_ws_comma',
-    'lib2to3.fixes.fix_xrange',
-]
-extra = {}
 try:
     from setuptools import setup
     from setuptools import Extension
     HAVE_SETUPTOOLS = True
 except ImportError:
     from distutils.core import setup, Extension
-
-    try:
-        from distutils.command.build_py import build_py_2to3 as build_py
-        from distutils.command.build_scripts import build_scripts_2to3 as build_scripts
-    except ImportError:
-        from distutils.command.build_py import build_py
-        from distutils.command.build_scripts import build_scripts
-    else:
-        build_py.fixer_names = fixer_names
-        build_scripts.fixer_names = fixer_names
-else:
-    if sys.version_info >= (3,):
-        from lib2to3.refactor import get_fixers_from_package
-
-        all_fixers = set(get_fixers_from_package('lib2to3.fixes'))
-        exclude_fixers = sorted(all_fixers.difference(fixer_names))
-
-        extra['use_2to3'] = True
-        extra['use_2to3_fixers'] = []
-        extra['use_2to3_exclude_fixers'] = exclude_fixers
 
 class gdal_config_error(Exception): pass
 
@@ -117,9 +87,7 @@ def fetch_config(option, gdal_config='gdal-config'):
         if version_info >= (3,0,0):
             try:
                 p = subprocess.Popen([command, args], stdout=subprocess.PIPE)
-            except OSError:
-                import sys
-                e = sys.exc_info()[1]
+            except OSError(e):
                 raise gdal_config_error(e)
             r = p.stdout.readline().decode('ascii').strip()
         else:
@@ -261,8 +229,7 @@ classifiers = [
         'Intended Audience :: Science/Research',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 3',
+        'Programming Language :: Python',
         'Programming Language :: C',
         'Programming Language :: C++',
         'Topic :: Scientific/Engineering :: GIS',
@@ -297,8 +264,7 @@ if HAVE_SETUPTOOLS:
            zip_safe = False,
            exclude_package_data = exclude_package_data,
            cmdclass={'build_ext':gdal_ext},
-           ext_modules = ext_modules,
-           **extra )
+           ext_modules = ext_modules )
 else:
     setup( name = name,
            version = gdal_version,
@@ -314,7 +280,5 @@ else:
            packages = packages,
            data_files = data_files,
            url=url,
-           cmdclass={'build_ext':gdal_ext,
-                     'build_py': build_py,
-                     'build_scripts': build_scripts},
+           cmdclass={'build_ext':gdal_ext},
            ext_modules = ext_modules )

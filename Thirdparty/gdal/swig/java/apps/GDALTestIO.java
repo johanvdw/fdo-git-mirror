@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: GDALTestIO.java 25018 2012-09-30 13:15:35Z rouault $
+ * $Id: GDALTestIO.java 18017 2009-11-14 13:47:26Z rouault $
  *
  * Name:     GDALTestIO.java
  * Project:  GDAL Java Interface
@@ -47,11 +47,6 @@ public class GDALTestIO implements Runnable
     static final int METHOD_DBB = 1;
     static final int METHOD_JAVA_ARRAYS = 2;
     static int    method;
-
-    static volatile boolean bWait = true;
-    static volatile int nReady = 0;
-    static Object waiter = new Object();
-    static Object notifier = new Object();
     
     public GDALTestIO(String filename, int nbIters)
     {
@@ -67,27 +62,7 @@ public class GDALTestIO implements Runnable
         
         int xsize = 4000;
         int ysize = 400;
-
-        synchronized(notifier)
-        {
-            nReady ++;
-            notifier.notify();
-        }
-
-        synchronized(waiter)
-        {
-            while( bWait )
-            {
-                try
-                {
-                    waiter.wait();
-                }
-                catch(InterruptedException ie)
-                {
-                }
-            }
-        }
-
+        
         driver = gdal.GetDriverByName("GTiff");
             
         ByteBuffer byteBuffer = ByteBuffer.allocateDirect(4 * xsize);
@@ -173,28 +148,6 @@ public class GDALTestIO implements Runnable
         Thread t2 = new Thread(new GDALTestIO("/vsimem/test2.tif", nbIters));
         t1.start();
         t2.start();
-
-        synchronized(notifier)
-        {
-            while( nReady != 2 )
-            {
-                try
-                {
-                    notifier.wait();
-                }
-                catch(InterruptedException ie)
-                {
-                }
-            }
-        }
-
-
-        synchronized(waiter)
-        {
-            bWait = false;
-            waiter.notifyAll();
-        }
-
         t1.join();
         t2.join();
 

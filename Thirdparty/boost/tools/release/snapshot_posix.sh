@@ -20,13 +20,13 @@ svn export --non-interactive --native-eol LF http://svn.boost.org/svn/boost/bran
 
 #echo "Building bjam..."
 # failure to use an up-to-date copy of bjam has caused much wasted effort.
-#pushd posix/tools/build/v2/engine
+#pushd posix/tools/jam/src
 #./build.sh gcc
 #popd
 #
 #echo "Building docs..."
 #pushd posix/doc
-#../tools/build/v2/engine/bin.cygwinx86/bjam --toolset=gcc &>../../posix-bjam.log
+#../tools/jam/src/bin.cygwinx86/bjam --toolset=gcc &>../../posix-bjam.log
 #popd
 
 echo "Cleaning up and renaming..."

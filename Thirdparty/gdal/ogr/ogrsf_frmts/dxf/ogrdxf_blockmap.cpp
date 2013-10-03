@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrdxf_blockmap.cpp 23668 2011-12-30 21:44:47Z rouault $
+ * $Id: ogrdxf_blockmap.cpp 22011 2011-03-22 20:13:38Z warmerdam $
  *
  * Project:  DXF Translator
  * Purpose:  Implements BlockMap reading and management portion of 
@@ -33,7 +33,7 @@
 #include "cpl_string.h"
 #include "cpl_csv.h"
 
-CPL_CVSID("$Id: ogrdxf_blockmap.cpp 23668 2011-12-30 21:44:47Z rouault $");
+CPL_CVSID("$Id: ogrdxf_blockmap.cpp 22011 2011-03-22 20:13:38Z warmerdam $");
 
 /************************************************************************/
 /*                          ReadBlockSection()                          */
@@ -72,8 +72,7 @@ void OGRDXFDataSource::ReadBlocksSection()
         if( EQUAL(szLineBuf,"ENDBLK") )
             continue;
 
-        if (nCode >= 0)
-            UnreadValue();
+        UnreadValue();
 
         // Now we will process entities till we run out at the ENDBLK code.
         // we aggregate the geometries of the features into a multi-geometry,

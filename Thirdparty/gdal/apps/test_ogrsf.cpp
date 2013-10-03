@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: test_ogrsf.cpp 25490 2013-01-12 23:43:30Z rouault $
+ * $Id: test_ogrsf.cpp 23602 2011-12-19 21:35:25Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Formal test harnass for OGRLayer implementations.
@@ -31,9 +31,8 @@
 #include "cpl_conv.h"
 #include "ogr_api.h"
 #include "ogr_p.h"
-#include "commonutils.h"
 
-CPL_CVSID("$Id: test_ogrsf.cpp 25490 2013-01-12 23:43:30Z rouault $");
+CPL_CVSID("$Id: test_ogrsf.cpp 23602 2011-12-19 21:35:25Z rouault $");
 
 int     bReadOnly = FALSE;
 int     bVerbose = TRUE;
@@ -41,7 +40,6 @@ int     bVerbose = TRUE;
 static void Usage();
 static int TestOGRLayer( OGRDataSource * poDS, OGRLayer * poLayer, int bIsSQLLayer );
 static int TestInterleavedReading( const char* pszDataSource, char** papszLayers );
-static int TestDSErrorConditions( OGRDataSource * poDS );
 
 /************************************************************************/
 /*                                main()                                */
@@ -53,11 +51,21 @@ int main( int nArgc, char ** papszArgv )
     const char  *pszDataSource = NULL;
     char** papszLayers = NULL;
     const char  *pszSQLStatement = NULL;
-    const char  *pszDialect = NULL;
     int bRet = TRUE;
 
-    EarlySetConfigOptions(nArgc, papszArgv);
-
+    /* Must process OGR_SKIP before OGRRegisterAll(), but we can't call */
+    /* OGRGeneralCmdLineProcessor before it needs the drivers to be registered */
+    /* for the --format or --formats options */
+    for( int iArg = 1; iArg < nArgc; iArg++ )
+    {
+        if( EQUAL(papszArgv[iArg], "--config") && iArg + 2 < nArgc &&
+            EQUAL(papszArgv[iArg+1], "OGR_SKIP") )
+        {
+            CPLSetConfigOption(papszArgv[iArg+1], papszArgv[iArg+2]);
+            break;
+        }
+    }
+    
 /* -------------------------------------------------------------------- */
 /*      Register format(s).                                             */
 /* -------------------------------------------------------------------- */
@@ -88,10 +96,6 @@ int main( int nArgc, char ** papszArgv )
             bVerbose = FALSE;
         else if( EQUAL(papszArgv[iArg],"-sql") && iArg + 1 < nArgc)
             pszSQLStatement = papszArgv[++iArg];
-        else if( EQUAL(papszArgv[iArg],"-dialect") && papszArgv[iArg+1] != NULL )
-        {
-            pszDialect = papszArgv[++iArg];
-        }
         else if( papszArgv[iArg][0] == '-' )
         {
             Usage();
@@ -160,7 +164,7 @@ int main( int nArgc, char ** papszArgv )
 /* -------------------------------------------------------------------- */
     if (pszSQLStatement != NULL)
     {
-        OGRLayer  *poResultSet = poDS->ExecuteSQL(pszSQLStatement, NULL, pszDialect);
+        OGRLayer  *poResultSet = poDS->ExecuteSQL(pszSQLStatement, NULL, NULL);
         if (poResultSet == NULL)
             exit(1);
             
@@ -169,8 +173,6 @@ int main( int nArgc, char ** papszArgv )
         bRet = TestOGRLayer( poDS, poResultSet, TRUE );
         
         poDS->ReleaseResultSet(poResultSet);
-
-        bRet &= TestDSErrorConditions(poDS);
     }
 /* -------------------------------------------------------------------- */
 /*      Process each data source layer.                                 */
@@ -192,8 +194,6 @@ int main( int nArgc, char ** papszArgv )
                     poLayer->GetName() );
             bRet &= TestOGRLayer( poDS, poLayer, FALSE );
         }
-
-        bRet &= TestDSErrorConditions(poDS);
 
         if (poDS->GetLayerCount() >= 2)
         {
@@ -225,8 +225,6 @@ int main( int nArgc, char ** papszArgv )
             
             papszLayerIter ++;
         }
-
-        bRet &= TestDSErrorConditions(poDS);
 
         if (CSLCount(papszLayers) >= 2)
         {
@@ -260,155 +258,8 @@ int main( int nArgc, char ** papszArgv )
 static void Usage()
 
 {
-    printf( "Usage: test_ogrsf [-ro] [-q] datasource_name \n"
-            "                  [[layer1_name, layer2_name, ...] | [-sql statement] [-dialect dialect]]\n" );
+    printf( "Usage: test_ogrsf [-ro] [-q] datasource_name [[layer1_name, layer2_name, ...] | [-sql statement]]\n" );
     exit( 1 );
-}
-
-/************************************************************************/
-/*                           TestBasic()                                */
-/************************************************************************/
-
-static int TestBasic( OGRLayer *poLayer )
-{
-    int bRet = TRUE;
-
-    const char* pszLayerName = poLayer->GetName();
-    OGRwkbGeometryType eGeomType = poLayer->GetGeomType();
-
-    if( strcmp(poLayer->GetName(), poLayer->GetLayerDefn()->GetName()) != 0 )
-    {
-        bRet = FALSE;
-        printf( "ERROR: poLayer->GetName() and poLayer->GetLayerDefn()->GetName() differ.\n"
-                "poLayer->GetName() = %s\n"
-                "poLayer->GetLayerDefn()->GetName() = %s\n",
-                    pszLayerName, poLayer->GetLayerDefn()->GetName());
-    }
-
-    if( eGeomType != poLayer->GetLayerDefn()->GetGeomType() )
-    {
-        bRet = FALSE;
-        printf( "ERROR: poLayer->GetGeomType() and poLayer->GetLayerDefn()->GetGeomType() differ.\n"
-                "poLayer->GetGeomType() = %d\n"
-                "poLayer->GetLayerDefn()->GetGeomType() = %d\n",
-                    eGeomType, poLayer->GetLayerDefn()->GetGeomType());
-    }
-
-    return bRet;
-}
-
-/************************************************************************/
-/*                      TestLayerErrorConditions()                      */
-/************************************************************************/
-
-static int TestLayerErrorConditions( OGRLayer* poLyr )
-{
-    int bRet = TRUE;
-
-    CPLPushErrorHandler(CPLQuietErrorHandler);
-
-    if (poLyr->TestCapability("fake_capability"))
-    {
-        printf( "ERROR: poLyr->TestCapability(\"fake_capability\") should have returned FALSE\n" );
-        bRet = FALSE;
-        goto bye;
-    }
-
-    if (poLyr->GetFeature(-10) != NULL)
-    {
-        printf( "ERROR: GetFeature(-10) should have returned NULL\n" );
-        bRet = FALSE;
-        goto bye;
-    }
-
-    if (poLyr->GetFeature(2000000000) != NULL)
-    {
-        printf( "ERROR: GetFeature(2000000000) should have returned NULL\n" );
-        bRet = FALSE;
-        goto bye;
-    }
-
-#if 0
-    /* PG driver doesn't issue errors when the feature doesn't exist */
-    /* So, not sure if emitting error is expected or not */
-
-    if (poLyr->DeleteFeature(-10) == OGRERR_NONE)
-    {
-        printf( "ERROR: DeleteFeature(-10) should have returned an error\n" );
-        bRet = FALSE;
-        goto bye;
-    }
-
-    if (poLyr->DeleteFeature(2000000000) == OGRERR_NONE)
-    {
-        printf( "ERROR: DeleteFeature(2000000000) should have returned an error\n" );
-        bRet = FALSE;
-        goto bye;
-    }
-#endif
-
-    if (poLyr->SetNextByIndex(-10) != OGRERR_FAILURE)
-    {
-        printf( "ERROR: SetNextByIndex(-10) should have returned OGRERR_FAILURE\n" );
-        bRet = FALSE;
-        goto bye;
-    }
-
-    if (poLyr->SetNextByIndex(2000000000) == OGRERR_NONE &&
-        poLyr->GetNextFeature() != NULL)
-    {
-        printf( "ERROR: SetNextByIndex(2000000000) and then GetNextFeature() should have returned NULL\n" );
-        bRet = FALSE;
-        goto bye;
-    }
-
-bye:
-    CPLPopErrorHandler();
-    return bRet;
-}
-
-/************************************************************************/
-/*                          GetLayerNameForSQL()                        */
-/************************************************************************/
-
-const char* GetLayerNameForSQL( OGRDataSource* poDS, const char* pszLayerName )
-{
-    int i;
-    char ch;
-    for(i=0;(ch = pszLayerName[i]) != 0;i++)
-    {
-        if (ch >= '0' && ch <= '9')
-        {
-            if (i == 0)
-                break;
-        }
-        else if (!((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')))
-            break;
-    }
-    /* Only quote if needed. Quoting conventions depend on the driver... */
-    if (ch == 0)
-        return pszLayerName;
-
-    if (EQUAL(poDS->GetDriver()->GetName(), "MYSQL"))
-        return CPLSPrintf("`%s`", pszLayerName);
-
-    if (EQUAL(poDS->GetDriver()->GetName(), "PostgreSQL") &&
-                strchr(pszLayerName, '.'))
-    {
-        const char* pszRet;
-        char** papszTokens = CSLTokenizeStringComplex(pszLayerName, ".", 0, 0);
-        if (CSLCount(papszTokens) == 2)
-            pszRet = CPLSPrintf("\"%s\".\"%s\"", papszTokens[0], papszTokens[1]);
-        else
-            pszRet = CPLSPrintf("\"%s\"", pszLayerName);
-        CSLDestroy(papszTokens);
-        return pszRet;
-    }
-
-    if (EQUAL(poDS->GetDriver()->GetName(), "SQLAnywhere"))
-        return pszLayerName;
-
-    return CPLSPrintf("\"%s\"", pszLayerName);
 }
 
 /************************************************************************/
@@ -494,9 +345,43 @@ static int TestOGRLayerFeatureCount( OGRDataSource* poDS, OGRLayer *poLayer, int
     if (!bIsSQLLayer)
     {
         CPLString osSQL;
-
-        osSQL.Printf("SELECT COUNT(*) FROM %s", GetLayerNameForSQL(poDS, poLayer->GetName()));
-
+        const char* pszLayerName = poLayer->GetName();
+        int i;
+        char ch;
+        for(i=0;(ch = pszLayerName[i]) != 0;i++)
+        {
+            if (ch >= '0' && ch <= '9')
+            {
+                if (i == 0)
+                    break;
+            }
+            else if (!((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')))
+                break;
+        }
+        /* Only quote if needed. Quoting conventions depend on the driver... */
+        if (ch == 0)
+            osSQL.Printf("SELECT COUNT(*) FROM %s", pszLayerName);
+        else
+        {
+            if (EQUAL(poDS->GetDriver()->GetName(), "MYSQL"))
+                osSQL.Printf("SELECT COUNT(*) FROM `%s`", pszLayerName);
+            else if (EQUAL(poDS->GetDriver()->GetName(), "PostgreSQL") &&
+                     strchr(pszLayerName, '.'))
+            {
+                char** papszTokens = CSLTokenizeStringComplex(pszLayerName, ".", 0, 0);
+                if (CSLCount(papszTokens) == 2)
+                {
+                    osSQL.Printf("SELECT COUNT(*) FROM \"%s\".\"%s\"", papszTokens[0], papszTokens[1]);
+                }
+                else
+                    osSQL.Printf("SELECT COUNT(*) FROM \"%s\"", pszLayerName);
+                CSLDestroy(papszTokens);
+            }
+            else if (EQUAL(poDS->GetDriver()->GetName(), "SQLAnywhere"))
+                osSQL.Printf("SELECT COUNT(*) FROM %s", pszLayerName);
+            else
+                osSQL.Printf("SELECT COUNT(*) FROM \"%s\"", pszLayerName);
+        }
         OGRLayer* poSQLLyr = poDS->ExecuteSQL(osSQL.c_str(), NULL, NULL);
         if (poSQLLyr)
         {
@@ -1521,393 +1406,6 @@ end:
     return bRet;
 }
 
-/*************************************************************************/
-/*                         TestTransactions()                            */
-/*************************************************************************/
-
-static int TestTransactions( OGRLayer *poLayer )
-
-{
-    OGRFeature* poFeature = NULL;
-    int nInitialFeatureCount = poLayer->GetFeatureCount();
-
-    OGRErr eErr = poLayer->StartTransaction();
-    if (eErr == OGRERR_NONE)
-    {
-        if (poLayer->TestCapability(OLCTransactions) == FALSE)
-        {
-            eErr = poLayer->RollbackTransaction();
-            if (eErr == OGRERR_UNSUPPORTED_OPERATION && poLayer->TestCapability(OLCTransactions) == FALSE)
-            {
-                /* The default implementation has a dummy StartTransaction(), but RollbackTransaction() returns */
-                /* OGRERR_UNSUPPORTED_OPERATION */
-                printf( "INFO: Transactions test skipped due to lack of transaction support.\n" );
-                return FALSE;
-            }
-            else
-            {
-                printf("WARN: StartTransaction() is supported, but TestCapability(OLCTransactions) returns FALSE.\n");
-            }
-        }
-    }
-    else if (eErr == OGRERR_FAILURE)
-    {
-        if (poLayer->TestCapability(OLCTransactions) == TRUE)
-        {
-            printf("ERROR: StartTransaction() failed, but TestCapability(OLCTransactions) returns TRUE.\n");
-            return FALSE;
-        }
-        else
-        {
-            return TRUE;
-        }
-    }
-
-    eErr = poLayer->RollbackTransaction();
-    if (eErr != OGRERR_NONE)
-    {
-        printf("ERROR: RollbackTransaction() failed after successfull StartTransaction().\n");
-        return FALSE;
-    }
-
-    /* ---------------- */
-
-    eErr = poLayer->StartTransaction();
-    if (eErr != OGRERR_NONE)
-    {
-        printf("ERROR: StartTransaction() failed.\n");
-        return FALSE;
-    }
-
-    eErr = poLayer->CommitTransaction();
-    if (eErr != OGRERR_NONE)
-    {
-        printf("ERROR: CommitTransaction() failed after successfull StartTransaction().\n");
-        return FALSE;
-    }
-
-    /* ---------------- */
-
-    eErr = poLayer->StartTransaction();
-    if (eErr != OGRERR_NONE)
-    {
-        printf("ERROR: StartTransaction() failed.\n");
-        return FALSE;
-    }
-
-    poFeature = new OGRFeature(poLayer->GetLayerDefn());
-    if (poLayer->GetLayerDefn()->GetFieldCount() > 0)
-        poFeature->SetField(0, "0");
-    eErr = poLayer->CreateFeature(poFeature);
-    delete poFeature;
-    poFeature = NULL;
-
-    if (eErr == OGRERR_FAILURE)
-    {
-        printf("INFO: CreateFeature() failed. Exiting this test now.\n");
-        poLayer->RollbackTransaction();
-        return FALSE;
-    }
-
-    eErr = poLayer->RollbackTransaction();
-    if (eErr != OGRERR_NONE)
-    {
-        printf("ERROR: RollbackTransaction() failed after successfull StartTransaction().\n");
-        return FALSE;
-    }
-
-    if (poLayer->GetFeatureCount() != nInitialFeatureCount)
-    {
-        printf("INFO: GetFeatureCount() should have returned its initial value after RollbackTransaction().\n");
-        poLayer->RollbackTransaction();
-        return FALSE;
-    }
-
-    /* ---------------- */
-
-    if( poLayer->TestCapability( OLCDeleteFeature ) )
-    {
-        eErr = poLayer->StartTransaction();
-        if (eErr != OGRERR_NONE)
-        {
-            printf("ERROR: StartTransaction() failed.\n");
-            return FALSE;
-        }
-
-        poFeature = new OGRFeature(poLayer->GetLayerDefn());
-        if (poLayer->GetLayerDefn()->GetFieldCount() > 0)
-            poFeature->SetField(0, "0");
-        eErr = poLayer->CreateFeature(poFeature);
-        int nFID = poFeature->GetFID();
-        delete poFeature;
-        poFeature = NULL;
-
-        if (eErr == OGRERR_FAILURE)
-        {
-            printf("INFO: CreateFeature() failed. Exiting this test now.\n");
-            poLayer->RollbackTransaction();
-            return FALSE;
-        }
-
-        eErr = poLayer->CommitTransaction();
-        if (eErr != OGRERR_NONE)
-        {
-            printf("ERROR: CommitTransaction() failed after successfull StartTransaction().\n");
-            return FALSE;
-        }
-
-        if (poLayer->GetFeatureCount() != nInitialFeatureCount + 1)
-        {
-            printf("INFO: GetFeatureCount() should have returned its initial value + 1 after CommitTransaction().\n");
-            poLayer->RollbackTransaction();
-            return FALSE;
-        }
-
-        eErr = poLayer->DeleteFeature(nFID);
-        if (eErr != OGRERR_NONE)
-        {
-            printf("ERROR: DeleteFeature() failed.\n");
-            return FALSE;
-        }
-
-        if (poLayer->GetFeatureCount() != nInitialFeatureCount)
-        {
-            printf("INFO: GetFeatureCount() should have returned its initial value after DeleteFeature().\n");
-            poLayer->RollbackTransaction();
-            return FALSE;
-        }
-    }
-
-    /* ---------------- */
-
-    printf( "INFO: Transactions test passed.\n" );
-
-    return TRUE;
-}
-
-/************************************************************************/
-/*                     TestOGRLayerIgnoreFields()                       */
-/************************************************************************/
-
-static int TestOGRLayerIgnoreFields( OGRLayer* poLayer )
-{
-    int iFieldNonEmpty = -1;
-    int iFieldNonEmpty2 = -1;
-    int bGeomNonEmpty = FALSE;
-    OGRFeature* poFeature;
-
-    poLayer->ResetReading();
-    while( (poFeature = poLayer->GetNextFeature()) != NULL )
-    {
-        if( iFieldNonEmpty < 0 )
-        {
-            for(int i=0;i<poFeature->GetFieldCount();i++)
-            {
-                if( poFeature->IsFieldSet(i) )
-                {
-                    iFieldNonEmpty = i;
-                    break;
-                }
-            }
-        }
-        else if ( iFieldNonEmpty2 < 0 )
-        {
-            for(int i=0;i<poFeature->GetFieldCount();i++)
-            {
-                if( i != iFieldNonEmpty && poFeature->IsFieldSet(i) )
-                {
-                    iFieldNonEmpty2 = i;
-                    break;
-                }
-            }
-        }
-
-        if( !bGeomNonEmpty && poFeature->GetGeometryRef() != NULL)
-            bGeomNonEmpty = TRUE;
-
-        delete poFeature;
-    }
-
-    if( iFieldNonEmpty < 0 && bGeomNonEmpty == FALSE )
-    {
-        printf( "INFO: IgnoreFields test skipped.\n" );
-        return TRUE;
-    }
-
-    char** papszIgnoredFields = NULL;
-    if( iFieldNonEmpty >= 0 )
-        papszIgnoredFields = CSLAddString(papszIgnoredFields,
-            poLayer->GetLayerDefn()->GetFieldDefn(iFieldNonEmpty)->GetNameRef());
-
-    if( bGeomNonEmpty )
-        papszIgnoredFields = CSLAddString(papszIgnoredFields, "OGR_GEOMETRY");
-
-    OGRErr eErr = poLayer->SetIgnoredFields((const char**)papszIgnoredFields);
-    CSLDestroy(papszIgnoredFields);
-
-    if( eErr == OGRERR_FAILURE )
-    {
-        printf( "ERROR: SetIgnoredFields() failed.\n" );
-        poLayer->SetIgnoredFields(NULL);
-        return FALSE;
-    }
-
-    int bFoundNonEmpty2 = FALSE;
-
-    poLayer->ResetReading();
-    while( (poFeature = poLayer->GetNextFeature()) != NULL )
-    {
-        if( iFieldNonEmpty >= 0 && poFeature->IsFieldSet(iFieldNonEmpty) )
-        {
-            delete poFeature;
-            printf( "ERROR: After SetIgnoredFields(), found a non empty field that should have been ignored.\n" );
-            poLayer->SetIgnoredFields(NULL);
-            return FALSE;
-        }
-
-        if( iFieldNonEmpty2 >= 0 && poFeature->IsFieldSet(iFieldNonEmpty2) )
-            bFoundNonEmpty2 = TRUE;
-
-        if( bGeomNonEmpty && poFeature->GetGeometryRef() != NULL)
-        {
-            delete poFeature;
-            printf( "ERROR: After SetIgnoredFields(), found a non empty geometry that should have been ignored.\n" );
-            poLayer->SetIgnoredFields(NULL);
-            return FALSE;
-        }
-
-        delete poFeature;
-    }
-
-    if( iFieldNonEmpty2 >= 0 && !bFoundNonEmpty2)
-    {
-        printf( "ERROR: SetIgnoredFields() discarded fields that it should not have discarded.\n" );
-        poLayer->SetIgnoredFields(NULL);
-        return FALSE;
-    }
-
-    poLayer->SetIgnoredFields(NULL);
-
-    printf( "INFO: IgnoreFields test passed.\n" );
-
-    return TRUE;
-}
-
-/************************************************************************/
-/*                            TestLayerSQL()                            */
-/************************************************************************/
-
-static int TestLayerSQL( OGRDataSource* poDS, OGRLayer * poLayer )
-
-{
-    int bRet = TRUE;
-    OGRLayer* poSQLLyr = NULL;
-    OGRFeature* poLayerFeat = NULL;
-    OGRFeature* poSQLFeat = NULL;
-
-    CPLString osSQL;
-
-    /* Test consistency between result layer and traditionnal layer */
-    poLayer->ResetReading();
-    poLayerFeat = poLayer->GetNextFeature();
-
-    osSQL.Printf("SELECT * FROM %s", GetLayerNameForSQL(poDS, poLayer->GetName()));
-    poSQLLyr = poDS->ExecuteSQL(osSQL.c_str(), NULL, NULL);
-    if( poSQLLyr == NULL )
-    {
-        printf( "ERROR: ExecuteSQL(%s) failed.\n", osSQL.c_str() );
-        bRet = FALSE;
-    }
-    else
-    {
-        poSQLFeat = poSQLLyr->GetNextFeature();
-        if( poLayerFeat == NULL && poSQLFeat != NULL )
-        {
-            printf( "ERROR: poLayerFeat == NULL && poSQLFeat != NULL.\n" );
-            bRet = FALSE;
-        }
-        else if( poLayerFeat != NULL && poSQLFeat == NULL )
-        {
-            printf( "ERROR: poLayerFeat != NULL && poSQLFeat == NULL.\n" );
-            bRet = FALSE;
-        }
-        else if( poLayerFeat != NULL && poSQLFeat != NULL )
-        {
-            OGRGeometry* poLayerFeatGeom = poLayerFeat->GetGeometryRef();
-            OGRGeometry* poSQLFeatGeom = poSQLFeat->GetGeometryRef();
-            if( poLayerFeatGeom == NULL && poSQLFeatGeom != NULL )
-            {
-                printf( "ERROR: poLayerFeatGeom == NULL && poSQLFeatGeom != NULL.\n" );
-                bRet = FALSE;
-            }
-            else if( poLayerFeatGeom != NULL && poSQLFeatGeom == NULL )
-            {
-                printf( "ERROR: poLayerFeatGeom != NULL && poSQLFeatGeom == NULL.\n" );
-                bRet = FALSE;
-            }
-            else if( poLayerFeatGeom != NULL && poSQLFeatGeom != NULL )
-            {
-                OGRSpatialReference* poLayerFeatSRS = poLayerFeatGeom->getSpatialReference();
-                OGRSpatialReference* poSQLFeatSRS = poSQLFeatGeom->getSpatialReference();
-                if( poLayerFeatSRS == NULL && poSQLFeatSRS != NULL )
-                {
-                    printf( "ERROR: poLayerFeatSRS == NULL && poSQLFeatSRS != NULL.\n" );
-                    bRet = FALSE;
-                }
-                else if( poLayerFeatSRS != NULL && poSQLFeatSRS == NULL )
-                {
-                    printf( "ERROR: poLayerFeatSRS != NULL && poSQLFeatSRS == NULL.\n" );
-                    bRet = FALSE;
-                }
-                else if( poLayerFeatSRS != NULL && poSQLFeatSRS != NULL )
-                {
-                    if( !(poLayerFeatSRS->IsSame(poSQLFeatSRS)) )
-                    {
-                        printf( "ERROR: !(poLayerFeatSRS->IsSame(poSQLFeatSRS)).\n" );
-                        bRet = FALSE;
-                    }
-                }
-            }
-        }
-    }
-
-    OGRFeature::DestroyFeature(poLayerFeat);
-    poLayerFeat = NULL;
-    OGRFeature::DestroyFeature(poSQLFeat);
-    poSQLFeat = NULL;
-    if( poSQLLyr )
-    {
-        poDS->ReleaseResultSet(poSQLLyr);
-        poSQLLyr = NULL;
-    }
-
-    /* Return an empty layer */
-    osSQL.Printf("SELECT * FROM %s WHERE 0 = 1", GetLayerNameForSQL(poDS, poLayer->GetName()));
-
-    poSQLLyr = poDS->ExecuteSQL(osSQL.c_str(), NULL, NULL);
-    if (poSQLLyr)
-    {
-        poSQLFeat = poSQLLyr->GetNextFeature();
-        if (poSQLFeat != NULL)
-        {
-            bRet = FALSE;
-            printf( "ERROR: ExecuteSQL() should have returned a layer without features.\n" );
-        }
-        OGRFeature::DestroyFeature(poSQLFeat);
-        poDS->ReleaseResultSet(poSQLLyr);
-    }
-    else
-    {
-        printf( "ERROR: ExecuteSQL() should have returned a non-NULL result.\n");
-        bRet = FALSE;
-    }
-    
-    if( bRet )
-        printf("INFO: TestLayerSQL passed.\n");
-
-    return bRet;
-}
-
 /************************************************************************/
 /*                            TestOGRLayer()                            */
 /************************************************************************/
@@ -1927,11 +1425,6 @@ static int TestOGRLayer( OGRDataSource* poDS, OGRLayer * poLayer, int bIsSQLLaye
         poLayer->SetSpatialFilter( NULL );
     }
 
-/* -------------------------------------------------------------------- */
-/*      Basic tests.                                                   */
-/* -------------------------------------------------------------------- */
-    bRet &= TestBasic( poLayer );
-    
 /* -------------------------------------------------------------------- */
 /*      Test feature count accuracy.                                    */
 /* -------------------------------------------------------------------- */
@@ -1984,38 +1477,7 @@ static int TestOGRLayer( OGRDataSource* poDS, OGRLayer * poLayer, int bIsSQLLaye
         bRet &= TestOGRLayerRandomWrite( poLayer );
     }
 
-/* -------------------------------------------------------------------- */
-/*      Test OLCIgnoreFields.                                           */
-/* -------------------------------------------------------------------- */
-    if( poLayer->TestCapability( OLCIgnoreFields ) )
-    {
-        bRet &= TestOGRLayerIgnoreFields( poLayer );
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Test UTF-8 reporting                                            */
-/* -------------------------------------------------------------------- */
     bRet &= TestOGRLayerUTF8( poLayer );
-
-/* -------------------------------------------------------------------- */
-/*      Test TestTransactions()                                         */
-/* -------------------------------------------------------------------- */
-    if( poLayer->TestCapability( OLCSequentialWrite ) )
-    {
-        bRet &= TestTransactions( poLayer );
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Test error conditions.                                          */
-/* -------------------------------------------------------------------- */
-    bRet &= TestLayerErrorConditions( poLayer );
-
-
-/* -------------------------------------------------------------------- */
-/*      Test some SQL.                                                  */
-/* -------------------------------------------------------------------- */
-    if( !bIsSQLLayer )
-        bRet &= TestLayerSQL( poDS, poLayer );
 
     return bRet;
 }
@@ -2145,58 +1607,5 @@ bye:
     OGRFeature::DestroyFeature(poFeature22);
     OGRDataSource::DestroyDataSource(poDS);
     OGRDataSource::DestroyDataSource(poDS2);
-    return bRet;
-}
-
-/************************************************************************/
-/*                          TestDSErrorConditions()                     */
-/************************************************************************/
-
-static int TestDSErrorConditions( OGRDataSource * poDS )
-{
-    int bRet = TRUE;
-    OGRLayer* poLyr;
-
-    CPLPushErrorHandler(CPLQuietErrorHandler);
-
-    if (poDS->TestCapability("fake_capability"))
-    {
-        printf( "ERROR: TestCapability(\"fake_capability\") should have returned FALSE\n" );
-        bRet = FALSE;
-        goto bye;
-    }
-
-    if (poDS->GetLayer(-1) != NULL)
-    {
-        printf( "ERROR: GetLayer(-1) should have returned NULL\n" );
-        bRet = FALSE;
-        goto bye;
-    }
-
-    if (poDS->GetLayer(poDS->GetLayerCount()) != NULL)
-    {
-        printf( "ERROR: GetLayer(poDS->GetLayerCount()) should have returned NULL\n" );
-        bRet = FALSE;
-        goto bye;
-    }
-
-    if (poDS->GetLayerByName("non_existing_layer") != NULL)
-    {
-        printf( "ERROR: GetLayerByName(\"non_existing_layer\") should have returned NULL\n" );
-        bRet = FALSE;
-        goto bye;
-    }
-
-    poLyr = poDS->ExecuteSQL("a fake SQL command", NULL, NULL);
-    if (poLyr != NULL)
-    {
-        poDS->ReleaseResultSet(poLyr);
-        printf( "ERROR: ExecuteSQL(\"a fake SQL command\") should have returned NULL\n" );
-        bRet = FALSE;
-        goto bye;
-    }
-
-bye:
-    CPLPopErrorHandler();
     return bRet;
 }

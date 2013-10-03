@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: nitfimage.c 25777 2013-03-20 21:12:02Z rouault $
+ * $Id: nitfimage.c 22843 2011-07-31 23:22:42Z rouault $
  *
  * Project:  NITF Read/Write Library
  * Purpose:  Module responsible for implementation of most NITFImage 
@@ -35,7 +35,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: nitfimage.c 25777 2013-03-20 21:12:02Z rouault $");
+CPL_CVSID("$Id: nitfimage.c 22843 2011-07-31 23:22:42Z rouault $");
 
 static int NITFReadIMRFCA( NITFImage *psImage, NITFRPC00BInfo *psRPC );
 static char *NITFTrimWhite( char * );
@@ -72,7 +72,7 @@ NITFImage *NITFImageAccess( NITFFile *psFile, int iSegment )
     const char* pszIID1;
     int        nFaultyLine = -1;
     int        bGotWrongOffset = FALSE;
-
+    
 /* -------------------------------------------------------------------- */
 /*      Verify segment, and return existing image accessor if there     */
 /*      is one.                                                         */
@@ -456,7 +456,6 @@ NITFImage *NITFImageAccess( NITFFile *psFile, int iSegment )
                                    (int)psSegInfo->nSegmentHeaderStart;
 
         psBandInfo->pabyLUT = (unsigned char *) CPLCalloc(768,1);
-
         if ( (int)psSegInfo->nSegmentHeaderSize <
              nOffset + nLUTS * psBandInfo->nSignificantLUTEntries )
             GOTO_header_too_small();
@@ -474,50 +473,6 @@ NITFImage *NITFImageAccess( NITFFile *psFile, int iSegment )
             memcpy( psBandInfo->pabyLUT+512, pachHeader + nOffset, 
                     psBandInfo->nSignificantLUTEntries );
             nOffset += psBandInfo->nSignificantLUTEntries;
-        }
-        else if( (nLUTS == 2) && (EQUALN(psImage->szIREP,"MONO",4)) &&
-          ((EQUALN(psBandInfo->szIREPBAND, "M", 1)) || (EQUALN(psBandInfo->szIREPBAND, "LU", 2))) )
-        {
-            int             iLUTEntry;
-            double          scale          = 255.0/65535.0;
-            unsigned char  *pMSB           = NULL;
-            unsigned char  *pLSB           = NULL;
-            unsigned char  *p3rdLUT        = NULL;
-            unsigned char   scaledVal      = 0;
-            unsigned short *pLUTVal        = NULL;
-
-          /* In this case, we have two LUTs. The first and second LUTs should map respectively to the most */
-          /* significant byte and the least significant byte of the 16 bit values. */
-
-            memcpy( psBandInfo->pabyLUT+256, pachHeader + nOffset, 
-                    psBandInfo->nSignificantLUTEntries );
-            nOffset += psBandInfo->nSignificantLUTEntries;
-
-            pMSB    = psBandInfo->pabyLUT;
-            pLSB    = psBandInfo->pabyLUT + 256;
-            p3rdLUT = psBandInfo->pabyLUT + 512;
-            /* E. Rouault: Why 255 and not 256 ? */
-            pLUTVal = (unsigned short*) CPLMalloc(sizeof(short)*255);
-
-            for( iLUTEntry = 0; iLUTEntry < 255; ++iLUTEntry )
-            {
-                /* E. Rouault: I don't understand why the following logic is endianness dependant */
-                pLUTVal[iLUTEntry] = ((pMSB[iLUTEntry] << 8) | pLSB[iLUTEntry]);
-#ifdef CPL_LSB
-                pLUTVal[iLUTEntry] = ((pLUTVal[iLUTEntry] >> 8) | (pLUTVal[iLUTEntry] << 8));
-#endif
-            }
-
-            for( iLUTEntry = 0; iLUTEntry < 255; ++iLUTEntry )
-            {
-                scaledVal = (unsigned char) ceil((double) (pLUTVal[iLUTEntry]*scale));
-
-                pMSB[iLUTEntry]    = scaledVal;
-                pLSB[iLUTEntry]    = scaledVal;
-                p3rdLUT[iLUTEntry] = scaledVal;
-            }
-
-            CPLFree(pLUTVal);
         }
         else 
         {

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrinfo.cpp 25582 2013-01-29 21:13:43Z rouault $
+ * $Id: ogrinfo.cpp 23119 2011-09-24 16:15:21Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Simple client for viewing OGR driver data.
@@ -33,9 +33,8 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 #include "cpl_multiproc.h"
-#include "commonutils.h"
 
-CPL_CVSID("$Id: ogrinfo.cpp 25582 2013-01-29 21:13:43Z rouault $");
+CPL_CVSID("$Id: ogrinfo.cpp 23119 2011-09-24 16:15:21Z rouault $");
 
 int     bReadOnly = FALSE;
 int     bVerbose = TRUE;
@@ -43,17 +42,13 @@ int     bSummaryOnly = FALSE;
 int     nFetchFID = OGRNullFID;
 char**  papszOptions = NULL;
 
-static void Usage(const char* pszErrorMsg = NULL);
+static void Usage();
 
 static void ReportOnLayer( OGRLayer *, const char *, OGRGeometry * );
 
 /************************************************************************/
 /*                                main()                                */
 /************************************************************************/
-
-#define CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(nExtraArg) \
-    do { if (iArg + nExtraArg >= nArgc) \
-        Usage(CPLSPrintf("%s option requires %d argument(s)", papszArgv[iArg], nExtraArg)); } while(0)
 
 int main( int nArgc, char ** papszArgv )
 
@@ -70,9 +65,6 @@ int main( int nArgc, char ** papszArgv )
     /* Check strict compilation and runtime library version as we use C++ API */
     if (! GDAL_CHECK_VERSION(papszArgv[0]))
         exit(1);
-
-    EarlySetConfigOptions(nArgc, papszArgv);
-
 /* -------------------------------------------------------------------- */
 /*      Register format(s).                                             */
 /* -------------------------------------------------------------------- */
@@ -94,20 +86,18 @@ int main( int nArgc, char ** papszArgv )
                    papszArgv[0], GDAL_RELEASE_NAME, GDALVersionInfo("RELEASE_NAME"));
             return 0;
         }
-        else if( EQUAL(papszArgv[iArg],"--help") )
-            Usage();
         else if( EQUAL(papszArgv[iArg],"-ro") )
             bReadOnly = TRUE;
         else if( EQUAL(papszArgv[iArg],"-q") || EQUAL(papszArgv[iArg],"-quiet"))
             bVerbose = FALSE;
-        else if( EQUAL(papszArgv[iArg],"-fid") )
-        {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
+        else if( EQUAL(papszArgv[iArg],"-fid") && iArg < nArgc-1 )
             nFetchFID = atoi(papszArgv[++iArg]);
-        }
-        else if( EQUAL(papszArgv[iArg],"-spat") )
+        else if( EQUAL(papszArgv[iArg],"-spat") 
+                 && papszArgv[iArg+1] != NULL 
+                 && papszArgv[iArg+2] != NULL 
+                 && papszArgv[iArg+3] != NULL 
+                 && papszArgv[iArg+4] != NULL )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(4);
             OGRLinearRing  oRing;
 
             oRing.addPoint( atof(papszArgv[iArg+1]), atof(papszArgv[iArg+2]) );
@@ -120,24 +110,21 @@ int main( int nArgc, char ** papszArgv )
             ((OGRPolygon *) poSpatialFilter)->addRing( &oRing );
             iArg += 4;
         }
-        else if( EQUAL(papszArgv[iArg],"-where") )
+        else if( EQUAL(papszArgv[iArg],"-where") && papszArgv[iArg+1] != NULL )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             pszWHERE = papszArgv[++iArg];
         }
-        else if( EQUAL(papszArgv[iArg],"-sql") )
+        else if( EQUAL(papszArgv[iArg],"-sql") && papszArgv[iArg+1] != NULL )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             pszSQLStatement = papszArgv[++iArg];
         }
-        else if( EQUAL(papszArgv[iArg],"-dialect") )
+        else if( EQUAL(papszArgv[iArg],"-dialect") 
+                 && papszArgv[iArg+1] != NULL )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             pszDialect = papszArgv[++iArg];
         }
-        else if( EQUAL(papszArgv[iArg],"-rc") )
+        else if( EQUAL(papszArgv[iArg],"-rc") && papszArgv[iArg+1] != NULL )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             nRepeatCount = atoi(papszArgv[++iArg]);
         }
         else if( EQUAL(papszArgv[iArg],"-al") )
@@ -165,7 +152,7 @@ int main( int nArgc, char ** papszArgv )
         }
         else if( papszArgv[iArg][0] == '-' )
         {
-            Usage(CPLSPrintf("Unkown option name '%s'", papszArgv[iArg]));
+            Usage();
         }
         else if( pszDataSource == NULL )
             pszDataSource = papszArgv[iArg];
@@ -177,7 +164,7 @@ int main( int nArgc, char ** papszArgv )
     }
 
     if( pszDataSource == NULL )
-        Usage("No datasource specified.");
+        Usage();
 
 /* -------------------------------------------------------------------- */
 /*      Open data source.                                               */
@@ -351,7 +338,7 @@ end:
 /*                               Usage()                                */
 /************************************************************************/
 
-static void Usage(const char* pszErrorMsg)
+static void Usage()
 
 {
     printf( "Usage: ogrinfo [--help-general] [-ro] [-q] [-where restricted_where]\n"
@@ -359,10 +346,6 @@ static void Usage(const char* pszErrorMsg)
             "               [-sql statement] [-dialect sql_dialect] [-al] [-so] [-fields={YES/NO}]\n"
             "               [-geom={YES/NO/SUMMARY}][--formats]\n"
             "               datasource_name [layer [layer ...]]\n");
-
-    if( pszErrorMsg != NULL )
-        fprintf(stderr, "\nFAILURE: %s\n", pszErrorMsg);
-
     exit( 1 );
 }
 

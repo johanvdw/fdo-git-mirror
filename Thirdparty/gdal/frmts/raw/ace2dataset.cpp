@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ace2dataset.cpp 23772 2012-01-21 08:31:07Z rouault $
+ * $Id: ace2dataset.cpp 22163 2011-04-14 21:26:21Z rouault $
  *
  * Project:  ACE2 Driver
  * Purpose:  Implementation of ACE2 elevation format read support.
@@ -31,7 +31,7 @@
 #include "rawdataset.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: ace2dataset.cpp 23772 2012-01-21 08:31:07Z rouault $");
+CPL_CVSID("$Id: ace2dataset.cpp 22163 2011-04-14 21:26:21Z rouault $");
 
 CPL_C_START
 void    GDALRegister_ACE2(void);
@@ -329,7 +329,7 @@ GDALDataset *ACE2Dataset::Open( GDALOpenInfo * poOpenInfo )
     CPLString osFilename = poOpenInfo->pszFilename;
     if ((strstr(poOpenInfo->pszFilename, ".ACE2.gz") ||
          strstr(poOpenInfo->pszFilename, ".ace2.gz")) &&
-        strncmp(poOpenInfo->pszFilename, "/vsigzip/", 9) != 0)
+        strncmp(poOpenInfo->pszFilename, "/vsigzip/", 10) != 0)
         osFilename = "/vsigzip/" + osFilename;
 
     VSILFILE* fpImage = VSIFOpenL( osFilename, "rb+" );

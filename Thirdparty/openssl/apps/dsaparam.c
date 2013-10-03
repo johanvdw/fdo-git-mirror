@@ -111,6 +111,9 @@ int MAIN(int, char **);
 
 int MAIN(int argc, char **argv)
 	{
+#ifndef OPENSSL_NO_ENGINE
+	ENGINE *e = NULL;
+#endif
 	DSA *dsa=NULL;
 	int i,badops=0,text=0;
 	BIO *in=NULL,*out=NULL;
@@ -275,7 +278,7 @@ bad:
 		}
 
 #ifndef OPENSSL_NO_ENGINE
-        setup_engine(bio_err, engine, 0);
+        e = setup_engine(bio_err, engine, 0);
 #endif
 
 	if (need_rand)
@@ -326,7 +329,6 @@ bad:
 				goto end;
 				}
 #endif
-			ERR_print_errors(bio_err);
 			BIO_printf(bio_err,"Error, DSA key generation failed\n");
 			goto end;
 			}
@@ -355,10 +357,12 @@ bad:
 	if (C)
 		{
 		unsigned char *data;
-		int l,len,bits_p;
+		int l,len,bits_p,bits_q,bits_g;
 
 		len=BN_num_bytes(dsa->p);
 		bits_p=BN_num_bits(dsa->p);
+		bits_q=BN_num_bits(dsa->q);
+		bits_g=BN_num_bits(dsa->g);
 		data=(unsigned char *)OPENSSL_malloc(len+20);
 		if (data == NULL)
 			{
@@ -430,19 +434,13 @@ bad:
 
 		assert(need_rand);
 		if ((dsakey=DSAparams_dup(dsa)) == NULL) goto end;
-		if (!DSA_generate_key(dsakey))
-			{
-			ERR_print_errors(bio_err);
-			DSA_free(dsakey);
-			goto end;
-			}
+		if (!DSA_generate_key(dsakey)) goto end;
 		if 	(outformat == FORMAT_ASN1)
 			i=i2d_DSAPrivateKey_bio(out,dsakey);
 		else if (outformat == FORMAT_PEM)
 			i=PEM_write_bio_DSAPrivateKey(out,dsakey,NULL,NULL,0,NULL,NULL);
 		else	{
 			BIO_printf(bio_err,"bad output format specified for outfile\n");
-			DSA_free(dsakey);
 			goto end;
 			}
 		DSA_free(dsakey);

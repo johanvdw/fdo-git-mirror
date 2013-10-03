@@ -1,24 +1,13 @@
-/***************************************************************************
+/*****************************************************************************
  *                                  _   _ ____  _
  *  Project                     ___| | | |  _ \| |
  *                             / __| | | | |_) | |
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2012, Daniel Stenberg, <daniel@haxx.se>, et al.
- *
- * This software is licensed as described in the file COPYING, which
- * you should have received as part of this distribution. The terms
- * are also available at http://curl.haxx.se/docs/copyright.html.
- *
- * You may opt to use, copy, modify, merge, publish, distribute and/or sell
- * copies of the Software, and permit persons to whom the Software is
- * furnished to do so, under the terms of the COPYING file.
- *
- * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
- * KIND, either express or implied.
- *
- ***************************************************************************/
+ * $Id: anyauthput.c,v 1.9 2009-06-10 12:59:59 yangtse Exp $
+ */
+
 #include <stdio.h>
 #include <fcntl.h>
 #ifdef WIN32
@@ -26,8 +15,7 @@
 #else
 #  ifdef __VMS
      typedef int intptr_t;
-#  endif
-#  if !defined(_AIX) && !defined(__sgi) && !defined(__osf__)
+#  else
 #    include <stdint.h>
 #  endif
 #  include <unistd.h>
@@ -51,12 +39,6 @@
 
 #ifndef TRUE
 #define TRUE 1
-#endif
-
-#if defined(_AIX) || defined(__sgi) || defined(__osf__)
-#ifndef intptr_t
-#define intptr_t long
-#endif
 #endif
 
 /*
@@ -96,16 +78,12 @@ static curlioerr my_ioctl(CURL *handle, curliocmd cmd, void *userp)
 static size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream)
 {
   size_t retcode;
-  curl_off_t nread;
 
   intptr_t fd = (intptr_t)stream;
 
   retcode = read(fd, ptr, size * nmemb);
 
-  nread = (curl_off_t)retcode;
-
-  fprintf(stderr, "*** We read %" CURL_FORMAT_CURL_OFF_T
-          " bytes from file\n", nread);
+  fprintf(stderr, "*** We read %d bytes from file\n", retcode);
 
   return retcode;
 }
@@ -158,7 +136,7 @@ int main(int argc, char **argv)
     /* and give the size of the upload, this supports large file sizes
        on systems that have general support for it */
     curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE,
-                     (curl_off_t)file_info.st_size);
+    			(curl_off_t)file_info.st_size);
 
     /* tell libcurl we can use "any" auth, which lets the lib pick one, but it
        also costs one extra round-trip and possibly sending of all the PUT
@@ -170,10 +148,6 @@ int main(int argc, char **argv)
 
     /* Now run off and do what you've been told! */
     res = curl_easy_perform(curl);
-    /* Check for errors */
-    if(res != CURLE_OK)
-      fprintf(stderr, "curl_easy_perform() failed: %s\n",
-              curl_easy_strerror(res));
 
     /* always cleanup */
     curl_easy_cleanup(curl);

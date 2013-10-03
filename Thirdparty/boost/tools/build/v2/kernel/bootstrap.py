@@ -21,5 +21,5 @@ def bootstrap(root_path):
     sys.modules["b2"] = m
 
     import b2.build_system
-    return b2.build_system.main()
+    b2.build_system.main()
 

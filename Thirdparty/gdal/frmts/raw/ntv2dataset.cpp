@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ntv2dataset.cpp 25494 2013-01-13 12:55:17Z etourigny $
+ * $Id: ntv2dataset.cpp 21682 2011-02-11 21:25:05Z warmerdam $
  *
  * Project:  Horizontal Datum Formats
  * Purpose:  Implementation of NTv2 datum shift format used in Canada, France, 
@@ -33,7 +33,7 @@
 #include "cpl_string.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id: ntv2dataset.cpp 25494 2013-01-13 12:55:17Z etourigny $");
+CPL_CVSID("$Id: ntv2dataset.cpp 21682 2011-02-11 21:25:05Z warmerdam $");
 
 /** 
  * The header for the file, and each grid consists of 11 16byte records.
@@ -180,8 +180,6 @@ void NTv2Dataset::FlushCache()
     {
         char *pszKey = NULL;
         const char *pszValue = CPLParseNameValue( papszMD[i], &pszKey );
-        if( pszKey == NULL )
-            continue;
 
         if( EQUAL(pszKey,"GS_TYPE") )
         {
@@ -527,8 +525,8 @@ int NTv2Dataset::OpenGrid( char *pachHeader, vsi_l_offset nGridOffset )
         SetBand( iBand+1, poBand );
     }
     
-    GetRasterBand(1)->SetDescription( "Latitude Offset (arc seconds)" );
-    GetRasterBand(2)->SetDescription( "Longitude Offset (arc seconds)" );
+    GetRasterBand(1)->SetDescription( "Latitude Offset" );
+    GetRasterBand(2)->SetDescription( "Longitude Offset" );
     GetRasterBand(3)->SetDescription( "Latitude Error" );
     GetRasterBand(4)->SetDescription( "Longitude Error" );
     
@@ -870,7 +868,7 @@ void GDALRegister_NTv2()
                                    "NTv2 Datum Grid Shift" );
         poDriver->SetMetadataItem( GDAL_DMD_EXTENSION, "gsb" );
         poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
-        poDriver->SetMetadataItem( GDAL_DMD_SUBDATASETS, "YES" );
+
         poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES, 
                                    "Float32" );
 

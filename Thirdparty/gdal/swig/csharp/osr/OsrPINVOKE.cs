@@ -528,9 +528,6 @@ class OsrPINVOKE {
   [DllImport("osr_wrap", EntryPoint="CSharp_SpatialReference_ImportFromMICoordSys")]
   public static extern int SpatialReference_ImportFromMICoordSys(HandleRef jarg1, string jarg2);
 
-  [DllImport("osr_wrap", EntryPoint="CSharp_SpatialReference_ImportFromOzi")]
-  public static extern int SpatialReference_ImportFromOzi(HandleRef jarg1, string jarg2, string jarg3, string jarg4);
-
   [DllImport("osr_wrap", EntryPoint="CSharp_SpatialReference_ExportToWkt")]
   public static extern int SpatialReference_ExportToWkt(HandleRef jarg1, out string jarg2);
 
@@ -590,9 +587,6 @@ class OsrPINVOKE {
 
   [DllImport("osr_wrap", EntryPoint="CSharp_CoordinateTransformation_TransformPoints")]
   public static extern void CoordinateTransformation_TransformPoints(HandleRef jarg1, int jarg2, double[] jarg3, double[] jarg4, double[] jarg5);
-
-  [DllImport("osr_wrap", EntryPoint="CSharp_CreateCoordinateTransformation")]
-  public static extern IntPtr CreateCoordinateTransformation(HandleRef jarg1, HandleRef jarg2);
 }
 
 }

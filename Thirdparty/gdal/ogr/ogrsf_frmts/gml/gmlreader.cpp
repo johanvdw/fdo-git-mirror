@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gmlreader.cpp 25727 2013-03-10 14:56:33Z rouault $
+ * $Id: gmlreader.cpp 23647 2011-12-23 22:27:20Z rouault $
  *
  * Project:  GML Reader
  * Purpose:  Implementation of GMLReader class.
@@ -232,15 +232,6 @@ const char* GMLReader::GetSourceFileName()
 
 {
     return m_pszFilename;
-}
-
-/************************************************************************/
-/*                               SetFP()                                */
-/************************************************************************/
-
-void GMLReader::SetFP( VSILFILE* fp )
-{
-    fpGML = fp;
 }
 
 /************************************************************************/
@@ -1364,25 +1355,23 @@ int GMLReader::PrescanForSchema( int bGetExtents )
             {
                 OGR_SRSNode *poGEOGCS = oSRS.GetAttrNode( "GEOGCS" );
                 if( poGEOGCS != NULL )
+                {
                     poGEOGCS->StripNodes( "AXIS" );
 
-                OGR_SRSNode *poPROJCS = oSRS.GetAttrNode( "PROJCS" );
-                if (poPROJCS != NULL && oSRS.EPSGTreatsAsNorthingEasting())
-                    poPROJCS->StripNodes( "AXIS" );
+                    char* pszWKT = NULL;
+                    if (oSRS.exportToWkt(&pszWKT) == OGRERR_NONE)
+                        poClass->SetSRSName(pszWKT);
+                    CPLFree(pszWKT);
 
-                char* pszWKT = NULL;
-                if (oSRS.exportToWkt(&pszWKT) == OGRERR_NONE)
-                    poClass->SetSRSName(pszWKT);
-                CPLFree(pszWKT);
-
-                /* So when we have computed the extent, we didn't know yet */
-                /* the SRS to use. Now we know it, we have to fix the extent */
-                /* order */
-                if (m_bCanUseGlobalSRSName)
-                {
-                    double  dfXMin, dfXMax, dfYMin, dfYMax;
-                    if( poClass->GetExtents(&dfXMin, &dfXMax, &dfYMin, &dfYMax) )
-                        poClass->SetExtents( dfYMin, dfYMax, dfXMin, dfXMax );
+                    /* So when we have computed the extent, we didn't know yet */
+                    /* the SRS to use. Now we know it, we have to fix the extent */
+                    /* order */
+                    if (m_bCanUseGlobalSRSName)
+                    {
+                        double  dfXMin, dfXMax, dfYMin, dfYMax;
+                        if( poClass->GetExtents(&dfXMin, &dfXMax, &dfYMin, &dfYMax) )
+                            poClass->SetExtents( dfYMin, dfYMax, dfXMin, dfXMax );
+                    }
                 }
             }
         }

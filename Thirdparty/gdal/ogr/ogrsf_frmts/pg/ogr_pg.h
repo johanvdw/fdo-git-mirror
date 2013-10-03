@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_pg.h 25366 2012-12-27 18:38:53Z rouault $
+ * $Id: ogr_pg.h 23652 2011-12-29 09:33:53Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions for OGR/PostgreSQL driver.
@@ -71,9 +71,8 @@
 #define NUMERICOID              1700
 
 CPLString OGRPGEscapeString(PGconn *hPGConn,
-                            const char* pszStrValue, int nMaxLength = -1,
-                            const char* pszTableName = "",
-                            const char* pszFieldName = "");
+                            const char* pszStrValue, int nMaxLength,
+                            const char* pszFieldName);
 CPLString OGRPGEscapeColumnName(const char* pszColumnName);
 
 #define UNDETERMINED_SRID       -2 /* Special value when we haven't yet looked for SRID */
@@ -160,8 +159,6 @@ class OGRPGLayer : public OGRLayer
     virtual const char *GetGeometryColumn();
 
     virtual OGRErr      SetNextByIndex( long nIndex );
-
-    int                 GetSRID();
 };
 
 /************************************************************************/
@@ -206,11 +203,10 @@ class OGRPGTableLayer : public OGRPGLayer
     int                 bPreservePrecision;
     int                 bUseCopy;
     int                 bCopyActive;
-    int                 bFIDColumnInCopyFields;
 
     OGRErr		CreateFeatureViaCopy( OGRFeature *poFeature );
     OGRErr		CreateFeatureViaInsert( OGRFeature *poFeature );
-    CPLString           BuildCopyFields(int bSetFID);
+    CPLString           BuildCopyFields(void);
 
     void                AppendFieldValue(PGconn *hPGConn, CPLString& osCommand,
                                          OGRFeature* poFeature, int i);
@@ -220,8 +216,6 @@ class OGRPGTableLayer : public OGRPGLayer
 
     int                 bRetrieveFID;
     int                 bHasWarnedAlreadySetFID;
-    
-    char              **papszOverrideColumnTypes;
 
 public:
                         OGRPGTableLayer( OGRPGDataSource *,
@@ -277,9 +271,7 @@ public:
     void                SetPrecisionFlag( int bFlag )
                                 { bPreservePrecision = bFlag; }
 
-    void                SetOverrideColumnTypes( const char* pszOverrideColumnTypes );
-
-    virtual OGRErr      StartCopy(int bSetFID);
+    virtual OGRErr      StartCopy();
     virtual OGRErr      EndCopy();
 
     OGRFeatureDefn     *GetLayerDefnCanReturnNULL();
@@ -294,9 +286,6 @@ class OGRPGResultLayer : public OGRPGLayer
     void                BuildFullQueryStatement(void);
 
     char                *pszRawStatement;
-
-    char                *pszGeomTableName;
-    char                *pszGeomTableSchemaName;
 
     CPLString           osWHERE;
 
@@ -316,8 +305,6 @@ class OGRPGResultLayer : public OGRPGLayer
     virtual int         TestCapability( const char * );
 
     virtual OGRFeature *GetNextFeature();
-
-    virtual OGRSpatialReference *GetSpatialRef();
 };
 
 /************************************************************************/
@@ -361,7 +348,6 @@ class OGRPGDataSource : public OGRDataSource
 
     void                OGRPGDecodeVersionString(PGver* psVersion, const char* pszVer);
 
-    CPLString           osCurrentSchema;
     CPLString           GetCurrentSchema();
 
     int                 nUndefinedSRID;

@@ -1,14 +1,16 @@
 rem Inspect snapshot
 
-rem Copyright Beman Dawes 2008, 2011
+rem Copyright 2008 Beman Dawes
 
 rem Distributed under the Boost Software License, Version 1.0.
 rem See http://www.boost.org/LICENSE_1_0.txt
 
+pushd posix\tools\inspect\build
+bjam
+popd
 echo inspect...
-pushd windows
-rem inspect_trunk.bat builds inspect program every day and copies it to %UTIL%
-%UTIL%%\inspect >..\inspect.html
+pushd posix
+dist\bin\inspect >..\inspect.html
 popd
 
 echo Create ftp script...

@@ -29,7 +29,6 @@
 #      ;
 
 from b2.build import type, feature, generators
-from b2.tools import builtin
 
 type.register('PCH', ['pch'])
 type.register('C_PCH', [], 'PCH')
@@ -49,7 +48,7 @@ class PchGenerator(generators.Generator):
         from being run unless it's being used for a top-level PCH target.
     """
     def action_class(self):
-        return builtin.CompileAction
+        return 'compile-action'
 
     def run(self, project, name, prop_set, sources):
         if not name:
@@ -66,7 +65,7 @@ class PchGenerator(generators.Generator):
             pass
         else:
             r = self.run_pch(project, name,
-                 prop_set.add_raw(['<define>BOOST_BUILD_PCH_ENABLED']),
+                 prop_set.add_raw('<define>BOOST_BUILD_PCH_ENABLED'),
                  sources)
             return generators.add_usage_requirements(
                 r, ['<define>BOOST_BUILD_PCH_ENABLED'])
@@ -75,9 +74,10 @@ class PchGenerator(generators.Generator):
     def run_pch(self, project, name, prop_set, sources):
         pass
 
+#FIXME: dummy-generator in builtins.jam needs to be ported.
 # NOTE: requirements are empty, default pch generator can be applied when
 # pch=off.
-generators.register(builtin.DummyGenerator(
-    "pch.default-c-pch-generator", False, [], ['C_PCH'], []))
-generators.register(builtin.DummyGenerator(
-    "pch.default-cpp-pch-generator", False, [], ['CPP_PCH'], []))
+###generators.register(
+###    [ new dummy-generator pch.default-c-pch-generator   : :   C_PCH ] ;
+###generators.register
+###    [ new dummy-generator pch.default-cpp-pch-generator : : CPP_PCH ] ;

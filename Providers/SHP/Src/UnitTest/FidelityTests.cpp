@@ -51,7 +51,7 @@ void FidelityTests::setUp ()
             FdoCommonFile::MkDir (LOCATION);
         mConnection = ShpTests::GetConnection ();
         mConnection->SetConnectionString (L"DefaultFileLocation=" LOCATION);
-        ShpTests::sLocation = LOCATION;
+		ShpTests::sLocation = LOCATION;
         CPPUNIT_ASSERT_MESSAGE ("connection state not open", FdoConnectionState_Open == mConnection->Open ());
     }
     catch (FdoException* ge)
@@ -64,26 +64,15 @@ void FidelityTests::tearDown ()
 {
     try
     {
-        // TODO: Determine Cause and Fix!
-        // HACK: Temporarily prevent teardown failure to clean up class from causing complete test failure.
-        try {   // delete the class, if its there:
-            TestCommonSchemaUtil::CleanUpClass(mConnection, NULL, L"Test");
-            TestCommonSchemaUtil::CleanUpClass(mConnection, NULL, L"coundist01_n83");
-        }
-        catch (FdoException *ge)
-        {
-            printf(" >>> Exception in tearDown() : %ls\n", ge->GetExceptionMessage());
-        }
-        catch ( ... )
-        {
-            printf(" >>> Exception in tearDown(): The tearDown failed for an unknown reason \n");
-        }
+        // delete the class, if its there:
+        TestCommonSchemaUtil::CleanUpClass(mConnection, NULL, L"Test");
+        TestCommonSchemaUtil::CleanUpClass(mConnection, NULL, L"coundist01_n83");
 
         mConnection->Close ();
-        FDO_SAFE_RELEASE(mConnection.p);
+		FDO_SAFE_RELEASE(mConnection.p);
 
-        if (FdoCommonFile::FileExists (LOCATION SCHEMA_NAME))
-            FdoCommonFile::Delete (LOCATION SCHEMA_NAME);
+    if (FdoCommonFile::FileExists (LOCATION SCHEMA_NAME))
+        FdoCommonFile::Delete (LOCATION SCHEMA_NAME);
         if (FdoCommonFile::FileExists (LOCATION))
             FdoCommonFile::RmDir (LOCATION);
     }

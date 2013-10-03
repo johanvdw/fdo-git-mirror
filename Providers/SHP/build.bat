@@ -138,7 +138,7 @@ echo %MSACTION% %TYPEBUILD% SHP provider dlls
 SET FDOACTIVEBUILD=%cd%\Src\SHP%VCBEXTENSION%
 cscript //Nologo //job:prepare preparebuilds.wsf
 pushd Src
-msbuild SHP%VCBEXTENSION%_temp.sln /t:%MSACTION% /p:Configuration=%TYPEBUILD% /p:Platform=%TYPEPLATFORM% %EXTRA_MSBUILD_PROPERTIES% /nologo /consoleloggerparameters:NoSummary /maxcpucount:4
+msbuild SHP%VCBEXTENSION%_temp.sln /t:%MSACTION% /p:Configuration=%TYPEBUILD% /p:Platform=%TYPEPLATFORM% %EXTRA_MSBUILD_PROPERTIES% /nologo /consoleloggerparameters:NoSummary
 SET FDOERROR=%errorlevel%
 if exist SHP%VCBEXTENSION%_temp.sln del /Q /F SHP%VCBEXTENSION%_temp.sln
 popd
@@ -175,19 +175,13 @@ if "%DOCENABLE%"=="skip" goto install_docs
 echo Creating SHP provider html and chm documentation
 if exist "Docs\HTML\SHP" rmdir /S /Q "Docs\HTML\SHP"
 if not exist "Docs\HTML\SHP" mkdir "Docs\HTML\SHP"
-copy ..\..\DocResources\geospatial.css Docs\HTML\SHP
 copy ..\..\DocResources\geospatial.js Docs\HTML\SHP
 copy ..\..\DocResources\osgeo.css Docs\HTML\SHP
-if exist ..\..\DocResources\comment.htm copy ..\..\DocResources\comment.htm Docs\HTML\SHP
-if exist ..\..\DocResources\comment.js copy ..\..\DocResources\comment.js Docs\HTML\SHP
 if exist Docs\SHP_Provider_API.chm attrib -r Docs\SHP_Provider_API.chm
 if exist "Docs\HTML\SHP_managed" rmdir /S /Q "Docs\HTML\SHP_managed"
 if not exist "Docs\HTML\SHP_managed" mkdir "Docs\HTML\SHP_managed"
-copy ..\..\DocResources\geospatial.css Docs\HTML\SHP_managed
 copy ..\..\DocResources\geospatial.js Docs\HTML\SHP_managed
 copy ..\..\DocResources\osgeo.css Docs\HTML\SHP_managed
-if exist ..\..\DocResources\comment.htm copy ..\..\DocResources\comment.htm Docs\HTML\SHP_managed
-if exist ..\..\DocResources\comment.js copy ..\..\DocResources\comment.js Docs\HTML\SHP_managed
 if exist Docs\SHP_Provider_API_managed.chm attrib -r Docs\SHP_Provider_API_managed.chm
 pushd Docs\doc_src
 doxygen Doxyfile_SHP

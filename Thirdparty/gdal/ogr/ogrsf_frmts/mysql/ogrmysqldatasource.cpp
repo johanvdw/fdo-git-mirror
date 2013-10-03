@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrmysqldatasource.cpp 24947 2012-09-22 09:54:23Z rouault $
+ * $Id: ogrmysqldatasource.cpp 22607 2011-06-28 20:43:27Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRMySQLDataSource class.
@@ -36,7 +36,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrmysqldatasource.cpp 24947 2012-09-22 09:54:23Z rouault $");
+CPL_CVSID("$Id: ogrmysqldatasource.cpp 22607 2011-06-28 20:43:27Z rouault $");
 /************************************************************************/
 /*                         OGRMySQLDataSource()                         */
 /************************************************************************/
@@ -241,14 +241,6 @@ int OGRMySQLDataSource::Open( const char * pszNewName, int bUpdate,
     {
         CSLDestroy( papszTableNames );
         return FALSE;
-    }
-    else
-    {
-        // Enable automatic reconnection
-        // Must be called after mysql_real_connect() on MySQL < 5.0.19
-        // and at any point on more recent versions.
-        my_bool reconnect = 1;
-        mysql_options(hConn, MYSQL_OPT_RECONNECT, &reconnect);
     }
     
     pszName = CPLStrdup( pszNewName );

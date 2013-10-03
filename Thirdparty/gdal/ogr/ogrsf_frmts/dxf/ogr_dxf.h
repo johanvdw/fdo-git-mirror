@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_dxf.h 25811 2013-03-29 22:16:56Z rouault $
+ * $Id: ogr_dxf.h 22527 2011-06-13 03:58:34Z warmerdam $
  *
  * Project:  DXF Translator
  * Purpose:  Definition of classes for OGR .dxf driver.
@@ -161,9 +161,8 @@ public:
     int                 nSrcBufferBytes;
     int                 iSrcBufferFileOffset;
     char                achSrcBuffer[1025];
-
+    
     int                 nLastValueSize;
-    int                 nLineNumber;
 
     int                 ReadValue( char *pszValueBuffer, 
                                    int nValueBufferSize = 81 );
@@ -281,7 +280,6 @@ class OGRDXFWriterLayer : public OGRLayer
 
     std::map<CPLString,CPLString> oNewLineTypes;
     int                 nNextAutoID;
-    int                 bWriteHatch;
 
   public:
     OGRDXFWriterLayer( OGRDXFWriterDS *poDS, VSILFILE *fp );
@@ -368,8 +366,6 @@ class OGRDXFWriterDS : public OGRDataSource
     int                 TransferUpdateTrailer( VSILFILE * );
     int                 FixupHANDSEED( VSILFILE * );
 
-    OGREnvelope         oGlobalEnvelope;
-
   public:
                         OGRDXFWriterDS();
                         ~OGRDXFWriterDS();
@@ -392,8 +388,6 @@ class OGRDXFWriterDS : public OGRDataSource
     int                 CheckEntityID( const char *pszEntityID );
     long                WriteEntityID( VSILFILE * fp,
                                        long nPreferredFID = OGRNullFID );
-
-    void                UpdateExtent( OGREnvelope* psEnvelope );
 };
 
 /************************************************************************/

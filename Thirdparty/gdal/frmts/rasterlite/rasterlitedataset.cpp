@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: rasterlitedataset.cpp 25494 2013-01-13 12:55:17Z etourigny $
+ * $Id: rasterlitedataset.cpp 23661 2011-12-29 22:54:32Z rouault $
  *
  * Project:  GDAL Rasterlite driver
  * Purpose:  Implement GDAL Rasterlite support using OGR SQLite driver
@@ -34,7 +34,7 @@
 
 #include "rasterlitedataset.h"
 
-CPL_CVSID("$Id: rasterlitedataset.cpp 25494 2013-01-13 12:55:17Z etourigny $");
+CPL_CVSID("$Id: rasterlitedataset.cpp 23661 2011-12-29 22:54:32Z rouault $");
 
 /************************************************************************/
 /*                            RasterliteBand()                          */
@@ -869,8 +869,7 @@ end:
 
 int RasterliteDataset::Identify(GDALOpenInfo* poOpenInfo)
 {
-    if (!EQUAL(CPLGetExtension(poOpenInfo->pszFilename), "MBTILES") &&
-        poOpenInfo->nHeaderBytes >= 1024 &&
+    if (poOpenInfo->nHeaderBytes >= 1024 &&
         EQUALN((const char*)poOpenInfo->pabyHeader, "SQLite Format 3", 15))
     {
         return TRUE;
@@ -896,10 +895,7 @@ GDALDataset* RasterliteDataset::Open(GDALOpenInfo* poOpenInfo)
     double minx = 0, miny = 0, maxx = 0, maxy = 0;
     int bMinXSet = FALSE, bMinYSet = FALSE, bMaxXSet = FALSE, bMaxYSet = FALSE;
     int nReqBands = 0;
-
-    if (!Identify(poOpenInfo))
-        return NULL;
-
+    
 /* -------------------------------------------------------------------- */
 /*      Parse "file name"                                               */
 /* -------------------------------------------------------------------- */
@@ -907,6 +903,10 @@ GDALDataset* RasterliteDataset::Open(GDALOpenInfo* poOpenInfo)
         EQUALN((const char*)poOpenInfo->pabyHeader, "SQLite Format 3", 15))
     {
         osFileName = poOpenInfo->pszFilename;
+    }
+    else if (!EQUALN(poOpenInfo->pszFilename, "RASTERLITE:", 11))
+    {
+        return NULL;
     }
     else
     {
@@ -967,7 +967,12 @@ GDALDataset* RasterliteDataset::Open(GDALOpenInfo* poOpenInfo)
 /*      Open underlying OGR DB                                          */
 /* -------------------------------------------------------------------- */
 
+    /* Set SQLITE_LIST_ALL_TABLES option as we wan't to be able to */
+    /* fetch non spatial tables */
+    CPLString osOldVal = CPLGetConfigOption("SQLITE_LIST_ALL_TABLES", "FALSE");
+    CPLSetThreadLocalConfigOption("SQLITE_LIST_ALL_TABLES", "TRUE");
     OGRDataSourceH hDS = OGROpen(osFileName.c_str(), (poOpenInfo->eAccess == GA_Update) ? TRUE : FALSE, NULL);
+    CPLSetThreadLocalConfigOption("SQLITE_LIST_ALL_TABLES", osOldVal.c_str());
     CPLDebug("RASTERLITE", "SQLite DB Open");
     
     RasterliteDataset* poDS = NULL;
@@ -987,15 +992,15 @@ GDALDataset* RasterliteDataset::Open(GDALOpenInfo* poOpenInfo)
         {   
             OGRLayerH hLyr = OGR_DS_GetLayer(hDS, i);
             const char* pszLayerName = OGR_FD_GetName(OGR_L_GetLayerDefn(hLyr));
-            if (strstr(pszLayerName, "_metadata"))
+            if (strstr(pszLayerName, "_rasters"))
             {
                 char* pszShortName = CPLStrdup(pszLayerName);
-                *strstr(pszShortName, "_metadata") = '\0';
+                *strstr(pszShortName, "_rasters") = '\0';
                 
-                CPLString osRasterTableName = pszShortName;
-                osRasterTableName += "_rasters";
-
-                if (OGR_DS_GetLayerByName(hDS, osRasterTableName.c_str()) != NULL)
+                CPLString osMetadataTableName = pszShortName;
+                osMetadataTableName += "_metadata";
+                
+                if (OGR_DS_GetLayerByName(hDS, osMetadataTableName.c_str()) != NULL)
                 {
                     if (poDS == NULL)
                     {
@@ -1044,7 +1049,7 @@ GDALDataset* RasterliteDataset::Open(GDALOpenInfo* poOpenInfo)
         OGRLayerH hMetadataLyr, hRasterLyr, hRasterPyramidsLyr;
         OGRLayerH hSQLLyr;
         OGRFeatureH hFeat;
-        int i, nResolutions = 0;
+        int i, nResolutions;
         int iBand, nBands, nBlockXSize, nBlockYSize;
         GDALDataType eDataType;
 
@@ -1073,41 +1078,39 @@ GDALDataset* RasterliteDataset::Open(GDALOpenInfo* poOpenInfo)
                          "FROM raster_pyramids WHERE table_prefix = '%s' "
                          "ORDER BY pixel_x_size ASC",
                          osTableName.c_str());
-
-            hSQLLyr = OGR_DS_ExecuteSQL(hDS, osSQL.c_str(), NULL, NULL);
-            if (hSQLLyr != NULL)
-            {
-                nResolutions = OGR_L_GetFeatureCount(hSQLLyr, TRUE);
-                if( nResolutions == 0 )
-                {
-                    OGR_DS_ReleaseResultSet(hDS, hSQLLyr);
-                    hSQLLyr = NULL;
-                }
-            }
-        }
-        else
-            hSQLLyr = NULL;
-
-        if( hSQLLyr == NULL )
-        {
+         }
+         else
+         {
             osSQL.Printf("SELECT DISTINCT(pixel_x_size), pixel_y_size "
                          "FROM \"%s_metadata\" WHERE pixel_x_size != 0  "
                          "ORDER BY pixel_x_size ASC",
                          osTableName.c_str());
+         }
 
+        hSQLLyr = OGR_DS_ExecuteSQL(hDS, osSQL.c_str(), NULL, NULL);
+        if (hSQLLyr == NULL)
+        {
+            if (hRasterPyramidsLyr == NULL)
+                goto end;
+                
+            osSQL.Printf("SELECT DISTINCT(pixel_x_size), pixel_y_size "
+                         "FROM \"%s_metadata\" WHERE pixel_x_size != 0  "
+                         "ORDER BY pixel_x_size ASC",
+                         osTableName.c_str());
+                         
             hSQLLyr = OGR_DS_ExecuteSQL(hDS, osSQL.c_str(), NULL, NULL);
             if (hSQLLyr == NULL)
                 goto end;
-
-            nResolutions = OGR_L_GetFeatureCount(hSQLLyr, TRUE);
-
-            if (nResolutions == 0)
-            {
-                OGR_DS_ReleaseResultSet(hDS, hSQLLyr);
-                goto end;
-            }
         }
-
+            
+        nResolutions = OGR_L_GetFeatureCount(hSQLLyr, TRUE);
+                     
+        if (nResolutions == 0)
+        {
+            OGR_DS_ReleaseResultSet(hDS, hSQLLyr);
+            goto end;
+        }
+            
 /* -------------------------------------------------------------------- */
 /*      Set dataset attributes                                          */
 /* -------------------------------------------------------------------- */
@@ -1343,7 +1346,6 @@ void GDALRegister_Rasterlite()
         poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, 
                                    "frmt_rasterlite.html" );
         poDriver->SetMetadataItem( GDAL_DMD_EXTENSION, "sqlite" );
-        poDriver->SetMetadataItem( GDAL_DMD_SUBDATASETS, "YES" );
         poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES, 
                                    "Byte UInt16 Int16 UInt32 Int32 Float32 "
                                    "Float64 CInt16 CInt32 CFloat32 CFloat64" );

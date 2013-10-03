@@ -54,16 +54,8 @@
 # OpenSSL PKCS#7 and CMS implementations.
 
 my $ossl_path;
-my $redir = " 2> cms.err > cms.out";
-# Make VMS work
-if ( $^O eq "VMS" && -f "OSSLX:openssl.exe" ) {
-    $ossl_path = "pipe mcr OSSLX:openssl";
-}
-# Make MSYS work
-elsif ( $^O eq "MSWin32" && -f "../apps/openssl.exe" ) {
-    $ossl_path = "cmd /c ..\\apps\\openssl";
-}
-elsif ( -f "../apps/openssl$ENV{EXE_EXT}" ) {
+
+if ( -f "../apps/openssl$ENV{EXE_EXT}" ) {
     $ossl_path = "../util/shlib_wrap.sh ../apps/openssl";
 }
 elsif ( -f "..\\out32dll\\openssl.exe" ) {
@@ -88,79 +80,79 @@ my @smime_pkcs7_tests = (
 
     [
         "signed content DER format, RSA key",
-        "-sign -in smcont.txt -outform \"DER\" -nodetach"
+        "-sign -in smcont.txt -outform DER -nodetach"
           . " -certfile $smdir/smroot.pem"
           . " -signer $smdir/smrsa1.pem -out test.cms",
-        "-verify -in test.cms -inform \"DER\" "
-          . " \"-CAfile\" $smdir/smroot.pem -out smtst.txt"
+        "-verify -in test.cms -inform DER "
+          . " -CAfile $smdir/smroot.pem -out smtst.txt"
     ],
 
     [
         "signed detached content DER format, RSA key",
-        "-sign -in smcont.txt -outform \"DER\""
+        "-sign -in smcont.txt -outform DER"
           . " -signer $smdir/smrsa1.pem -out test.cms",
-        "-verify -in test.cms -inform \"DER\" "
-          . " \"-CAfile\" $smdir/smroot.pem -out smtst.txt -content smcont.txt"
+        "-verify -in test.cms -inform DER "
+          . " -CAfile $smdir/smroot.pem -out smtst.txt -content smcont.txt"
     ],
 
     [
         "signed content test streaming BER format, RSA",
-        "-sign -in smcont.txt -outform \"DER\" -nodetach"
+        "-sign -in smcont.txt -outform DER -nodetach"
           . " -stream -signer $smdir/smrsa1.pem -out test.cms",
-        "-verify -in test.cms -inform \"DER\" "
-          . " \"-CAfile\" $smdir/smroot.pem -out smtst.txt"
+        "-verify -in test.cms -inform DER "
+          . " -CAfile $smdir/smroot.pem -out smtst.txt"
     ],
 
     [
         "signed content DER format, DSA key",
-        "-sign -in smcont.txt -outform \"DER\" -nodetach"
+        "-sign -in smcont.txt -outform DER -nodetach"
           . " -signer $smdir/smdsa1.pem -out test.cms",
-        "-verify -in test.cms -inform \"DER\" "
-          . " \"-CAfile\" $smdir/smroot.pem -out smtst.txt"
+        "-verify -in test.cms -inform DER "
+          . " -CAfile $smdir/smroot.pem -out smtst.txt"
     ],
 
     [
         "signed detached content DER format, DSA key",
-        "-sign -in smcont.txt -outform \"DER\""
+        "-sign -in smcont.txt -outform DER"
           . " -signer $smdir/smdsa1.pem -out test.cms",
-        "-verify -in test.cms -inform \"DER\" "
-          . " \"-CAfile\" $smdir/smroot.pem -out smtst.txt -content smcont.txt"
+        "-verify -in test.cms -inform DER "
+          . " -CAfile $smdir/smroot.pem -out smtst.txt -content smcont.txt"
     ],
 
     [
         "signed detached content DER format, add RSA signer",
-        "-resign -inform \"DER\" -in test.cms -outform \"DER\""
+        "-resign -inform DER -in test.cms -outform DER"
           . " -signer $smdir/smrsa1.pem -out test2.cms",
-        "-verify -in test2.cms -inform \"DER\" "
-          . " \"-CAfile\" $smdir/smroot.pem -out smtst.txt -content smcont.txt"
+        "-verify -in test2.cms -inform DER "
+          . " -CAfile $smdir/smroot.pem -out smtst.txt -content smcont.txt"
     ],
 
     [
         "signed content test streaming BER format, DSA key",
-        "-sign -in smcont.txt -outform \"DER\" -nodetach"
+        "-sign -in smcont.txt -outform DER -nodetach"
           . " -stream -signer $smdir/smdsa1.pem -out test.cms",
-        "-verify -in test.cms -inform \"DER\" "
-          . " \"-CAfile\" $smdir/smroot.pem -out smtst.txt"
+        "-verify -in test.cms -inform DER "
+          . " -CAfile $smdir/smroot.pem -out smtst.txt"
     ],
 
     [
         "signed content test streaming BER format, 2 DSA and 2 RSA keys",
-        "-sign -in smcont.txt -outform \"DER\" -nodetach"
+        "-sign -in smcont.txt -outform DER -nodetach"
           . " -signer $smdir/smrsa1.pem -signer $smdir/smrsa2.pem"
           . " -signer $smdir/smdsa1.pem -signer $smdir/smdsa2.pem"
           . " -stream -out test.cms",
-        "-verify -in test.cms -inform \"DER\" "
-          . " \"-CAfile\" $smdir/smroot.pem -out smtst.txt"
+        "-verify -in test.cms -inform DER "
+          . " -CAfile $smdir/smroot.pem -out smtst.txt"
     ],
 
     [
 "signed content test streaming BER format, 2 DSA and 2 RSA keys, no attributes",
-        "-sign -in smcont.txt -outform \"DER\" -noattr -nodetach"
+        "-sign -in smcont.txt -outform DER -noattr -nodetach"
           . " -signer $smdir/smrsa1.pem -signer $smdir/smrsa2.pem"
           . " -signer $smdir/smdsa1.pem -signer $smdir/smdsa2.pem"
           . " -stream -out test.cms",
-        "-verify -in test.cms -inform \"DER\" "
-          . " \"-CAfile\" $smdir/smroot.pem -out smtst.txt"
+        "-verify -in test.cms -inform DER "
+          . " -CAfile $smdir/smroot.pem -out smtst.txt"
     ],
 
     [
@@ -169,7 +161,7 @@ my @smime_pkcs7_tests = (
           . " -signer $smdir/smrsa1.pem -signer $smdir/smrsa2.pem"
           . " -signer $smdir/smdsa1.pem -signer $smdir/smdsa2.pem"
           . " -stream -out test.cms",
-        "-verify -in test.cms " . " \"-CAfile\" $smdir/smroot.pem -out smtst.txt"
+        "-verify -in test.cms " . " -CAfile $smdir/smroot.pem -out smtst.txt"
     ],
 
     [
@@ -178,7 +170,7 @@ my @smime_pkcs7_tests = (
           . " -signer $smdir/smrsa1.pem -signer $smdir/smrsa2.pem"
           . " -signer $smdir/smdsa1.pem -signer $smdir/smdsa2.pem"
           . " -stream -out test.cms",
-        "-verify -in test.cms " . " \"-CAfile\" $smdir/smroot.pem -out smtst.txt"
+        "-verify -in test.cms " . " -CAfile $smdir/smroot.pem -out smtst.txt"
     ],
 
     [
@@ -219,12 +211,12 @@ my @smime_cms_tests = (
 
     [
         "signed content test streaming BER format, 2 DSA and 2 RSA keys, keyid",
-        "-sign -in smcont.txt -outform \"DER\" -nodetach -keyid"
+        "-sign -in smcont.txt -outform DER -nodetach -keyid"
           . " -signer $smdir/smrsa1.pem -signer $smdir/smrsa2.pem"
           . " -signer $smdir/smdsa1.pem -signer $smdir/smdsa2.pem"
           . " -stream -out test.cms",
-        "-verify -in test.cms -inform \"DER\" "
-          . " \"-CAfile\" $smdir/smroot.pem -out smtst.txt"
+        "-verify -in test.cms -inform DER "
+          . " -CAfile $smdir/smroot.pem -out smtst.txt"
     ],
 
     [
@@ -234,7 +226,7 @@ my @smime_cms_tests = (
           . " -signer $smdir/smdsa1.pem -signer $smdir/smdsa2.pem"
           . " -stream -out test.cms",
         "-verify -in test.cms -inform PEM "
-          . " \"-CAfile\" $smdir/smroot.pem -out smtst.txt"
+          . " -CAfile $smdir/smroot.pem -out smtst.txt"
     ],
 
     [
@@ -243,7 +235,7 @@ my @smime_cms_tests = (
           . " -receipt_request_to test\@openssl.org -receipt_request_all"
           . " -out test.cms",
         "-verify -in test.cms "
-          . " \"-CAfile\" $smdir/smroot.pem -out smtst.txt"
+          . " -CAfile $smdir/smroot.pem -out smtst.txt"
     ],
 
     [
@@ -252,7 +244,7 @@ my @smime_cms_tests = (
           . " -signer $smdir/smrsa2.pem"
           . " -out test2.cms",
         "-verify_receipt test2.cms -in test.cms"
-          . " \"-CAfile\" $smdir/smroot.pem"
+          . " -CAfile $smdir/smroot.pem"
     ],
 
     [
@@ -293,38 +285,38 @@ my @smime_cms_tests = (
 
     [
         "encrypted content test streaming PEM format, 128 bit RC2 key",
-        "\"-EncryptedData_encrypt\" -in smcont.txt -outform PEM"
+        "-EncryptedData_encrypt -in smcont.txt -outform PEM"
           . " -rc2 -secretkey 000102030405060708090A0B0C0D0E0F"
           . " -stream -out test.cms",
-        "\"-EncryptedData_decrypt\" -in test.cms -inform PEM "
+        "-EncryptedData_decrypt -in test.cms -inform PEM "
           . " -secretkey 000102030405060708090A0B0C0D0E0F -out smtst.txt"
     ],
 
     [
         "encrypted content test streaming PEM format, 40 bit RC2 key",
-        "\"-EncryptedData_encrypt\" -in smcont.txt -outform PEM"
+        "-EncryptedData_encrypt -in smcont.txt -outform PEM"
           . " -rc2 -secretkey 0001020304"
           . " -stream -out test.cms",
-        "\"-EncryptedData_decrypt\" -in test.cms -inform PEM "
+        "-EncryptedData_decrypt -in test.cms -inform PEM "
           . " -secretkey 0001020304 -out smtst.txt"
     ],
 
     [
         "encrypted content test streaming PEM format, triple DES key",
-        "\"-EncryptedData_encrypt\" -in smcont.txt -outform PEM"
+        "-EncryptedData_encrypt -in smcont.txt -outform PEM"
           . " -des3 -secretkey 000102030405060708090A0B0C0D0E0F1011121314151617"
           . " -stream -out test.cms",
-        "\"-EncryptedData_decrypt\" -in test.cms -inform PEM "
+        "-EncryptedData_decrypt -in test.cms -inform PEM "
           . " -secretkey 000102030405060708090A0B0C0D0E0F1011121314151617"
           . " -out smtst.txt"
     ],
 
     [
         "encrypted content test streaming PEM format, 128 bit AES key",
-        "\"-EncryptedData_encrypt\" -in smcont.txt -outform PEM"
+        "-EncryptedData_encrypt -in smcont.txt -outform PEM"
           . " -aes128 -secretkey 000102030405060708090A0B0C0D0E0F"
           . " -stream -out test.cms",
-        "\"-EncryptedData_decrypt\" -in test.cms -inform PEM "
+        "-EncryptedData_decrypt -in test.cms -inform PEM "
           . " -secretkey 000102030405060708090A0B0C0D0E0F -out smtst.txt"
     ],
 
@@ -390,14 +382,14 @@ sub run_smime_tests {
 		$rscmd =~ s/-stream//;	
 		$rvcmd =~ s/-stream//;
 		}
-        system("$scmd$rscmd$redir");
+        system("$scmd$rscmd 2>cms.err 1>cms.out");
         if ($?) {
             print "$tnam: generation error\n";
             $$rv++;
             exit 1 if $halt_err;
             next;
         }
-        system("$vcmd$rvcmd$redir");
+        system("$vcmd$rvcmd 2>cms.err 1>cms.out");
         if ($?) {
             print "$tnam: verify error\n";
             $$rv++;

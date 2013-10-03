@@ -1,5 +1,5 @@
 /******************************************************************************
-* $Id: FGdbUtils.cpp 23984 2012-02-15 05:19:25Z rcoup $
+* $Id: FGdbUtils.cpp 23328 2011-11-05 20:27:40Z rouault $
 *
 * Project:  OpenGIS Simple Features Reference Implementation
 * Purpose:  Different utility functions used in FileGDB OGR driver.
@@ -35,7 +35,7 @@
 #include "ogr_api.h"
 #include "ogrpgeogeometry.h"
 
-CPL_CVSID("$Id: FGdbUtils.cpp 23984 2012-02-15 05:19:25Z rcoup $");
+CPL_CVSID("$Id: FGdbUtils.cpp 23328 2011-11-05 20:27:40Z rouault $");
 
 using std::string;
 
@@ -504,86 +504,4 @@ void FGDB_CPLAddXMLAttribute(CPLXMLNode* node, const char* attrname, const char*
 {
     if ( !node ) return;
     CPLCreateXMLNode( CPLCreateXMLNode( node, CXT_Attribute, attrname ), CXT_Text, attrvalue );
-}
-
-/*************************************************************************/
-/*                          FGDBLaunderName()                            */
-/*************************************************************************/
-
-std::string FGDBLaunderName(const std::string name)
-{
-    std::string newName = name;
-
-    if ( newName[0]>='0' && newName[0]<='9' )
-    {
-        newName = "_" + newName;
-    }
-
-    for(size_t i=0; i < newName.size(); i++)
-    {
-        if ( !( newName[i] == '_' ||
-              ( newName[i]>='0' && newName[i]<='9') ||
-              ( newName[i]>='a' && newName[i]<='z') || 
-              ( newName[i]>='A' && newName[i]<='Z') ))
-        {
-            newName[i] = '_';
-        }
-    }
-
-    return newName;
-}
-
-/*************************************************************************/
-/*                     FGDBEscapeUnsupportedPrefixes()                   */
-/*************************************************************************/
-
-std::string FGDBEscapeUnsupportedPrefixes(const std::string className)
-{
-    std::string newName = className;
-    // From ESRI docs
-    // Feature classes starting with these strings are unsupported.
-    static const char* UNSUPPORTED_PREFIXES[] = {"sde_", "gdb_", "delta_", NULL};
-
-    for (int i = 0; UNSUPPORTED_PREFIXES[i] != NULL; i++)
-    {
-        if (newName.find(UNSUPPORTED_PREFIXES[i]) == 0)
-        {
-            newName = "_" + newName;
-            break;
-        }
-    }
-
-    return newName;
-}
-
-/*************************************************************************/
-/*                        FGDBEscapeReservedKeywords()                   */
-/*************************************************************************/
-
-std::string FGDBEscapeReservedKeywords(const std::string name)
-{
-    std::string newName = name;
-    std::string upperName = name;
-    std::transform(upperName.begin(), upperName.end(), upperName.begin(), ::toupper);
-
-    // From ESRI docs
-    static const char* RESERVED_WORDS[] = {FGDB_OID_NAME, "ADD", "ALTER", "AND", "AS", "ASC", "BETWEEN",
-                                    "BY", "COLUMN", "CREATE", "DATE", "DELETE", "DESC",
-                                    "DROP", "EXISTS", "FOR", "FROM", "IN", "INSERT", "INTO",
-                                    "IS", "LIKE", "NOT", "NULL", "OR", "ORDER", "SELECT",
-                                    "SET", "TABLE", "UPDATE", "VALUES", "WHERE", NULL};
-
-    // Append an underscore to any FGDB reserved words used as field names
-    // This is the same behaviour ArcCatalog follows.
-    for (int i = 0; RESERVED_WORDS[i] != NULL; i++)
-    {
-        const char* w = RESERVED_WORDS[i];
-        if (upperName == w)
-        {
-            newName += '_';
-            break;
-        }
-    }
-
-    return newName;
 }

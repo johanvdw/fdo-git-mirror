@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gribdataset.cpp 25627 2013-02-10 10:17:19Z rouault $
+ * $Id: gribdataset.cpp 23302 2011-11-02 16:07:04Z aboudreault $
  *
  * Project:  GRIB Driver
  * Purpose:  GDALDataset driver for GRIB translator for read support
@@ -40,13 +40,11 @@
 
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: gribdataset.cpp 25627 2013-02-10 10:17:19Z rouault $");
+CPL_CVSID("$Id: gribdataset.cpp 23302 2011-11-02 16:07:04Z aboudreault $");
 
 CPL_C_START
 void	GDALRegister_GRIB(void);
 CPL_C_END
-
-static void *hGRIBMutex = NULL;
 
 /************************************************************************/
 /* ==================================================================== */
@@ -69,18 +67,13 @@ class GRIBDataset : public GDALPamDataset
 
     CPLErr 	GetGeoTransform( double * padfTransform );
     const char *GetProjectionRef();
-    
 	private:
 		void SetGribMetaData(grib_MetaData* meta);
     VSILFILE	*fp;
     char  *pszProjection;
+		char  *pszDescription;
     OGRCoordinateTransformation *poTransform;
     double adfGeoTransform[6]; // Calculate and store once as GetGeoTransform may be called multiple times
-
-    GIntBig  nCachedBytes;
-    GIntBig  nCachedBytesThreshold;
-    int      bCacheOnlyOneBand;
-    GRIBRasterBand* poLastUsedBand;
 };
 
 /************************************************************************/
@@ -99,16 +92,9 @@ public:
     virtual CPLErr IReadBlock( int, int, void * );
     virtual const char *GetDescription() const;
 
-    virtual double GetNoDataValue( int *pbSuccess = NULL );
-
     void    FindPDSTemplate();
 
-    void    UncacheData();
-
 private:
-
-    CPLErr       LoadData();
-
     static void ReadGribData( DataSource &, sInt4, int, double**, grib_MetaData**);
     sInt4 start;
     int subgNum;
@@ -245,41 +231,16 @@ const char * GRIBRasterBand::GetDescription() const
 }
  
 /************************************************************************/
-/*                             LoadData()                               */
+/*                             IReadBlock()                             */
 /************************************************************************/
 
-CPLErr GRIBRasterBand::LoadData()
+CPLErr GRIBRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
+                                   void * pImage )
 
 {
     if( !m_Grib_Data )
     {
         GRIBDataset *poGDS = (GRIBDataset *) poDS;
-
-        if (poGDS->bCacheOnlyOneBand)
-        {
-            /* In "one-band-at-a-time" strategy, if the last recently used */
-            /* band is not that one, uncache it. We could use a smarter strategy */
-            /* based on a LRU, but that's a bit overkill for now. */
-            poGDS->poLastUsedBand->UncacheData();
-            poGDS->nCachedBytes = 0;
-        }
-        else
-        {
-            /* Once we have cached more than nCachedBytesThreshold bytes, we will switch */
-            /* to "one-band-at-a-time" strategy, instead of caching all bands that have */
-            /* been accessed */
-            if (poGDS->nCachedBytes > poGDS->nCachedBytesThreshold)
-            {
-                CPLDebug("GRIB", "Maximum band cache size reached for this dataset. "
-                         "Caching only one band at a time from now");
-                for(int i=0;i<poGDS->nBands;i++)
-                {
-                    ((GRIBRasterBand*) poGDS->GetRasterBand(i+1))->UncacheData();
-                }
-                poGDS->nCachedBytes = 0;
-                poGDS->bCacheOnlyOneBand = TRUE;
-            }
-        }
 
         FileDataSource grib_fp (poGDS->fp);
 
@@ -298,9 +259,6 @@ CPLErr GRIBRasterBand::LoadData()
         nGribDataXSize = m_Grib_MetaData->gds.Nx;
         nGribDataYSize = m_Grib_MetaData->gds.Ny;
 
-        poGDS->nCachedBytes += nGribDataXSize * nGribDataYSize * sizeof(double);
-        poGDS->poLastUsedBand = this;
-
         if( nGribDataXSize != nRasterXSize 
             || nGribDataYSize != nRasterYSize )
         {
@@ -312,21 +270,6 @@ CPLErr GRIBRasterBand::LoadData()
                       nBand );
         }
     }
-
-    return CE_None;
-}
-
-/************************************************************************/
-/*                             IReadBlock()                             */
-/************************************************************************/
-
-CPLErr GRIBRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
-                                   void * pImage )
-
-{
-    CPLErr eErr = LoadData();
-    if (eErr != CE_None)
-        return eErr;
 
 /* -------------------------------------------------------------------- */
 /*      The image as read is always upside down to our normal           */
@@ -359,34 +302,6 @@ CPLErr GRIBRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
         
         return CE_None;
     }
-}
-
-/************************************************************************/
-/*                           GetNoDataValue()                           */
-/************************************************************************/
-
-double GRIBRasterBand::GetNoDataValue( int *pbSuccess )
-{
-    CPLErr eErr = LoadData();
-    if (eErr != CE_None ||
-        m_Grib_MetaData == NULL ||
-        m_Grib_MetaData->gridAttrib.f_miss == 0)
-    {
-        if (pbSuccess)
-            *pbSuccess = FALSE;
-        return 0;
-    }
-
-    if (m_Grib_MetaData->gridAttrib.f_miss == 2)
-    {
-        /* what TODO ? */
-        CPLDebug("GRIB", "Secondary missing value also set for band %d : %f",
-                 nBand, m_Grib_MetaData->gridAttrib.missSec);
-    }
-
-    if (pbSuccess)
-        *pbSuccess = TRUE;
-    return m_Grib_MetaData->gridAttrib.missPri;
 }
 
 /************************************************************************/
@@ -435,30 +350,19 @@ void GRIBRasterBand::ReadGribData( DataSource & fp, sInt4 start, int subgNum, do
 }
 
 /************************************************************************/
-/*                            UncacheData()                             */
-/************************************************************************/
-
-void GRIBRasterBand::UncacheData()
-{
-    if (m_Grib_Data)
-        free (m_Grib_Data);
-    m_Grib_Data = NULL;
-    if (m_Grib_MetaData)
-    {
-        MetaFree( m_Grib_MetaData );
-        delete m_Grib_MetaData;
-    }
-    m_Grib_MetaData = NULL;
-}
-
-/************************************************************************/
 /*                           ~GRIBRasterBand()                          */
 /************************************************************************/
 
 GRIBRasterBand::~GRIBRasterBand()
 {
     CPLFree(longFstLevel);
-    UncacheData();
+    if (m_Grib_Data)
+        free (m_Grib_Data);
+    if (m_Grib_MetaData)
+    {
+        MetaFree( m_Grib_MetaData );
+        delete m_Grib_MetaData;
+    }
 }
 
 /************************************************************************/
@@ -478,13 +382,6 @@ GRIBDataset::GRIBDataset()
   adfGeoTransform[3] = 0.0;
   adfGeoTransform[4] = 0.0;
   adfGeoTransform[5] = 1.0;
-
-  nCachedBytes = 0;
-  /* Switch caching strategy once 100 MB threshold is reached */
-  /* Why 100 MB ? --> why not ! */
-  nCachedBytesThreshold = ((GIntBig)atoi(CPLGetConfigOption("GRIB_CACHEMAX", "100"))) * 1024 * 1024;
-  bCacheOnlyOneBand = FALSE;
-  poLastUsedBand = NULL;
 }
 
 /************************************************************************/
@@ -565,8 +462,8 @@ GDALDataset *GRIBDataset::Open( GDALOpenInfo * poOpenInfo )
     int version;
 // grib is not thread safe, make sure not to cause problems
 // for other thread safe formats
-
-    CPLMutexHolderD(&hGRIBMutex);
+    static void *mutex = 0;
+    CPLMutexHolderD(&mutex);
     MemoryDataSource mds (poOpenInfo->pabyHeader, poOpenInfo->nHeaderBytes);
     if (ReadSECT0 (mds, &buff, &buffLen, -1, sect0, &gribLen, &version) < 0) {
         free (buff);
@@ -606,9 +503,7 @@ GDALDataset *GRIBDataset::Open( GDALOpenInfo * poOpenInfo )
         free(errMsg);
 		
 		CPLError( CE_Failure, CPLE_OpenFailed, "Error (%d) opening file %s", errno, poOpenInfo->pszFilename);
-        CPLReleaseMutex(hGRIBMutex); // Release hGRIBMutex otherwise we'll deadlock with GDALDataset own hGRIBMutex
         delete poDS;
-        CPLAcquireMutex(hGRIBMutex, 1000.0);
         return NULL;
 	}
     
@@ -643,9 +538,7 @@ GDALDataset *GRIBDataset::Open( GDALOpenInfo * poOpenInfo )
         CPLError( CE_Failure, CPLE_OpenFailed, 
                   "%s is a grib file, but no raster dataset was successfully identified.",
                   poOpenInfo->pszFilename );
-        CPLReleaseMutex(hGRIBMutex); // Release hGRIBMutex otherwise we'll deadlock with GDALDataset own hGRIBMutex
         delete poDS;
-        CPLAcquireMutex(hGRIBMutex, 1000.0);
         return NULL;
     }
 
@@ -666,9 +559,7 @@ GDALDataset *GRIBDataset::Open( GDALOpenInfo * poOpenInfo )
                 CPLError( CE_Failure, CPLE_OpenFailed, 
                           "%s is a grib file, but no raster dataset was successfully identified.",
                           poOpenInfo->pszFilename );
-                CPLReleaseMutex(hGRIBMutex); // Release hGRIBMutex otherwise we'll deadlock with GDALDataset own hGRIBMutex
                 delete poDS;
-                CPLAcquireMutex(hGRIBMutex, 1000.0);
                 return NULL;
             }
 
@@ -692,15 +583,12 @@ GDALDataset *GRIBDataset::Open( GDALOpenInfo * poOpenInfo )
 /*      Initialize any PAM information.                                 */
 /* -------------------------------------------------------------------- */
     poDS->SetDescription( poOpenInfo->pszFilename );
-    
-    CPLReleaseMutex(hGRIBMutex); // Release hGRIBMutex otherwise we'll deadlock with GDALDataset own hGRIBMutex
     poDS->TryLoadXML();
 
 /* -------------------------------------------------------------------- */
 /*      Check for external overviews.                                   */
 /* -------------------------------------------------------------------- */
     poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename, poOpenInfo->papszSiblingFiles );
-    CPLAcquireMutex(hGRIBMutex, 1000.0);
 
     return( poDS );
 }
@@ -736,7 +624,7 @@ void GRIBDataset::SetGribMetaData(grib_MetaData* meta)
         break;
       case GS3_LAMBERT:
         oSRS.SetLCC(meta->gds.scaleLat1, meta->gds.scaleLat2,
-                    meta->gds.meshLat, meta->gds.orientLon,
+                    0.0, meta->gds.orientLon,
                     0.0, 0.0); // set projection
         break;
 			
@@ -873,19 +761,6 @@ void GRIBDataset::SetGribMetaData(grib_MetaData* meta)
 }
 
 /************************************************************************/
-/*                       GDALDeregister_GRIB()                          */
-/************************************************************************/
-
-static void GDALDeregister_GRIB(GDALDriver* )
-{
-    if( hGRIBMutex != NULL )
-    {
-        CPLDestroyMutex(hGRIBMutex);
-        hGRIBMutex = NULL;
-    }
-}
-
-/************************************************************************/
 /*                         GDALRegister_GRIB()                          */
 /************************************************************************/
 
@@ -908,7 +783,6 @@ void GDALRegister_GRIB()
 
         poDriver->pfnOpen = GRIBDataset::Open;
         poDriver->pfnIdentify = GRIBDataset::Identify;
-        poDriver->pfnUnloadDriver = GDALDeregister_GRIB;
 
         GetGDALDriverManager()->RegisterDriver( poDriver );
     }

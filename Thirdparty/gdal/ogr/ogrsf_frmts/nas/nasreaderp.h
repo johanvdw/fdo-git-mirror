@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: nasreaderp.h 25120 2012-10-13 22:38:57Z rouault $
+ * $Id: gmlreaderp.h 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  NAS Reader
  * Purpose:  Private Declarations for OGR NAS Reader code.
@@ -63,12 +63,8 @@ class NASHandler : public DefaultHandler
     int        m_nDepth;
     int        m_nDepthFeature;
     int        m_bIgnoreFeature;
-    int        m_nDepthElement;
-    CPLString  m_osIgnoredElement;
 
     CPLString  m_osLastTypeName;
-    CPLString  m_osLastReplacingFID;
-    CPLString  m_osLastSafeToIgnore;
 
 public:
     NASHandler( NASReader *poReader );

@@ -18,9 +18,10 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
+ * $Id: curl.rc,v 1.12 2009-06-15 02:29:49 yangtse Exp $
  ***************************************************************************/
 #include <winver.h>
-#include "tool_version.h"
+#include "version.h"
 
 LANGUAGE  0x09,0x01
 

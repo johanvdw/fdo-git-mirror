@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: fitsdataset.cpp 25284 2012-12-03 21:07:56Z rouault $
+ * $Id: fitsdataset.cpp 23060 2011-09-05 17:58:30Z rouault $
  *
  * Project:  FITS Driver
  * Purpose:  Implement FITS raster read/write support
@@ -33,7 +33,7 @@
 #include "cpl_string.h"
 #include <string.h>
 
-CPL_CVSID("$Id: fitsdataset.cpp 25284 2012-12-03 21:07:56Z rouault $");
+CPL_CVSID("$Id: fitsdataset.cpp 23060 2011-09-05 17:58:30Z rouault $");
 
 CPL_C_START
 #include <fitsio.h>
@@ -263,10 +263,10 @@ FITSDataset::~FITSDataset() {
         if (strlen(field) == 0)
 	  continue;
         else {
-	  char* key = NULL;
+	  char* key;
 	  const char* value = CPLParseNameValue(field, &key);
 	  // FITS keys must be less than 8 chars
-	  if (key != NULL && strlen(key) <= 8 && !isIgnorableFITSHeader(key)) {
+	  if (strlen(key) <= 8 && !isIgnorableFITSHeader(key)) {
 	    // Although FITS provides support for different value
 	    // types, the GDAL Metadata mechanism works only with
 	    // string values. Prior to about 2003-05-02, this driver

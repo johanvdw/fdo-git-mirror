@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: jpeg2000dataset.cpp 25662 2013-02-22 12:04:24Z rouault $
+ * $Id: jpeg2000dataset.cpp 22678 2011-07-09 19:47:12Z rouault $
  *
  * Project:  JPEG-2000
  * Purpose:  Partial implementation of the ISO/IEC 15444-1 standard
@@ -34,7 +34,7 @@
 #include <jasper/jasper.h>
 #include "jpeg2000_vsil_io.h"
 
-CPL_CVSID("$Id: jpeg2000dataset.cpp 25662 2013-02-22 12:04:24Z rouault $");
+CPL_CVSID("$Id: jpeg2000dataset.cpp 22678 2011-07-09 19:47:12Z rouault $");
 
 CPL_C_START
 void    GDALRegister_JPEG2000(void);
@@ -858,20 +858,6 @@ GDALDataset *JPEG2000Dataset::Open( GDALOpenInfo * poOpenInfo )
     }
 
 /* -------------------------------------------------------------------- */
-/*      Check for world file.                                           */
-/* -------------------------------------------------------------------- */
-    if( !poDS->bGeoTransformValid )
-    {
-        poDS->bGeoTransformValid |=
-            GDALReadWorldFile2( poOpenInfo->pszFilename, NULL,
-                                poDS->adfGeoTransform,
-                                poOpenInfo->papszSiblingFiles, NULL )
-            || GDALReadWorldFile2( poOpenInfo->pszFilename, ".wld",
-                                   poDS->adfGeoTransform,
-                                   poOpenInfo->papszSiblingFiles, NULL );
-    }
-
-/* -------------------------------------------------------------------- */
 /*      Initialize any PAM information.                                 */
 /* -------------------------------------------------------------------- */
     poDS->SetDescription( poOpenInfo->pszFilename );
@@ -898,8 +884,6 @@ JPEG2000CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     int  nBands = poSrcDS->GetRasterCount();
     int  nXSize = poSrcDS->GetRasterXSize();
     int  nYSize = poSrcDS->GetRasterYSize();
-    int                 iBand;
-    GDALRasterBand      *poBand;
 
     if( nBands == 0 )
     {
@@ -918,36 +902,13 @@ JPEG2000CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
             return NULL;
     }
     
-    for ( iBand = 0; iBand < nBands; iBand++ )
-    {
-        poBand = poSrcDS->GetRasterBand( iBand + 1);
-
-        switch ( poBand->GetRasterDataType() )
-        {
-            case GDT_Byte:
-            case GDT_Int16:
-            case GDT_UInt16:
-                break;
-
-            default:
-                if( !CSLTestBoolean(CPLGetConfigOption("JPEG2000_FORCE_CREATION", "NO")) )
-                {
-                    CPLError(CE_Failure, CPLE_AppDefined,
-                             "A band of the source dataset is of type %s, which might cause crashes in libjasper. "
-                             "Set JPEG2000_FORCE_CREATION configuration option to YES to attempt the creation of the file.",
-                             GDALGetDataTypeName(poBand->GetRasterDataType()));
-                    return NULL;
-                }
-                break;
-        }
-    }
-    
     if( !pfnProgress( 0.0, NULL, pProgressData ) )
         return NULL;
 
 /* -------------------------------------------------------------------- */
 /*      Create the dataset.                                             */
 /* -------------------------------------------------------------------- */
+    int                 iBand;
     jas_stream_t        *psStream;
     jas_image_t         *psImage;
 
@@ -970,6 +931,7 @@ JPEG2000CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 /* -------------------------------------------------------------------- */
 /*      Loop over image, copying image data.                            */
 /* -------------------------------------------------------------------- */
+    GDALRasterBand      *poBand;
     GUInt32             *paiScanline;
     int                 iLine, iPixel;
     CPLErr              eErr = CE_None;
@@ -1153,18 +1115,9 @@ JPEG2000CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     }
     else                                    // Unknown
     {
-        /* JAS_CLRSPC_UNKNOWN causes crashes in Jasper jp2_enc.c at line 231 */
-        /* iccprof = jas_iccprof_createfromcmprof(jas_image_cmprof(image)); */
-        /* but if we explictely set the cmprof, it does not work better */
-        /* since it would abort at line 281 later ... */
-        /* So the best option is to switch to gray colorspace */
-        /* And we need to switch at the band level too, otherwise Kakadu or */
-        /* JP2MrSID don't like it */
-        //jas_image_setclrspc( psImage, JAS_CLRSPC_UNKNOWN );
-        jas_image_setclrspc( psImage, JAS_CLRSPC_SGRAY );
+        jas_image_setclrspc( psImage, JAS_CLRSPC_UNKNOWN );
         for ( iBand = 0; iBand < nBands; iBand++ )
-            //jas_image_setcmpttype( psImage, iBand, JAS_IMAGE_CT_UNKNOWN );
-            jas_image_setcmpttype( psImage, iBand, JAS_IMAGE_CT_GRAY_Y );
+            jas_image_setcmpttype( psImage, iBand, JAS_IMAGE_CT_UNKNOWN );
     }
 
 /* -------------------------------------------------------------------- */

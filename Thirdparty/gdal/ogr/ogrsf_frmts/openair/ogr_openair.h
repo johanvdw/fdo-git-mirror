@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_openair.h 25311 2012-12-15 12:48:14Z rouault $
+ * $Id: ogr_openair.h 20996 2010-10-28 18:38:15Z rouault $
  *
  * Project:  OpenAir Translator
  * Purpose:  Definition of classes for OGR .sua driver.
@@ -87,6 +87,8 @@ class OGROpenAirLabelLayer : public OGRLayer
     OGRSpatialReference *poSRS;
 
     VSILFILE*          fpOpenAir;
+    int                bEOF;
+    int                bHasLastLine;
     CPLString          osLastLine;
 
     int                nNextFID;

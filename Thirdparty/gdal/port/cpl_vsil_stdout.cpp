@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_vsil_stdout.cpp 25871 2013-04-06 21:21:33Z rouault $
+ * $Id: cpl_vsil_stdout.cpp 21906 2011-03-06 16:41:27Z rouault $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Implement VSI large file api for stdout
@@ -37,7 +37,7 @@
 #include <fcntl.h>
 #endif
 
-CPL_CVSID("$Id: cpl_vsil_stdout.cpp 25871 2013-04-06 21:21:33Z rouault $");
+CPL_CVSID("$Id: cpl_vsil_stdout.cpp 21906 2011-03-06 16:41:27Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -79,10 +79,6 @@ class VSIStdoutHandle : public VSIVirtualHandle
 int VSIStdoutHandle::Seek( vsi_l_offset nOffset, int nWhence )
 
 {
-    if( nOffset == 0 && (nWhence == SEEK_END || nWhence == SEEK_CUR) )
-        return 0;
-    if( nWhence == SEEK_SET && nOffset == Tell() )
-        return 0;
     CPLError(CE_Failure, CPLE_NotSupported, "Seek() unsupported on /vsistdout");
     return -1;
 }

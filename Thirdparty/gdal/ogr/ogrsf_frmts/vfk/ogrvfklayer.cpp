@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrvfklayer.cpp 25702 2013-03-07 17:17:54Z martinl $
+ * $Id: ogrvfklayer.cpp 18529 2010-01-12 00:10:56Z mloskot $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRVFKLayer class.
@@ -33,7 +33,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrvfklayer.cpp 25702 2013-03-07 17:17:54Z martinl $");
+CPL_CVSID("$Id: ogrvfklayer.cpp 18529 2010-01-12 00:10:56Z mloskot $");
 
 /*!
   \brief OGRVFKLayer constructor
@@ -44,39 +44,36 @@ CPL_CVSID("$Id: ogrvfklayer.cpp 25702 2013-03-07 17:17:54Z martinl $");
   \param poDSIn  data source where to registrate OGR layer
 */
 OGRVFKLayer::OGRVFKLayer(const char *pszName,
-                         OGRSpatialReference *poSRSIn,
-                         OGRwkbGeometryType eReqType,
-                         OGRVFKDataSource *poDSIn)
+			 OGRSpatialReference *poSRSIn,
+			 OGRwkbGeometryType eReqType,
+			 OGRVFKDataSource *poDSIn)
 {
     /* set spatial reference */
     if( poSRSIn == NULL ) {
-        /* default is S-JTSK 
-        const char *wktString = "PROJCS[\"Krovak\","
-            "GEOGCS[\"GCS_Bessel 1841\","
-            "DATUM[\"D_unknown\","
-            "SPHEROID[\"bessel\","
-            "6377397.155,299.1528128]],"
-            "PRIMEM[\"Greenwich\",0],"
-            "UNIT[\"Degree\",0.017453292519943295]],"
-            "PROJECTION[\"Krovak\"],"
-            "PARAMETER[\"latitude_of_center\",49.5],"
-            "PARAMETER[\"longitude_of_center\",24.83333333333333],"
-            "PARAMETER[\"azimuth\",0],"
-            "PARAMETER[\"pseudo_standard_parallel_1\",0],"
-            "PARAMETER[\"scale_factor\",0.9999],"
-            "PARAMETER[\"false_easting\",0],"
-            "PARAMETER[\"false_northing\",0],"
-            "UNIT[\"Meter\",1]]";
-        */
-        
+	/* default is S-JTSK */
+	const char *wktString = "PROJCS[\"S-JTSK_Krovak_East_North\","
+	    "GEOGCS[\"GCS_S_JTSK\","
+	    "DATUM[\"Jednotne_Trigonometricke_Site_Katastralni\","
+            "SPHEROID[\"Bessel_1841\",6377397.155,299.1528128]],"
+	    "PRIMEM[\"Greenwich\",0.0],"
+	    "UNIT[\"Degree\",0.0174532925199433]],"
+	    "PROJECTION[\"Krovak\"],"
+	    "PARAMETER[\"False_Easting\",0.0],"
+	    "PARAMETER[\"False_Northing\",0.0],"
+	    "PARAMETER[\"Pseudo_Standard_Parallel_1\",78.5],"
+	    "PARAMETER[\"Scale_Factor\",0.9999],"
+	    "PARAMETER[\"Azimuth\",30.28813975277778],"
+	    "PARAMETER[\"Longitude_Of_Center\",24.83333333333333],"
+	    "PARAMETER[\"Latitude_Of_Center\",49.5],"
+	    "PARAMETER[\"X_Scale\",-1.0],"
+	    "PARAMETER[\"Y_Scale\",1.0],"
+	    "PARAMETER[\"XY_Plane_Rotation\",90.0],"
+	    "UNIT[\"Meter\",1.0]]";
         poSRS = new OGRSpatialReference();
-        /*
-        if (poSRS->importFromWkt((char **)&wktString) != OGRERR_NONE) {
-        */
-        if (poSRS->importFromEPSG(2065) != OGRERR_NONE) {
-            delete poSRS;
-            poSRS = NULL;
-        }
+	if (poSRS->importFromWkt((char **)&wktString) != OGRERR_NONE) {
+	    delete poSRS;
+	    poSRS = NULL;
+	}
     }
     else {
         poSRS = poSRSIn->Clone();
@@ -115,7 +112,7 @@ OGRVFKLayer::~OGRVFKLayer()
 int OGRVFKLayer::TestCapability(const char * pszCap)
 {
     if (EQUAL(pszCap, OLCRandomRead)) {
-        return TRUE; /* ? */
+	return TRUE; /* ? */
     }
     
     return FALSE;
@@ -137,9 +134,10 @@ void OGRVFKLayer::ResetReading()
 
   \param poVfkFeature pointer to VFKFeature
 
-  \return pointer to OGRGeometry or NULL on error
+  \return pointer to OGRGeometry
+  \return NULL on error
 */
-OGRGeometry *OGRVFKLayer::CreateGeometry(IVFKFeature * poVfkFeature)
+OGRGeometry *OGRVFKLayer::CreateGeometry(VFKFeature * poVfkFeature)
 {
     return poVfkFeature->GetGeometry();
 }
@@ -166,12 +164,12 @@ int OGRVFKLayer::GetFeatureCount(int bForce)
     int nfeatures;
 
     if(!bForce)
-        return -1;
+	return -1;
     
     if (m_poFilterGeom || m_poAttrQuery)
-        nfeatures = OGRLayer::GetFeatureCount(bForce);
+	nfeatures = OGRLayer::GetFeatureCount(bForce);
     else
-        nfeatures = poDataBlock->GetFeatureCount();
+	nfeatures = poDataBlock->GetMaxFID();
     
     CPLDebug("OGR_VFK", "OGRVFKLayer::GetFeatureCount(): n=%d", nfeatures);
     
@@ -197,23 +195,25 @@ OGRFeature *OGRVFKLayer::GetNextFeature()
        requirements
     */
     while (TRUE) {
-        /* cleanup last feature, and get a new raw vfk feature */
-        if (poOGRGeom != NULL) {
-            delete poOGRGeom;
-            poOGRGeom = NULL;
-        }
-        
-        poVFKFeature = (VFKFeature *) poDataBlock->GetNextFeature();
-        if (!poVFKFeature)
-            return NULL;        
-        
-        /* skip feature with unknown geometry type */
-        if (poVFKFeature->GetGeometryType() == wkbUnknown)
-            continue;
-        
-        poOGRFeature = GetFeature(poVFKFeature);
-        if (poOGRFeature)
-            return poOGRFeature;
+	/* cleanup last feature, and get a new raw vfk feature */
+	if (poOGRGeom != NULL) {
+	    delete poOGRGeom;
+	    poOGRGeom = NULL;
+	}
+	
+	poVFKFeature = poDataBlock->GetNextFeature();
+	if (!poVFKFeature)
+	    return NULL;	
+	
+	/* skip feature with unknown geometry type */
+	if (poVFKFeature->GetGeometryType() == wkbUnknown)
+	    continue;
+	
+	poOGRFeature = GetFeature(poVFKFeature);
+	// CPLDebug("OGR_VFK", "OGRVFKLayer::GetNextFeature(): fid=%d", m_iNextFeature);
+	
+	if (poOGRFeature)
+	    return poOGRFeature;
     }
 }
 
@@ -222,18 +222,17 @@ OGRFeature *OGRVFKLayer::GetNextFeature()
 
   \param nFID feature id (-1 for next)
 
-  \return pointer to OGRFeature or NULL not found
+  \return pointer to OGRFeature
+  \return NULL not found
 */
 OGRFeature *OGRVFKLayer::GetFeature(long nFID)
 {
-    IVFKFeature *poVFKFeature;
-
-    poVFKFeature = poDataBlock->GetFeature(nFID);
+    VFKFeature *poVFKFeature;
     
+    poVFKFeature = poDataBlock->GetFeature(nFID);
     if (!poVFKFeature)
-        return NULL;
-
-    CPLAssert(nFID == poVFKFeature->GetFID());
+	return NULL;
+    
     CPLDebug("OGR_VFK", "OGRVFKLayer::GetFeature(): fid=%ld", nFID);
     
     return GetFeature(poVFKFeature);
@@ -242,24 +241,25 @@ OGRFeature *OGRVFKLayer::GetFeature(long nFID)
 /*!
   \brief Get feature (private)
   
-  \return pointer to OGRFeature or NULL not found
+  \return pointer to OGRFeature
+  \return NULL not found
 */
-OGRFeature *OGRVFKLayer::GetFeature(IVFKFeature *poVFKFeature)
+OGRFeature *OGRVFKLayer::GetFeature(VFKFeature *poVFKFeature)
 {
     OGRGeometry *poGeom;
     
     /* skip feature with unknown geometry type */
     if (poVFKFeature->GetGeometryType() == wkbUnknown)
-        return NULL;
+	return NULL;
     
     /* get features geometry */
     poGeom = CreateGeometry(poVFKFeature);
     if (poGeom != NULL)
-        poGeom->assignSpatialReference(poSRS);
+	poGeom->assignSpatialReference(poSRS);
     
     /* does it satisfy the spatial query, if there is one? */
     if (m_poFilterGeom != NULL && poGeom && !FilterGeometry(poGeom)) {
-        return NULL;
+	return NULL;
     }
     
     /* convert the whole feature into an OGRFeature */
@@ -267,17 +267,30 @@ OGRFeature *OGRVFKLayer::GetFeature(IVFKFeature *poVFKFeature)
     poOGRFeature->SetFID(poVFKFeature->GetFID());
     // poOGRFeature->SetFID(++m_iNextFeature);
     
-    poVFKFeature->LoadProperties(poOGRFeature);
+    for (int iField = 0; iField < poDataBlock->GetPropertyCount(); iField++) {
+	if (poVFKFeature->GetProperty(iField)->IsNull())
+	    continue;
+	OGRFieldType fType = poOGRFeature->GetDefnRef()->GetFieldDefn(iField)->GetType();
+	if (fType == OFTInteger) 
+	    poOGRFeature->SetField(iField,
+				   poVFKFeature->GetProperty(iField)->GetValueI());
+	else if (fType == OFTReal)
+	    poOGRFeature->SetField(iField,
+				   poVFKFeature->GetProperty(iField)->GetValueD());
+	else
+	    poOGRFeature->SetField(iField,
+				   poVFKFeature->GetProperty(iField)->GetValueS());
+    }
     
     /* test against the attribute query */
     if (m_poAttrQuery != NULL &&
-        !m_poAttrQuery->Evaluate(poOGRFeature)) {
-        delete poOGRFeature;
-        return NULL;
+	!m_poAttrQuery->Evaluate(poOGRFeature)) {
+	delete poOGRFeature;
+	return NULL;
     }
     
     if (poGeom)
-        poOGRFeature->SetGeometryDirectly(poGeom->clone());
+	poOGRFeature->SetGeometryDirectly(poGeom->clone());
     
     return poOGRFeature;
 }

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: XMLNode.i 24439 2012-05-17 21:54:16Z rouault $
+ * $Id: XMLNode.i 19751 2010-05-22 11:29:53Z rouault $
  *
  * Project:  GDAL SWIG Interface
  * Purpose:  GDAL XML SWIG Interface declarations.
@@ -37,18 +37,18 @@ typedef enum
     CXT_Literal = 4     
 } CPLXMLNodeType;
 
-%rename (XMLNode) CPLXMLNode;
-%rename (Type) CPLXMLNode::eType;
-%rename (Value) CPLXMLNode::pszValue;
-%rename (Next) CPLXMLNode::psNext;
-%rename (Child) CPLXMLNode::psChild;
-typedef struct CPLXMLNode
+%rename (XMLNode) _CPLXMLNode;
+%rename (Type) _CPLXMLNode::eType;
+%rename (Value) _CPLXMLNode::pszValue;
+%rename (Next) _CPLXMLNode::psNext;
+%rename (Child) _CPLXMLNode::psChild;
+typedef struct _CPLXMLNode
 {
 %immutable;
     CPLXMLNodeType      eType;       
     char                *pszValue;   
-    struct CPLXMLNode *psNext;
-    struct CPLXMLNode *psChild;
+    struct _CPLXMLNode *psNext;     
+    struct _CPLXMLNode *psChild;
 %mutable;  
 } CPLXMLNode;
 

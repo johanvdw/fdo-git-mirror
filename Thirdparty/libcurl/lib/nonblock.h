@@ -1,5 +1,5 @@
-#ifndef HEADER_CURL_NONBLOCK_H
-#define HEADER_CURL_NONBLOCK_H
+#ifndef __NONBLOCK_H
+#define __NONBLOCK_H
 /***************************************************************************
  *                                  _   _ ____  _
  *  Project                     ___| | | |  _ \| |
@@ -20,6 +20,7 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
+ * $Id: nonblock.h,v 1.1 2009-07-09 21:55:26 bagder Exp $
  ***************************************************************************/
 
 #include <curl/curl.h> /* for curl_socket_t */
@@ -27,5 +28,4 @@
 int curlx_nonblock(curl_socket_t sockfd,    /* operate on this */
                    int nonblock   /* TRUE or FALSE */);
 
-#endif /* HEADER_CURL_NONBLOCK_H */
-
+#endif

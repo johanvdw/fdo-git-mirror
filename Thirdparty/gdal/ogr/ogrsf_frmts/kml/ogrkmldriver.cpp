@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrkmldriver.cpp 23978 2012-02-14 20:42:34Z rouault $
+ * $Id: ogrkmldriver.cpp 12937 2007-11-22 07:52:23Z mloskot $
  *
  * Project:  KML Driver
  * Purpose:  Implementation of OGRKMLDriver class.
@@ -67,14 +67,14 @@ OGRDataSource *OGRKMLDriver::Open( const char * pszName, int bUpdate )
 
     if( poDS->Open( pszName, TRUE ) )
     {
-        /*if( poDS->GetLayerCount() == 0 )
+        if( poDS->GetLayerCount() == 0 )
         {
             CPLError( CE_Failure, CPLE_OpenFailed, 
                 "No layers in KML file: %s.", pszName );
 
             delete poDS;
             poDS = NULL;
-        }*/
+        }
     }
     else
     {

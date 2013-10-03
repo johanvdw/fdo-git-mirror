@@ -69,8 +69,6 @@ int swqlex( YYSTYPE *ppNode, swq_parse_context *context )
     {
         char *token;
         int i_token;
-        char chQuote = *pszInput;
-        int bFoundEndQuote = FALSE;
 
         pszInput++;
 
@@ -85,24 +83,20 @@ int swqlex( YYSTYPE *ppNode, swq_parse_context *context )
                 pszInput++;
             else if( *pszInput == '\'' && pszInput[1] == '\'' )
                 pszInput++;
-            else if( *pszInput == chQuote )
+            else if( *pszInput == '"' )
             {
                 pszInput++;
-                bFoundEndQuote = TRUE;
+                break;
+            }
+            else if( *pszInput == '\'' )
+            {
+                pszInput++;
                 break;
             }
             
             token[i_token++] = *(pszInput++);
         }
         token[i_token] = '\0';
-
-        if( !bFoundEndQuote )
-        {
-            CPLError(CE_Failure, CPLE_AppDefined,
-                     "Did not find end-of-string character");
-            CPLFree( token );
-            return 0;
-        }
 
         *ppNode = new swq_expr_node( token );
         CPLFree( token );
@@ -224,10 +218,6 @@ int swqlex( YYSTYPE *ppNode, swq_parse_context *context )
             nReturn = SWQT_DISTINCT;
         else if( EQUAL(osToken,"CAST") )
             nReturn = SWQT_CAST;
-        else if( EQUAL(osToken,"UNION") )
-            nReturn = SWQT_UNION;
-        else if( EQUAL(osToken,"ALL") )
-            nReturn = SWQT_ALL;
         else
         {
             *ppNode = new swq_expr_node( osToken );
@@ -290,9 +280,6 @@ swq_select_summarize( swq_select *select_info,
             select_info->column_summary[i].max = -1e20;
         }
     }
-
-    if( select_info->column_summary == NULL )
-        return NULL;
 
 /* -------------------------------------------------------------------- */
 /*      If distinct processing is on, process that now.                 */
@@ -512,16 +499,13 @@ void swq_select_free( swq_select *select_info )
 /************************************************************************/
 /*                         swq_identify_field()                         */
 /************************************************************************/
-static 
-int swq_identify_field_internal( const char *field_token, const char* table_name,
-                                 swq_field_list *field_list,
-                                 swq_field_type *this_type, int *table_id, int tables_enabled );
 
 int swq_identify_field( const char *token, swq_field_list *field_list,
                         swq_field_type *this_type, int *table_id )
 
 {
-    CPLString osTableName;
+    int i;
+    char table_name[128];
     const char *field_token = token;
     int   tables_enabled;
 
@@ -533,72 +517,19 @@ int swq_identify_field( const char *token, swq_field_list *field_list,
 /* -------------------------------------------------------------------- */
 /*      Parse out table name if present, and table support enabled.     */
 /* -------------------------------------------------------------------- */
+    table_name[0] = '\0';
     if( tables_enabled && strchr(token, '.') != NULL )
     {
         int dot_offset = (int)(strchr(token,'.') - token);
 
-        osTableName = token;
-        osTableName.resize(dot_offset);
-        field_token = token + dot_offset + 1;
-
-#ifdef notdef
-        /* We try to detect if a.b is the a.b field */
-        /* of the main table, or the b field of the a table */
-        /* If both exists, report an error. */
-        /* This works, but I'm not sure this is a good idea to */
-        /* enable that. It is a sign that our SQL grammar is somewhat */
-        /* ambiguous */
-
-        swq_field_type eTypeWithTablesEnabled;
-        int            nTableIdWithTablesEnabled;
-        int nRetWithTablesEnabled = swq_identify_field_internal(
-            field_token, osTableName.c_str(), field_list,
-            &eTypeWithTablesEnabled, &nTableIdWithTablesEnabled, TRUE);
-
-        swq_field_type eTypeWithTablesDisabled;
-        int            nTableIdWithTablesDisabled;
-        int nRetWithTablesDisabled = swq_identify_field_internal(
-            token, "", field_list,
-            &eTypeWithTablesDisabled, &nTableIdWithTablesDisabled, FALSE);
-
-        if( nRetWithTablesEnabled >= 0 && nRetWithTablesDisabled >= 0 )
+        if( dot_offset < (int) sizeof(table_name) )
         {
-            CPLError(CE_Failure, CPLE_AppDefined,
-                        "Ambiguous situation. Both %s exists as a field in "
-                        "main table and %s exists as a field in %s table",
-                        token, osTableName.c_str(), field_token);
-            return -1;
+            strncpy( table_name, token, dot_offset );
+            table_name[dot_offset] = '\0';
+            field_token = token + dot_offset + 1;
         }
-        else if( nRetWithTablesEnabled >= 0 )
-        {
-            if( this_type != NULL ) *this_type = eTypeWithTablesEnabled;
-            if( table_id != NULL ) *table_id = nTableIdWithTablesEnabled;
-            return nRetWithTablesEnabled;
-        }
-        else if( nRetWithTablesDisabled >= 0 )
-        {
-            if( this_type != NULL ) *this_type = eTypeWithTablesDisabled;
-            if( table_id != NULL ) *table_id = nTableIdWithTablesDisabled;
-            return nRetWithTablesDisabled;
-        }
-        else
-        {
-            return -1;
-        }
-#endif
     }
 
-    return swq_identify_field_internal(field_token, osTableName.c_str(), field_list,
-                                       this_type, table_id, tables_enabled);
-}
-
-
-int swq_identify_field_internal( const char *field_token, const char* table_name,
-                                 swq_field_list *field_list,
-                                 swq_field_type *this_type, int *table_id, int tables_enabled )
-
-{
-    int i;
 /* -------------------------------------------------------------------- */
 /*      Search for matching field.                                      */
 /* -------------------------------------------------------------------- */
@@ -734,9 +665,7 @@ static const char* apszSQLReservedKeywords[] = {
     "FROM",
     "AS",
     "ASC",
-    "DESC",
-    "UNION",
-    "ALL"
+    "DESC"
 };
 
 int swq_is_reserved_keyword(const char* pszStr)

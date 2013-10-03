@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogravce00datasource.cpp 24747 2012-08-08 00:13:30Z warmerdam $
+ * $Id: ogravce00datasource.cpp 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  OGR
  * Purpose:  Implements OGRAVCE00DataSource class.
@@ -33,7 +33,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogravce00datasource.cpp 24747 2012-08-08 00:13:30Z warmerdam $");
+CPL_CVSID("$Id: ogravce00datasource.cpp 10645 2007-01-18 02:22:39Z warmerdam $");
 
 /************************************************************************/
 /*                        OGRAVCE00DataSource()                         */
@@ -76,18 +76,10 @@ int OGRAVCE00DataSource::Open( const char * pszNewName, int bTestOpen )
 /*      Open the source file.  Supress error reporting if we are in     */
 /*      TestOpen mode.                                                  */
 /* -------------------------------------------------------------------- */
-    int bCompressed = FALSE;
-
     if( bTestOpen )
         CPLPushErrorHandler( CPLQuietErrorHandler );
 
     psE00 = AVCE00ReadOpenE00(pszNewName);
-
-    if( CPLGetLastErrorNo() == CPLE_OpenFailed
-        && strstr(CPLGetLastErrorMsg(),"compressed E00") != NULL ) 
-    {
-        bCompressed = TRUE;
-    }
 
     if( bTestOpen )
     {
@@ -96,17 +88,7 @@ int OGRAVCE00DataSource::Open( const char * pszNewName, int bTestOpen )
     }
 
     if( psE00 == NULL )
-    {
-        if( bCompressed ) 
-        {
-            CPLError(CE_Failure, CPLE_OpenFailed, 
-                     "This looks like a compressed E00 file and cannot be "
-                     "processed directly. You may need to uncompress it "
-                     "first using the E00compr library or the e00conv "
-                     "program." );
-        }
         return FALSE;
-    }
 
     pszName = CPLStrdup( pszNewName );
     /* pszCoverageName = CPLStrdup( psE00->pszCoverName ); */

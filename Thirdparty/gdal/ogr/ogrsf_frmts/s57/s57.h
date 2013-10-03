@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: s57.h 25905 2013-04-13 20:46:53Z rouault $
+ * $Id: s57.h 22469 2011-05-31 14:19:18Z warmerdam $
  *
  * Project:  S-57 Translator
  * Purpose:  Declarations for S-57 translator not including the
@@ -52,7 +52,6 @@ char **S57FileCollector( const char * pszDataset );
 #define S57O_RETURN_PRIMITIVES "RETURN_PRIMITIVES"
 #define S57O_RETURN_LINKAGES "RETURN_LINKAGES"
 #define S57O_RETURN_DSID     "RETURN_DSID"
-#define S57O_RECODE_BY_DSSI  "RECODE_BY_DSSI"
 
 #define S57M_UPDATES                    0x01
 #define S57M_LNAM_REFS                  0x02
@@ -62,7 +61,6 @@ char **S57FileCollector( const char * pszDataset );
 #define S57M_RETURN_PRIMITIVES          0x20
 #define S57M_RETURN_LINKAGES            0x40
 #define S57M_RETURN_DSID                0x80
-#define S57M_RECODE_BY_DSSI             0x100
 
 /* -------------------------------------------------------------------- */
 /*      RCNM values.                                                    */
@@ -121,9 +119,9 @@ class CPL_DLL S57ClassRegistrar
     GUInt16    *panAttrIndex; // sorted by acronym.
 
     int         FindFile( const char *pszTarget, const char *pszDirectory,
-                          int bReportErr, VSILFILE **fp );
+                          int bReportErr, FILE **fp );
 
-    const char *ReadLine( VSILFILE * fp );
+    const char *ReadLine( FILE * fp );
     char      **papszNextLine;
 
 public:
@@ -163,7 +161,7 @@ public:
 #define SAT_FREE_TEXT   'S'
 
     char        GetAttrClass( int i ) { return pachAttrClass[i]; }
-    int         FindAttrByAcronym( const char * );
+    GInt16      FindAttrByAcronym( const char * );
 
 };
 
@@ -260,10 +258,6 @@ class CPL_DLL S57Reader
 
     int                 iPointOffset;
     OGRFeature          *poMultiPoint;
-    
-    int                 Aall;               // see RecodeByDSSI() function
-    int                 Nall;               // see RecodeByDSSI() function
-    bool                needAallNallSetup;  // see RecodeByDSSI() function
 
     void                ClearPendingMultiPoint();
     OGRFeature         *NextPendingMultiPoint();
@@ -322,9 +316,6 @@ class CPL_DLL S57Reader
     int                 CollectClassList( int *, int);
 
     OGRErr              GetExtent( OGREnvelope *psExtent, int bForce );
-
-    char               *RecodeByDSSI(const char *SourceString, bool LookAtAALL_NALL);
-
  };
 
 /************************************************************************/

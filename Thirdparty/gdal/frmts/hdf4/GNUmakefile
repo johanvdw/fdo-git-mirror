@@ -3,9 +3,16 @@ include ../../GDALmake.opt
 
 OBJ	=	hdf4dataset.o hdf4imagedataset.o
 
-SUBLIBS 	= lib-hdfeos
+HDFEOS_OPTS	=	
+SUBLIBS 	=
 
-CPPFLAGS	:=	-I../pds -Ihdf-eos $(GDAL_INCLUDE) $(HDF4_INCLUDE) $(CPPFLAGS)
+HDF4EOS_SETTING = internal
+ifeq ($(HDF4EOS_SETTING),internal)
+SUBLIBS	:= lib-hdfeos $(SUBLIBS) 
+HDFEOS_OPTS :=	-Ihdf-eos $(HDFEOS_OPTS)
+endif
+
+CPPFLAGS	:=	-I../pds $(GDAL_INCLUDE) $(HDF4_INCLUDE) $(HDFEOS_OPTS) $(CPPFLAGS)
 
 default:	$(OBJ:.o=.$(OBJ_EXT)) $(SUBLIBS)
 

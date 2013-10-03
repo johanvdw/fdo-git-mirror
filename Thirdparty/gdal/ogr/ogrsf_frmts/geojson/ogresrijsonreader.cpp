@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogresrijsonreader.cpp 24923 2012-09-16 09:46:59Z rouault $
+ * $Id: ogresrijsonreader.cpp 22281 2011-05-01 17:57:55Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implementation of OGRESRIJSONReader class (OGR ESRIJSON Driver)
@@ -112,7 +112,7 @@ OGRGeoJSONLayer* OGRESRIJSONReader::ReadLayer( const char* pszName,
         
     poLayer_ = new OGRGeoJSONLayer( pszName, NULL,
                                     OGRESRIJSONGetGeometryType(poGJObject_),
-                                    poDS );
+                                    NULL, poDS );
 
     if( !GenerateLayerDefn() )
     {
@@ -177,8 +177,7 @@ bool OGRESRIJSONReader::GenerateLayerDefn()
     else
     {
         poObjFeatures = OGRGeoJSONFindMemberByName( poGJObject_, "fieldAliases" );
-        if( NULL != poObjFeatures &&
-            json_object_get_type(poObjFeatures) == json_type_object )
+        if( NULL != poObjFeatures )
         {
             OGRFeatureDefn* poDefn = poLayer_->GetLayerDefn();
             json_object_iter it;
@@ -310,8 +309,7 @@ OGRFeature* OGRESRIJSONReader::ReadFeature( json_object* poObj )
 
     json_object* poObjProps = NULL;
     poObjProps = OGRGeoJSONFindMemberByName( poObj, "attributes" );
-    if( NULL != poObjProps &&
-        json_object_get_type(poObjProps) == json_type_object )
+    if( NULL != poObjProps )
     {
         int nField = -1;
         OGRFieldDefn* poFieldDefn = NULL;
@@ -327,10 +325,7 @@ OGRFeature* OGRESRIJSONReader::ReadFeature( json_object* poObj )
             {
                 if ( EQUAL( it.key,  poLayer_->GetFIDColumn() ) )
                     poFeature->SetFID( json_object_get_int( it.val ) );
-                if ( poLayer_->GetLayerDefn()->GetFieldDefn(nField)->GetType() == OFTReal )
-                    poFeature->SetField( nField, CPLAtofM(json_object_get_string(it.val)) );
-                else
-                    poFeature->SetField( nField, json_object_get_string(it.val) );
+                poFeature->SetField( nField, json_object_get_string(it.val) );
             }
         }
     }
@@ -410,12 +405,8 @@ OGRESRIJSONReader::ReadFeatureCollection( json_object* poObj )
         for( int i = 0; i < nFeatures; ++i )
         {
             poObjFeature = json_object_array_get_idx( poObjFeatures, i );
-            if (poObjFeature != NULL &&
-                json_object_get_type(poObjFeature) == json_type_object)
-            {
-                poFeature = OGRESRIJSONReader::ReadFeature( poObjFeature );
-                bAdded = AddFeature( poFeature );
-            }
+            poFeature = OGRESRIJSONReader::ReadFeature( poObjFeature );
+            bAdded = AddFeature( poFeature );
             //CPLAssert( bAdded );
         }
         //CPLAssert( nFeatures == poLayer_->GetFeatureCount() );

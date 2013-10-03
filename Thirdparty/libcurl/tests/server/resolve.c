@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2012, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2010, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -18,8 +18,8 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
+ * $Id: resolve.c,v 1.14 2010-02-02 12:39:10 yangtse Exp $
  ***************************************************************************/
-#include "server_setup.h"
 
 /* Purpose
  *
@@ -31,8 +31,21 @@
  *
  */
 
+#define CURL_NO_OLDIES
+
+#include "setup.h" /* portability help from the lib directory */
+
 #ifdef HAVE_SIGNAL_H
 #include <signal.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
 #endif
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
@@ -118,8 +131,8 @@ int main(int argc, char *argv[])
   else {
 #ifdef ENABLE_IPV6
     /* Check that the system has IPv6 enabled before checking the resolver */
-    curl_socket_t s = socket(PF_INET6, SOCK_DGRAM, 0);
-    if(s == CURL_SOCKET_BAD)
+    int s = socket(PF_INET6, SOCK_DGRAM, 0);
+    if(s == -1)
       /* an ipv6 address was requested and we can't get/use one */
       rc = -1;
     else {

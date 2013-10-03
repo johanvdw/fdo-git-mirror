@@ -1,12 +1,12 @@
 /******************************************************************************
- * $Id: ogrvfkdatasource.cpp 25703 2013-03-07 18:23:48Z martinl $
+ * $Id: ogrvfkdatasource.cpp 23423 2011-11-26 18:40:30Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRVFKDatasource class.
  * Author:   Martin Landa, landa.martin gmail.com
  *
  ******************************************************************************
- * Copyright (c) 2009-2010, 2013 Martin Landa <landa.martin gmail.com>
+ * Copyright (c) 2009-2010, Martin Landa <landa.martin gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -33,7 +33,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrvfkdatasource.cpp 25703 2013-03-07 18:23:48Z martinl $");
+CPL_CVSID("$Id: ogrvfkdatasource.cpp 23423 2011-11-26 18:40:30Z rouault $");
 
 /*!
   \brief OGRVFKDataSource constructor
@@ -56,11 +56,11 @@ OGRVFKDataSource::~OGRVFKDataSource()
     CPLFree(pszName);
     
     if (poReader)
-        delete poReader;
+	delete poReader;
     
     for(int i = 0; i < nLayers; i++)
         delete papoLayers[i];
-
+    
     CPLFree(papoLayers);
 }
 
@@ -68,9 +68,10 @@ OGRVFKDataSource::~OGRVFKDataSource()
   \brief Open VFK datasource
 
   \param pszNewName datasource name
-  \param bTestOpen True to test if datasource is possible to open
+  \param bTextOpen True to test if datasource is possible to open
 
-  \return TRUE on success or FALSE on failure
+  \return TRUE on success
+  \return FALSE on failure
 */
 int OGRVFKDataSource::Open(const char *pszNewName, int bTestOpen)
 {
@@ -82,27 +83,27 @@ int OGRVFKDataSource::Open(const char *pszNewName, int bTestOpen)
     if (fp == NULL) {
         if (!bTestOpen)
             CPLError(CE_Failure, CPLE_OpenFailed, 
-                     "Failed to open VFK file `%s'",
-                     pszNewName);
-        
+		     "Failed to open VFK file `%s'.",
+		     pszNewName);
+	
         return FALSE;
     }
 
    /* If we aren't sure it is VFK, load a header chunk and check    
       for signs it is VFK */
     if (bTestOpen) {
-        size_t nRead = VSIFRead(szHeader, 1, sizeof(szHeader), fp);
-        if (nRead <= 0) {
+	size_t nRead = VSIFRead(szHeader, 1, sizeof(szHeader), fp);
+	if (nRead <= 0) {
             VSIFClose(fp);
             return FALSE;
         }
         szHeader[MIN(nRead, sizeof(szHeader))-1] = '\0';
-        
-        // TODO: improve check
-        if (strncmp(szHeader, "&HVERZE;", 8) != 0) {
-            VSIFClose(fp);
+	
+	// TODO: improve check
+	if (strncmp(szHeader, "&HVERZE;", 8) != 0) {
+	    VSIFClose(fp);
             return FALSE;
-        } 
+	} 
     }
 
     /* We assume now that it is VFK. Close and instantiate a
@@ -111,24 +112,31 @@ int OGRVFKDataSource::Open(const char *pszNewName, int bTestOpen)
 
     pszName = CPLStrdup(pszNewName);
     
-    poReader = CreateVFKReader(pszNewName);
+    poReader = CreateVFKReader();
     if (poReader == NULL) {
         CPLError(CE_Failure, CPLE_AppDefined, 
-                 "File %s appears to be VFK but the VFK reader can't"
-                 "be instantiated",
-                 pszNewName);
+		 "File %s appears to be VFK but the VFK reader can't"
+		 "be instantiated.",
+		 pszNewName );
         return FALSE;
     }
-   
-    /* read data blocks, i.e. &B */
-    poReader->ReadDataBlocks();
+    /* load data (whole file) */
+    poReader->SetSourceFile(pszNewName);
+    poReader->LoadData();
+
+    /* get data blocks, i.e. &B */
+    poReader->LoadDataBlocks();
+    /* collect geometry properties
+       load on first request
+    */
+    /* poReader->LoadGeometry(); */
     
     /* get list of layers */
     papoLayers = (OGRVFKLayer **) CPLCalloc(sizeof(OGRVFKLayer *), poReader->GetDataBlockCount());
     
     for (int iLayer = 0; iLayer < poReader->GetDataBlockCount(); iLayer++) {
         papoLayers[iLayer] = CreateLayerFromBlock(poReader->GetDataBlock(iLayer));
-        nLayers++;
+	nLayers++;
     }
     
     return TRUE;
@@ -139,7 +147,8 @@ int OGRVFKDataSource::Open(const char *pszNewName, int bTestOpen)
 
   \param iLayer layer number
 
-  \return pointer to OGRLayer instance or NULL on error
+  \return pointer to OGRLayer instance
+  \return NULL on error
 */
 OGRLayer *OGRVFKDataSource::GetLayer(int iLayer)
 {
@@ -154,7 +163,8 @@ OGRLayer *OGRVFKDataSource::GetLayer(int iLayer)
 
   \param pszCap capability
 
-  \return TRUE if supported or FALSE if not supported
+  \return True if supported
+  \return False if not supported
 */
 int OGRVFKDataSource::TestCapability(const char * pszCap)
 {
@@ -166,9 +176,10 @@ int OGRVFKDataSource::TestCapability(const char * pszCap)
 
   \param poDataBlock pointer to VFKDataBlock instance
 
-  \return pointer to OGRVFKLayer instance or NULL on error
+  \return poiter to OGRVFKLayer instance
+  \return NULL on error
 */
-OGRVFKLayer *OGRVFKDataSource::CreateLayerFromBlock(const IVFKDataBlock *poDataBlock)
+OGRVFKLayer *OGRVFKDataSource::CreateLayerFromBlock(const VFKDataBlock *poDataBlock)
 {
     OGRVFKLayer *poLayer;
 
@@ -176,20 +187,33 @@ OGRVFKLayer *OGRVFKDataSource::CreateLayerFromBlock(const IVFKDataBlock *poDataB
 
     /* create an empty layer */
     poLayer = new OGRVFKLayer(poDataBlock->GetName(), NULL,
-                              poDataBlock->GetGeometryType(), this);
+			      poDataBlock->GetGeometryType(), this);
 
     /* define attributes (properties) */
     for (int iField = 0; iField < poDataBlock->GetPropertyCount(); iField++) {
-        VFKPropertyDefn *poProperty = poDataBlock->GetProperty(iField);
-        OGRFieldDefn oField(poProperty->GetName(), poProperty->GetType());
+	VFKPropertyDefn *poProperty = poDataBlock->GetProperty(iField);
+	OGRFieldDefn oField(poProperty->GetName(), poProperty->GetType());
 
         if(poProperty->GetWidth() > 0)
-            oField.SetWidth(poProperty->GetWidth());
+	    oField.SetWidth(poProperty->GetWidth());
         if(poProperty->GetPrecision() > 0)
-            oField.SetPrecision(poProperty->GetPrecision());
-        
-        poLayer->GetLayerDefn()->AddFieldDefn(&oField);
+	    oField.SetPrecision(poProperty->GetPrecision());
+	
+	poLayer->GetLayerDefn()->AddFieldDefn(&oField);
     }
     
     return poLayer;
+}
+
+/*!
+  \brief Get info
+
+  \param key key
+
+  \return value (string)
+  \return NULL if not found
+*/
+const char *OGRVFKDataSource::GetInfo(const char *key)
+{
+    return poReader->GetInfo(key);
 }

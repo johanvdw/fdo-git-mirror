@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrsegydatasource.cpp 25280 2012-12-02 18:55:32Z rouault $
+ * $Id: ogrsegydatasource.cpp 23268 2011-10-22 09:50:46Z rouault $
  *
  * Project:  SEG-Y Translator
  * Purpose:  Implements OGRSEGYDataSource class.
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrsegydatasource.cpp 25280 2012-12-02 18:55:32Z rouault $");
+CPL_CVSID("$Id: ogrsegydatasource.cpp 23268 2011-10-22 09:50:46Z rouault $");
 
 /************************************************************************/
 /*                        OGRSEGYDataSource()                       */
@@ -157,8 +157,7 @@ int OGRSEGYDataSource::Open( const char * pszFilename, int bUpdateIn)
 
     GByte* pabyTextHeader = (GByte*) CPLMalloc(3200 + 1);
     GByte* pabyASCIITextHeader = (GByte*) CPLMalloc(3200 + 40 + 1);
-    if ((int)VSIFReadL(pabyTextHeader, 1, 3200, fp) != 3200 ||
-        EQUALN((const char*)pabyTextHeader, "%PDF", 4))
+    if ((int)VSIFReadL(pabyTextHeader, 1, 3200, fp) != 3200)
     {
         VSIFCloseL(fp);
         CPLFree(pabyTextHeader);

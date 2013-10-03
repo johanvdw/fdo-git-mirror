@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrfeature.cpp 25692 2013-03-01 15:16:20Z rouault $
+ * $Id: ogrfeature.cpp 23606 2011-12-19 23:55:18Z warmerdam $
  * 
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRFeature class implementation. 
@@ -32,7 +32,7 @@
 #include "ogr_p.h"
 #include <vector>
 
-CPL_CVSID("$Id: ogrfeature.cpp 25692 2013-03-01 15:16:20Z rouault $");
+CPL_CVSID("$Id: ogrfeature.cpp 23606 2011-12-19 23:55:18Z warmerdam $");
 
 /************************************************************************/
 /*                             OGRFeature()                             */
@@ -65,8 +65,9 @@ OGRFeature::OGRFeature( OGRFeatureDefn * poDefnIn )
     
     poGeometry = NULL;
 
-    // Allocate array of fields and initialize them to the unset special value
-    pauFields = (OGRField *) CPLMalloc( poDefn->GetFieldCount() *
+    // we should likely be initializing from the defaults, but this will
+    // usually be a waste. 
+    pauFields = (OGRField *) CPLCalloc( poDefn->GetFieldCount(),
                                         sizeof(OGRField) );
 
     for( int i = 0; i < poDefn->GetFieldCount(); i++ )
@@ -701,7 +702,7 @@ int OGRFeature::IsFieldSet( int iField ) const
             if( poGeometry == NULL )
                 return FALSE;
 
-            return OGR_G_Area((OGRGeometryH)poGeometry) != 0.0;
+            return OGR_G_GetArea((OGRGeometryH)poGeometry) != 0.0;
 
           default:
             return FALSE;
@@ -887,7 +888,7 @@ int OGRFeature::GetFieldAsInteger( int iField )
         case SPF_OGR_GEOM_AREA:
             if( poGeometry == NULL )
                 return 0;
-            return (int)OGR_G_Area((OGRGeometryH)poGeometry);
+            return (int)OGR_G_GetArea((OGRGeometryH)poGeometry);
 
         default:
             return 0;
@@ -977,7 +978,7 @@ double OGRFeature::GetFieldAsDouble( int iField )
         case SPF_OGR_GEOM_AREA:
             if( poGeometry == NULL )
                 return 0.0;
-            return OGR_G_Area((OGRGeometryH)poGeometry);
+            return OGR_G_GetArea((OGRGeometryH)poGeometry);
 
         default:
             return 0.0;
@@ -1100,7 +1101,7 @@ const char *OGRFeature::GetFieldAsString( int iField )
                 return "";
 
             snprintf( szTempBuffer, TEMP_BUFFER_SIZE, "%.16g", 
-                      OGR_G_Area((OGRGeometryH)poGeometry) );
+                      OGR_G_GetArea((OGRGeometryH)poGeometry) );
             return m_pszTmpFieldValue = CPLStrdup( szTempBuffer );
 
           default:
@@ -1135,8 +1136,8 @@ const char *OGRFeature::GetFieldAsString( int iField )
 
         if( poFDefn->GetWidth() != 0 )
         {
-            snprintf( szFormat, sizeof(szFormat), "%%.%df",
-                poFDefn->GetPrecision() );
+            snprintf( szFormat, sizeof(szFormat), "%%%d.%df",
+                      poFDefn->GetWidth(), poFDefn->GetPrecision() );
         }
         else
             strcpy( szFormat, "%.15g" );
@@ -1149,7 +1150,7 @@ const char *OGRFeature::GetFieldAsString( int iField )
     else if( poFDefn->GetType() == OFTDateTime )
     {
         snprintf( szTempBuffer, TEMP_BUFFER_SIZE,
-                  "%04d/%02d/%02d %02d:%02d:%02d", 
+                  "%04d/%02d/%02d %2d:%02d:%02d", 
                   pauFields[iField].Date.Year,
                   pauFields[iField].Date.Month,
                   pauFields[iField].Date.Day,
@@ -1926,12 +1927,7 @@ void OGR_F_SetFieldDouble( OGRFeatureH hFeat, int iField, double dfValue )
 void OGRFeature::SetField( int iField, const char * pszValue )
 
 {
-    static int bWarn = -1;
-    OGRFieldDefn *poFDefn = poDefn->GetFieldDefn( iField );
-    char *pszLast;
-
-    if( bWarn < 0 )
-        bWarn = CSLTestBoolean( CPLGetConfigOption( "OGR_SETFIELD_NUMERIC_WARNING", "NO" ) );
+    OGRFieldDefn        *poFDefn = poDefn->GetFieldDefn( iField );
 
     if( poFDefn == NULL )
         return;
@@ -1945,21 +1941,12 @@ void OGRFeature::SetField( int iField, const char * pszValue )
     }
     else if( poFDefn->GetType() == OFTInteger )
     {
-        long nVal = strtol(pszValue, &pszLast, 10);
-        pauFields[iField].Integer = (nVal > INT_MAX) ? INT_MAX : (nVal < INT_MIN) ? INT_MIN : (int) nVal;
-        if( bWarn && (nVal != (long)pauFields[iField].Integer || !pszLast || *pszLast ) )
-            CPLError(CE_Warning, CPLE_AppDefined,
-                     "Value '%s' of field %s.%s parsed incompletely to integer %d.",
-                     pszValue, poDefn->GetName(), poFDefn->GetNameRef(), pauFields[iField].Integer );
+        pauFields[iField].Integer = atoi(pszValue);
         pauFields[iField].Set.nMarker2 = OGRUnsetMarker;
     }
     else if( poFDefn->GetType() == OFTReal )
     {
-        pauFields[iField].Real = CPLStrtod(pszValue, &pszLast);
-        if( bWarn && ( !pszLast || *pszLast ) )
-             CPLError(CE_Warning, CPLE_AppDefined,
-                      "Value '%s' of field %s.%s parsed incompletely to real %.16g.",
-                      pszValue, poDefn->GetName(), poFDefn->GetNameRef(), pauFields[iField].Real );
+        pauFields[iField].Real = atof(pszValue);
     }
     else if( poFDefn->GetType() == OFTDate 
              || poFDefn->GetType() == OFTTime
@@ -2347,13 +2334,6 @@ void OGRFeature::SetField( int iField, int nYear, int nMonth, int nDay,
         || poFDefn->GetType() == OFTTime 
         || poFDefn->GetType() == OFTDateTime )
     {
-        if( (GInt16)nYear != nYear )
-        {
-            CPLError(CE_Failure, CPLE_NotSupported,
-                     "Years < -32768 or > 32767 are not supported");
-            return;
-        }
-
         pauFields[iField].Date.Year = (GInt16)nYear;
         pauFields[iField].Date.Month = (GByte)nMonth;
         pauFields[iField].Date.Day = (GByte)nDay;
@@ -3105,94 +3085,6 @@ OGRErr OGRFeature::SetFrom( OGRFeature * poSrcFeature, int *panMap ,
 /* -------------------------------------------------------------------- */
 /*      Set the fields by name.                                         */
 /* -------------------------------------------------------------------- */
-
-    eErr = SetFieldsFrom( poSrcFeature, panMap, bForgiving );
-    if( eErr != OGRERR_NONE )
-        return eErr;
-
-    return OGRERR_NONE;
-}
-
-/************************************************************************/
-/*                      OGR_F_SetFromWithMap()                          */
-/************************************************************************/
-
-/**
- * \brief Set one feature from another.
- *
- * Overwrite the contents of this feature from the geometry and attributes
- * of another.  The hOtherFeature does not need to have the same
- * OGRFeatureDefn.  Field values are copied according to the provided indices
- * map. Field types do not have to exactly match.  OGR_F_SetField*() function 
- * conversion rules will be applied as needed. This is more efficient than
- * OGR_F_SetFrom() in that this doesn't lookup the fields by their names.
- * Particularly useful when the field names don't match.
- *
- * This function is the same as the C++ method OGRFeature::SetFrom().
- *
- * @param hFeat handle to the feature to set to.
- * @param hOtherFeat handle to the feature from which geometry,
- * and field values will be copied.
- *
- * @param panMap Array of the indices of the destination feature's fields
- * stored at the corresponding index of the source feature's fields. A value of
- * -1 should be used to ignore the source's field. The array should not be NULL
- * and be as long as the number of fields in the source feature.
- * 
- * @param bForgiving TRUE if the operation should continue despite lacking
- * output fields matching some of the source fields.
- *
- * @return OGRERR_NONE if the operation succeeds, even if some values are
- * not transferred, otherwise an error code.
- */
-
-OGRErr OGR_F_SetFromWithMap( OGRFeatureH hFeat, OGRFeatureH hOtherFeat, 
-                      int bForgiving, int *panMap )
-
-{
-    VALIDATE_POINTER1( hFeat, "OGR_F_SetFrom", CE_Failure );
-    VALIDATE_POINTER1( hOtherFeat, "OGR_F_SetFrom", CE_Failure );
-    VALIDATE_POINTER1( panMap, "OGR_F_SetFrom", CE_Failure);
-
-    return ((OGRFeature *) hFeat)->SetFrom( (OGRFeature *) hOtherFeat, 
-                                           panMap, bForgiving );
-}
-
-/************************************************************************/
-/*                           SetFieldsFrom()                            */
-/************************************************************************/
-
-/**
- * \brief Set fields from another feature.
- *
- * Overwrite the fields of this feature from the attributes of
- * another. The FID and the style string are not set. The poSrcFeature
- * does not need to have the same OGRFeatureDefn.  Field values are
- * copied according to the provided indices map. Field types do not
- * have to exactly match.  SetField() method conversion rules will be
- * applied as needed. This is more efficient than OGR_F_SetFrom() in
- * that this doesn't lookup the fields by their names.  Particularly
- * useful when the field names don't match.
- *
- * @param poSrcFeature the feature from which geometry, and field values will
- * be copied.
- *
- * @param panMap Array of the indices of the feature's fields
- * stored at the corresponding index of the source feature's fields. A value of
- * -1 should be used to ignore the source's field. The array should not be NULL
- * and be as long as the number of fields in the source feature.
- * 
- * @param bForgiving TRUE if the operation should continue despite lacking
- * output fields matching some of the source fields.
- *
- * @return OGRERR_NONE if the operation succeeds, even if some values are
- * not transferred, otherwise an error code.
- */
-
-OGRErr OGRFeature::SetFieldsFrom( OGRFeature * poSrcFeature, int *panMap ,
-                                  int bForgiving )
-
-{
     int         iField, iDstField;
 
     for( iField = 0; iField < poSrcFeature->GetFieldCount(); iField++ )
@@ -3289,6 +3181,51 @@ OGRErr OGRFeature::SetFieldsFrom( OGRFeature * poSrcFeature, int *panMap ,
     }
 
     return OGRERR_NONE;
+}
+
+/************************************************************************/
+/*                      OGR_F_SetFromWithMap()                          */
+/************************************************************************/
+
+/**
+ * \brief Set one feature from another.
+ *
+ * Overwrite the contents of this feature from the geometry and attributes
+ * of another.  The hOtherFeature does not need to have the same
+ * OGRFeatureDefn.  Field values are copied according to the provided indices
+ * map. Field types do not have to exactly match.  OGR_F_SetField*() function 
+ * conversion rules will be applied as needed. This is more efficient than
+ * OGR_F_SetFrom() in that this doesn't lookup the fields by their names.
+ * Particularly useful when the field names don't match.
+ *
+ * This function is the same as the C++ method OGRFeature::SetFrom().
+ *
+ * @param hFeat handle to the feature to set to.
+ * @param hOtherFeat handle to the feature from which geometry,
+ * and field values will be copied.
+ *
+ * @param panMap Array of the indices of the destination feature's fields
+ * stored at the corresponding index of the source feature's fields. A value of
+ * -1 should be used to ignore the source's field. The array should not be NULL
+ * and be as long as the number of fields in the source feature.
+ * 
+ * @param bForgiving TRUE if the operation should continue despite lacking
+ * output fields matching some of the source fields.
+ *
+ * @return OGRERR_NONE if the operation succeeds, even if some values are
+ * not transferred, otherwise an error code.
+ */
+
+OGRErr OGR_F_SetFromWithMap( OGRFeatureH hFeat, OGRFeatureH hOtherFeat, 
+                      int bForgiving, int *panMap )
+
+{
+    VALIDATE_POINTER1( hFeat, "OGR_F_SetFrom", CE_Failure );
+    VALIDATE_POINTER1( hOtherFeat, "OGR_F_SetFrom", CE_Failure );
+    VALIDATE_POINTER1( panMap, "OGR_F_SetFrom", CE_Failure);
+
+    return ((OGRFeature *) hFeat)->SetFrom( (OGRFeature *) hOtherFeat, 
+                                           panMap, bForgiving );
 }
 
 /************************************************************************/

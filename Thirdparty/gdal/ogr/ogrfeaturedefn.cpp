@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrfeaturedefn.cpp 24286 2012-04-21 19:17:26Z rouault $
+ * $Id: ogrfeaturedefn.cpp 22900 2011-08-07 20:47:41Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRFeatureDefn class implementation.
@@ -31,7 +31,7 @@
 #include "ogr_api.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrfeaturedefn.cpp 24286 2012-04-21 19:17:26Z rouault $");
+CPL_CVSID("$Id: ogrfeaturedefn.cpp 22900 2011-08-07 20:47:41Z rouault $");
 
 /************************************************************************/
 /*                           OGRFeatureDefn()                           */
@@ -921,35 +921,4 @@ void OGRFeatureDefn::DestroyFeatureDefn( OGRFeatureDefn *poDefn )
 
 {
     delete poDefn;
-}
-
-/************************************************************************/
-/*                             IsSame()                                 */
-/************************************************************************/
-
-/**
- * \brief Test if the feature definition is identical to the other one.
- *
- * @param poOtherFeatureDefn the other feature definition to compare to.
- * @return TRUE if the feature definition is identical to the other one.
- */
-
-int OGRFeatureDefn::IsSame( const OGRFeatureDefn * poOtherFeatureDefn ) const
-{
-    if (strcmp(pszFeatureClassName, poOtherFeatureDefn->pszFeatureClassName) == 0 &&
-        eGeomType == poOtherFeatureDefn->eGeomType &&
-        nFieldCount == poOtherFeatureDefn->nFieldCount)
-    {
-        for(int i=0;i<nFieldCount;i++)
-        {
-            const OGRFieldDefn* poFldDefn = papoFieldDefn[i];
-            const OGRFieldDefn* poOtherFldDefn = poOtherFeatureDefn->papoFieldDefn[i];
-            if (!poFldDefn->IsSame(poOtherFldDefn))
-            {
-                return FALSE;
-            }
-        }
-        return TRUE;
-    }
-    return FALSE;
 }

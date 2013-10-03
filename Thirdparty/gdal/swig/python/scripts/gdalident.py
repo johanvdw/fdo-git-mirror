@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #******************************************************************************
-#  $Id: gdalident.py 24064 2012-03-04 00:34:19Z warmerdam $
+#  $Id: gdalident.py 18194 2009-12-06 20:07:45Z rouault $
 # 
 #  Project:  GDAL
 #  Purpose:  Application to identify files by format.
@@ -36,6 +36,7 @@ except ImportError:
 import sys
 import stat
 import os
+import glob
 
 # =============================================================================
 # 	Usage()
@@ -97,7 +98,11 @@ while i < len(argv):
         report_failure = 1
 
     else:
-        files.append(arg)
+        # Expand any possible wildcards from command line arguments
+        f = glob.glob( arg )
+        if len(f) == 0:
+            print('File not found: "%s"' % ( str( arg ) ))
+        files += f # append 1 or more files
 
     i = i + 1
 

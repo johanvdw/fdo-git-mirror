@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_gpx.h 25311 2012-12-15 12:48:14Z rouault $
+ * $Id: ogr_gpx.h 20996 2010-10-28 18:38:15Z rouault $
  *
  * Project:  GPX Translator
  * Purpose:  Definition of classes for OGR .gpx driver.
@@ -73,6 +73,7 @@ class OGRGPXLayer : public OGRLayer
     XML_Parser         oParser;
     XML_Parser         oSchemaParser;
 #endif
+    int                doParse;
     int                inInterestingElement;
     int                hasFoundLat;
     int                hasFoundLon;

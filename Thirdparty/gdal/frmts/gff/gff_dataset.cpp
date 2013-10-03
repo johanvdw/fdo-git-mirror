@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gff_dataset.cpp 25311 2012-12-15 12:48:14Z rouault $
+ * $Id: gff_dataset.cpp 20996 2010-10-28 18:38:15Z rouault $
  *
  * Project:  Ground-based SAR Applitcations Testbed File Format driver
  * Purpose:  Support in GDAL for Sandia National Laboratory's GFF format
@@ -35,7 +35,7 @@
 #include "cpl_vsi.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: gff_dataset.cpp 25311 2012-12-15 12:48:14Z rouault $");
+CPL_CVSID("$Id: gff_dataset.cpp 20996 2010-10-28 18:38:15Z rouault $");
 
 /*******************************************************************
  * Declaration of the GFFDataset class                             *
@@ -53,9 +53,9 @@ class GFFDataset : public GDALPamDataset
     unsigned short nVersionMajor;
     unsigned short nVersionMinor;
     unsigned int nLength;
-    //char *pszCreator;
+    char *pszCreator;
     /* I am taking this at face value (are they freakin' insane?) */
-    //float fBPP;
+    float fBPP;
     unsigned int nBPP;
 
     /* Good information to know */
@@ -64,10 +64,10 @@ class GFFDataset : public GDALPamDataset
     unsigned int nRowMajor;
     unsigned int nRgCnt;
     unsigned int nAzCnt;
-    //long nScaleExponent;
-    //long nScaleMantissa;
-    //long nOffsetExponent;
-    //long nOffsetMantissa;
+    long nScaleExponent;
+    long nScaleMantissa;
+    long nOffsetExponent;
+    long nOffsetMantissa;
 public:
     GFFDataset();
     ~GFFDataset();

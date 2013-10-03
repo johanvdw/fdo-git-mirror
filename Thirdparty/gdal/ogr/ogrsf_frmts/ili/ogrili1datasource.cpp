@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrili1datasource.cpp 23890 2012-02-03 16:30:23Z pka $
+ * $Id: ogrili1datasource.cpp 15268 2008-08-31 19:03:09Z pka $
  *
  * Project:  Interlis 1 Translator
  * Purpose:  Implements OGRILI1DataSource class.
@@ -38,7 +38,7 @@
 
 #include <string>
 
-CPL_CVSID("$Id: ogrili1datasource.cpp 23890 2012-02-03 16:30:23Z pka $");
+CPL_CVSID("$Id: ogrili1datasource.cpp 15268 2008-08-31 19:03:09Z pka $");
 
 /************************************************************************/
 /*                         OGRILI1DataSource()                         */
@@ -225,21 +225,17 @@ int OGRILI1DataSource::Create( const char *pszFilename,
 
     IOM_BASKET model = 0;
     if( osModelFilename.length() != 0 ) {
-      // compile ili model
-      char *iliFiles[1] = {(char *)osModelFilename.c_str()};
-      model=iom_compileIli(1,iliFiles);
-      if(!model){
+    // compile ili model
+    char *iliFiles[1] = {(char *)osModelFilename.c_str()};
+    model=iom_compileIli(1,iliFiles);
+    if(!model){
         CPLError( CE_Warning, CPLE_OpenFailed,
                   "iom_compileIli %s, %s.",
                   pszName, VSIStrerror( errno ) );
         iom_end();
         return FALSE;
-      }
     }
-
-    pszTopic = CPLStrdup(model ?
-                         GetAttrObjName(model, "iom04.metamodel.Topic") :
-                         CPLGetBasename(osBasename.c_str()));
+    }
 
 /* -------------------------------------------------------------------- */
 /*      Write headers                                                   */
@@ -248,9 +244,7 @@ int OGRILI1DataSource::Create( const char *pszFilename,
     VSIFPrintf( fpTransfer, "OGR/GDAL %s, INTERLIS Driver\n", GDAL_RELEASE_NAME );
     VSIFPrintf( fpTransfer, "////\n" );
     VSIFPrintf( fpTransfer, "MTID INTERLIS1\n" );
-    const char* modelname = model ?
-                            GetAttrObjName(model, "iom04.metamodel.DataModel") :
-                            CPLGetBasename(osBasename.c_str());
+    const char* modelname = model ? GetAttrObjName(model, "iom04.metamodel.DataModel") : osBasename.c_str(); //TODO: remove file extension (= table name)
     VSIFPrintf( fpTransfer, "MODL %s\n", modelname );
 
     return TRUE;
@@ -276,7 +270,7 @@ OGRILI1DataSource::CreateLayer( const char * pszLayerName,
 {
     const char *table = pszLayerName;
     char * topic = ExtractTopic(pszLayerName);
-    if (nLayers) VSIFPrintf( fpTransfer, "ETAB\n" );
+    if (pszTopic) VSIFPrintf( fpTransfer, "ETAB\n" );
     if (topic)
     {
       table = pszLayerName+strlen(topic)+2; //after "__"
@@ -295,9 +289,9 @@ OGRILI1DataSource::CreateLayer( const char * pszLayerName,
         CPLFree(topic);
       }
     }
-    else
+    else if (pszTopic == NULL)
     {
-      if (pszTopic == NULL) pszTopic = CPLStrdup("Unknown");
+      pszTopic = CPLStrdup("Topic"); //TODO: From model?
       VSIFPrintf( fpTransfer, "TOPI %s\n", pszTopic );
     }
     VSIFPrintf( fpTransfer, "TABL %s\n", table );

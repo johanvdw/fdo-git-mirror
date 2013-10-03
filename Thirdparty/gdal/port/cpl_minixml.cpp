@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_minixml.cpp 25340 2012-12-21 20:30:21Z rouault $
+ * $Id: cpl_minixml.cpp 22178 2011-04-16 20:07:53Z rouault $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Implementation of MiniXML Parser and handling.
@@ -44,7 +44,7 @@
 #include "cpl_string.h"
 #include <ctype.h>
 
-CPL_CVSID("$Id: cpl_minixml.cpp 25340 2012-12-21 20:30:21Z rouault $");
+CPL_CVSID("$Id: cpl_minixml.cpp 22178 2011-04-16 20:07:53Z rouault $");
 
 typedef enum {
     TNone,
@@ -880,7 +880,7 @@ static void _GrowBuffer( size_t nNeeded,
 /************************************************************************/
 
 static void
-CPLSerializeXMLNode( const CPLXMLNode *psNode, int nIndent,
+CPLSerializeXMLNode( CPLXMLNode *psNode, int nIndent, 
                      char **ppszText, unsigned int *pnLength, 
                      unsigned int *pnMaxLength )
 
@@ -901,7 +901,7 @@ CPLSerializeXMLNode( const CPLXMLNode *psNode, int nIndent,
 /* -------------------------------------------------------------------- */
     if( psNode->eType == CXT_Text )
     {
-        char *pszEscaped = CPLEscapeString( psNode->pszValue, -1, CPLES_XML_BUT_QUOTES );
+        char *pszEscaped = CPLEscapeString( psNode->pszValue, -1, CPLES_XML );
 
         CPLAssert( psNode->psChild == NULL );
 
@@ -922,18 +922,8 @@ CPLSerializeXMLNode( const CPLXMLNode *psNode, int nIndent,
                    && psNode->psChild->eType == CXT_Text );
 
         sprintf( *ppszText + *pnLength, " %s=\"", psNode->pszValue );
-        *pnLength += strlen(*ppszText + *pnLength);
-
-        char *pszEscaped = CPLEscapeString( psNode->psChild->pszValue, -1, CPLES_XML );
-
-        _GrowBuffer( strlen(pszEscaped) + *pnLength,
-                     ppszText, pnMaxLength );
-        strcat( *ppszText + *pnLength, pszEscaped );
-
-        CPLFree( pszEscaped );
-
-        *pnLength += strlen(*ppszText + *pnLength);
-        _GrowBuffer( 3 + *pnLength, ppszText, pnMaxLength );
+        CPLSerializeXMLNode( psNode->psChild, 0, ppszText, 
+                             pnLength, pnMaxLength );
         strcat( *ppszText + *pnLength, "\"" );
     }
 
@@ -998,9 +988,6 @@ CPLSerializeXMLNode( const CPLXMLNode *psNode, int nIndent,
         
         if( !bHasNonAttributeChildren )
         {
-            _GrowBuffer( *pnLength + 40,
-                         ppszText, pnMaxLength );
-
             if( psNode->pszValue[0] == '?' )
                 strcat( *ppszText + *pnLength, "?>\n" );
             else
@@ -1059,17 +1046,17 @@ CPLSerializeXMLNode( const CPLXMLNode *psNode, int nIndent,
  * document becomes owned by the caller and should be freed with CPLFree()
  * when no longer needed.
  *
- * @param psNode the node to serialize.
+ * @param psNode
  *
  * @return the document on success or NULL on failure. 
  */
 
-char *CPLSerializeXMLTree( const CPLXMLNode *psNode )
+char *CPLSerializeXMLTree( CPLXMLNode *psNode )
 
 {
     unsigned int nMaxLength = 100, nLength = 0;
     char *pszText = NULL;
-    const CPLXMLNode *psThis;
+    CPLXMLNode *psThis;
 
     pszText = (char *) CPLMalloc(nMaxLength);
     pszText[0] = '\0';
@@ -1954,7 +1941,7 @@ CPLXMLNode *CPLParseXMLFile( const char *pszFilename )
  * @return TRUE on success, FALSE otherwise.
  */
 
-int CPLSerializeXMLTreeToFile( const CPLXMLNode *psTree, const char *pszFilename )
+int CPLSerializeXMLTreeToFile( CPLXMLNode *psTree, const char *pszFilename )
 
 {
     char    *pszDoc;

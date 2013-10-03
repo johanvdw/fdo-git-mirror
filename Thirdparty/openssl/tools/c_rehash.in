@@ -7,7 +7,6 @@
 my $openssl;
 
 my $dir;
-my $prefix;
 
 if(defined $ENV{OPENSSL}) {
 	$openssl = $ENV{OPENSSL};
@@ -25,7 +24,7 @@ if (defined(&Cwd::getcwd)) {
 }
 my $path_delim = ($pwd =~ /^[a-z]\:/i) ? ';' : ':'; # DOS/Win32 or Unix delimiter?
 
-$ENV{PATH} = "$prefix/bin" . ($ENV{PATH} ? $path_delim . $ENV{PATH} : ""); # prefix our path
+$ENV{PATH} .= "$path_delim$dir/bin";
 
 if(! -x $openssl) {
 	my $found = 0;

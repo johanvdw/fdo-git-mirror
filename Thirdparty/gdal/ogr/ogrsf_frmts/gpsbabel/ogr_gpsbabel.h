@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_gpsbabel.h 25526 2013-01-19 20:41:08Z rouault $
+ * $Id: ogr_gpsbabel.h 20996 2010-10-28 18:38:15Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions for OGR/GPSBabel driver.
@@ -32,6 +32,8 @@
 
 #include "ogrsf_frmts.h"
 #include "cpl_string.h"
+
+int ForkAndPipe(const char * const argv[], VSILFILE* fin, VSILFILE* fout);
 
 /************************************************************************/
 /*                        OGRGPSBabelDataSource                         */

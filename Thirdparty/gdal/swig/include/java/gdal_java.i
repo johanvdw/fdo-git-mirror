@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_java.i 25808 2013-03-26 21:12:24Z warmerdam $
+ * $Id: gdal_java.i 21579 2011-01-24 21:57:24Z rouault $
  *
  * Name:     gdal_java.i
  * Project:  GDAL SWIG Interface
@@ -692,9 +692,7 @@ import java.awt.Color;
       greens[i] = (byte)(entry.getGreen()&0xff);
       blues[i] = (byte)(entry.getBlue()&0xff);
       byte alpha = (byte)(entry.getAlpha()&0xff);
-
-      // The byte type is -128 to 127 so a normal 255 will be -1.
-      if (alpha == -1) 
+      if (alpha == 255) 
           noAlphas ++;
       else{
         if (alpha == 0){
@@ -958,6 +956,96 @@ import org.gdal.gdalconst.gdalconstConstants;
   }
 %}
 
+/************************************************************************/
+/*                       Stuff for progress callback                    */
+/************************************************************************/
+
+
+%header %{
+typedef struct {
+    JNIEnv *jenv;
+    jobject pJavaCallback;
+} JavaProgressData;
+%}
+
+%inline
+%{
+class ProgressCallback
+{
+public:
+        virtual ~ProgressCallback() {  }
+        virtual int run(double dfComplete, const char* pszMessage)
+        {
+            return 1;
+        }
+};
+
+class TermProgressCallback : public ProgressCallback
+{
+public:
+    TermProgressCallback()
+    {
+    }
+
+    virtual int run(double dfComplete, const char* pszMessage)
+    {
+        return GDALTermProgress(dfComplete, pszMessage, NULL);
+    }
+};
+%}
+
+%{
+/************************************************************************/
+/*                        JavaProgressProxy()                           */
+/************************************************************************/
+
+int CPL_STDCALL
+JavaProgressProxy( double dfComplete, const char *pszMessage, void *pData )
+{
+    JavaProgressData* psProgressInfo = (JavaProgressData*)pData;
+    JNIEnv *jenv = psProgressInfo->jenv;
+    int ret;
+    const jclass progressCallbackClass = jenv->FindClass("org/gdal/gdal/ProgressCallback");
+    const jmethodID runMethod = jenv->GetMethodID(progressCallbackClass, "run", "(DLjava/lang/String;)I");
+    jstring temp_string = jenv->NewStringUTF(pszMessage);
+    ret = jenv->CallIntMethod(psProgressInfo->pJavaCallback, runMethod, dfComplete, temp_string);
+    jenv->DeleteLocalRef(temp_string);
+    return ret;
+}
+%}
+
+%typemap(arginit, noblock=1) ( GDALProgressFunc callback = NULL, void* callback_data=NULL)
+{
+    JavaProgressData sProgressInfo;
+    sProgressInfo.jenv = jenv;
+    sProgressInfo.pJavaCallback = NULL;
+
+}
+
+%typemap(in) ( GDALProgressFunc callback = NULL, void* callback_data=NULL) 
+{
+    if ( $input != 0 ) {
+        sProgressInfo.pJavaCallback = $input;
+        $1 = JavaProgressProxy;
+        $2 = &sProgressInfo;
+    }
+    else
+    {
+        $1 = NULL;
+        $2 = NULL;
+    }
+}
+
+
+/* These 3 typemaps tell SWIG what JNI and Java types to use */
+%typemap(jni) (GDALProgressFunc callback = NULL, void* callback_data=NULL)  "jobject"
+%typemap(jtype) (GDALProgressFunc callback = NULL, void* callback_data=NULL)  "ProgressCallback"
+%typemap(jstype) (GDALProgressFunc callback = NULL, void* callback_data=NULL)  "ProgressCallback"
+%typemap(javain) (GDALProgressFunc callback = NULL, void* callback_data=NULL)  "$javainput"
+%typemap(javaout) (GDALProgressFunc callback = NULL, void* callback_data=NULL) {
+    return $jnicall;
+  }
+
 %typemap(in) (OGRLayerShadow*)
 {
     if ($input != NULL)
@@ -973,6 +1061,5 @@ import org.gdal.gdalconst.gdalconstConstants;
 %typemap(jstype) (OGRLayerShadow*)  "org.gdal.ogr.Layer"
 %typemap(javain) (OGRLayerShadow*)  "$javainput"
 
-%include callback.i
 
 %include typemaps_java.i

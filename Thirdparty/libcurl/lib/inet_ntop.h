@@ -1,5 +1,5 @@
-#ifndef HEADER_CURL_INET_NTOP_H
-#define HEADER_CURL_INET_NTOP_H
+#ifndef __INET_NTOP_H
+#define __INET_NTOP_H
 /***************************************************************************
  *                                  _   _ ____  _
  *  Project                     ___| | | |  _ \| |
@@ -20,9 +20,10 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
+ * $Id: inet_ntop.h,v 1.8 2009-08-07 23:32:38 gknauf Exp $
  ***************************************************************************/
 
-#include "curl_setup.h"
+#include "setup.h"
 
 char *Curl_inet_ntop(int af, const void *addr, char *buf, size_t size);
 
@@ -34,5 +35,4 @@ char *Curl_inet_ntop(int af, const void *addr, char *buf, size_t size);
         inet_ntop(af,addr,buf,(curl_socklen_t)size)
 #endif
 
-#endif /* HEADER_CURL_INET_NTOP_H */
-
+#endif /* __INET_NTOP_H */

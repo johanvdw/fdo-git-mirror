@@ -64,18 +64,12 @@
 #include "o_time.h"
 
 #ifdef OPENSSL_SYS_VMS
-# if __CRTL_VER >= 70000000 && \
-     (defined _POSIX_C_SOURCE || !defined _ANSI_C_SOURCE)
-#  define VMS_GMTIME_OK
-# endif
-# ifndef VMS_GMTIME_OK
-#  include <libdtdef.h>
-#  include <lib$routines.h>
-#  include <lnmdef.h>
-#  include <starlet.h>
-#  include <descrip.h>
-#  include <stdlib.h>
-# endif /* ndef VMS_GMTIME_OK */
+# include <libdtdef.h>
+# include <lib$routines.h>
+# include <lnmdef.h>
+# include <starlet.h>
+# include <descrip.h>
+# include <stdlib.h>
 #endif
 
 struct tm *OPENSSL_gmtime(const time_t *timer, struct tm *result)
@@ -87,7 +81,7 @@ struct tm *OPENSSL_gmtime(const time_t *timer, struct tm *result)
 	   so we don't even look at the return value */
 	gmtime_r(timer,result);
 	ts = result;
-#elif !defined(OPENSSL_SYS_VMS) || defined(VMS_GMTIME_OK)
+#elif !defined(OPENSSL_SYS_VMS)
 	ts = gmtime(timer);
 	if (ts == NULL)
 		return NULL;
@@ -95,7 +89,7 @@ struct tm *OPENSSL_gmtime(const time_t *timer, struct tm *result)
 	memcpy(result, ts, sizeof(struct tm));
 	ts = result;
 #endif
-#if defined( OPENSSL_SYS_VMS) && !defined( VMS_GMTIME_OK)
+#ifdef OPENSSL_SYS_VMS
 	if (ts == NULL)
 		{
 		static $DESCRIPTOR(tabnam,"LNM$DCL_LOGICAL");

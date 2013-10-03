@@ -1,4 +1,4 @@
-# $Id: nmake.opt 25907 2013-04-13 21:19:24Z rouault $
+# $Id: nmake.opt 23610 2011-12-20 01:17:29Z warmerdam $
 #
 # nmake.opt - main configuration file for NMAKE makefiles.
 #
@@ -25,7 +25,7 @@
 # Check version of Visual C++ compiler:
 # nmake -f makefile.vc MSVC_VER=xxxx
 # where xxxx is one of following:
-# 1700 = 11.0(2012)
+# 1700 = 11.0(2011)
 # 1600 = 10.0(2010)
 # 1500 = 9.0 (2008)
 # 1400 = 8.0 (2005) - specific compilation flags, different from older VC++
@@ -40,7 +40,7 @@ MSVC_VER=1500
 
 ###############################################################################
 # Optional use of Visual Leak Detector (VLD) by Dan Moulding, available at
-# http://vld.codeplex.com/
+# http://dmoulding.googlepages.com/vld
 # Uncomment this line to use VLD in debug configuration only:
 #MSVC_VLD_DIR="C:\Program Files\Visual Leak Detector"
 
@@ -135,14 +135,7 @@ OPTFLAGS=	/nologo /MD /EHsc /GR /Zi /Fd$(GDAL_ROOT)\gdal$(VERSION).pdb  /DDEBUG
 WARNFLAGS =	/W4 /wd4127 /wd4251 /wd4275 /wd4786 /wd4100 /wd4245 /wd4206 /wd4018 /wd4389
 !ENDIF
 
-# 
-# Set flags controlling availability of SSE
-# 
-!IFNDEF SSEFLAGS
-SSEFLAGS = /DHAVE_SSE_AT_COMPILE_TIME
-!ENDIF
-
-# The following are extra disables that can be applied to external source
+# The followin are extra disables that can be applied to external source
 # not under our control that we wish to use less stringent warnings with.
 !IFNDEF SOFTWARNFLAGS
 SOFTWARNFLAGS= /wd4244 /wd4702 /wd4701 /wd4013 /wd4706 /wd4057 /wd4210 /wd4305
@@ -166,9 +159,7 @@ WIN64=YES
 STDCALL=YES
 
 # Version number embedded in DLL name. 
-!IFNDEF VERSION
-VERSION =	110
-!ENDIF
+VERSION =	19
 
 # Comment the following out if you want PAM supported disabled
 # by default.  
@@ -265,14 +256,6 @@ JPEG12_SUPPORTED = 1
 # NCSEcw4.lib, and add -DHAVE_COMPRESS to ECWFLAGS.  The ECWDIR setting will
 # also need some adjustment. 
 
-# Uncomment the following and update to enable ECW read support with the 5.0 SDK
-#ECWDIR  =  "c:\Intergraph\ecwsdk5"
-#ECWFLAGS = -DECWSDK_VERSION=50 \
-#       -I$(ECWDIR)\include \
-#       -I$(ECWDIR)\include/NCSECW/api -I$(ECWDIR)\include/NCSECW/jp2 \
-#       -I$(ECWDIR)\include/NCSECW/ecw
-#ECWLIB  =  $(ECWDIR)\lib\vc90\win32\NCSEcw.lib
-
 # To build ECW support as a plugin uncomment the following, and make sure
 # to do "nmake /f makefile.vc plugin" in gdal/frmts/ecw and copy the two
 # resulting DLLs to an appropriate place.
@@ -302,7 +285,6 @@ JPEG12_SUPPORTED = 1
 
 # Uncomment the following and update to enable OGDI support.
 #OGDIDIR =	D:\warmerda\iii\devdir
-#OGDI_INCLUDE = $(OGDIDIR)\include\ogdi
 #OGDIVER =	31
 #OGDILIB =	$(OGDIDIR)\lib\$(TARGET)\ogdi$(OGDIVER).lib \
 #		$(OGDIDIR)\lib\$(TARGET)\zlib_ogdi$(OGDIVER).lib
@@ -378,19 +360,6 @@ PCIDSK_SETTING=INTERNAL
 #MYSQL_INC_DIR = D:\Software\MySQLServer4.1\include
 #MYSQL_LIB = D:\Software\MySQLServer4.1\lib\opt\libmysql.lib advapi32.lib
 
-# INGRES Libraries
-# Uncomment the following to enable Ingres format.
-# INGRES_HOME = $(II_SYSTEM)\ingres
-# Uncomment the following if you prefer to build Ingres support as a plugin.
-# INGRES_PLUGIN = YES
-!IFDEF INGRES_HOME
-INGRES_INC_DIR = "$(INGRES_HOME)\files"
-INGRES_LIB = "$(INGRES_HOME)\lib\iilibapi.lib" \
-	"$(INGRES_HOME)\lib\iilibutil.lib" \
-	"$(INGRES_HOME)\lib\libingres.lib"
-!ENDIF
-
-
 # SQLite Libraries
 #SQLITE_INC=-IN:\pkg\sqlite-win32
 #SQLITE_LIB=N:\pkg\sqlite-win32\sqlite3_i.lib
@@ -399,12 +368,6 @@ INGRES_LIB = "$(INGRES_HOME)\lib\iilibapi.lib" \
 # depending on the layout of the include directories. In case of compilation errors, remove it.
 #SQLITE_INC=-IC:\osgeo4w\include -DHAVE_SPATIALITE -DSPATIALITE_AMALGAMATION
 #SQLITE_LIB=C:\osgeo4w\lib\spatialite_i.lib
-# Uncomment following line if libsqlite3 has been compiled with SQLITE_HAS_COLUMN_METADATA=yes
-#SQLITE_HAS_COLUMN_METADATA=yes
-
-# PCRE Library (REGEXP support for SQLite) for example from http://sourceforge.net/projects/gnuwin32/files/pcre/7.0/pcre-7.0.exe/download
-#PCRE_INC=-I"C:\Program Files\GNUWin32\include" -DHAVE_PCRE
-#PCRE_LIB="C:\Program Files\GNUWin32\lib\pcre.lib"
 
 # Informix Data Blade
 #INFORMIXDIR="C:\Program Files\IBM\Informix\Client-SDK"
@@ -506,21 +469,17 @@ OCI_INCLUDE =	-I$(ORACLE_HOME)\oci\include
 #SOSI_INC_DIR = e:/sosi
 #SOSI_LIBS = e:/sosi/FYBA.lib e:/sosi/GM.lib e:/sosi/UT.lib
 
-# Uncomment for OpenJpeg (release v2.0.0) support
+# Uncomment for OpenJpeg support
 #OPENJPEG_ENABLED = YES
-#OPENJPEG_CFLAGS = -IC:\openjpeg\include
-#OPENJPEG_LIB = C:\openjpeg\lib\openjpeg.lib
+#OPENJPEG_CFLAGS = -IC:\openjpeg\libopenjpeg
+#OPENJPEG_LIB = C:\openjpeg\bin\Release\openjpeg.lib
 
 # Uncomment for PDF support
 # Uncomment POPPLER_BASE_STREAM_HAS_TWO_ARGS = YES for Poppler >= 0.16.0
-# Uncomment POPPLER_0_20_OR_LATER = YES for Poppler >= 0.20.0
-# Uncomment POPPLER_0_23_OR_LATER = YES for Poppler >= 0.23.0
 #POPPLER_ENABLED = YES
 #POPPLER_CFLAGS = -Ie:/kde/include -Ie:/kde/include/poppler
 #POPPLER_HAS_OPTCONTENT = YES
 #POPPLER_BASE_STREAM_HAS_TWO_ARGS = YES
-#POPPLER_0_20_OR_LATER = YES
-#POPPLER_0_23_OR_LATER = YES
 #POPPLER_LIBS = e:/kde/lib/poppler.lib e:/kde/lib/freetype.lib e:/kde/lib/liblcms-1.lib advapi32.lib gdi32.lib
 
 # Uncomment for PDF support
@@ -536,10 +495,6 @@ OCI_INCLUDE =	-I$(ORACLE_HOME)\oci\include
 #WEBP_ENABLED = YES
 #WEBP_CFLAGS = -IE:/libwebp-0.1-windows/dev/Include
 #WEBP_LIBS = e:/libwebp-0.1-windows/dev/lib/libwebp_a.lib
-
-# Uncomment for libxml2 support (for cpl_xml_validate.cpp routines, used optionaly by the GML driver)
-#LIBXML2_INC = -Iz:\home\even\release-1500-dev\release-1500\include
-#LIBXML2_LIB = z:\home\even\release-1500-dev\release-1500\lib\libxml2.lib
 
 # Uncomment for freexl support
 #
@@ -578,11 +533,7 @@ INC	=	-I$(GDAL_ROOT)\port -I$(GDAL_ROOT)\ogr -I$(GDAL_ROOT)\gcore \
 
 !IFDEF MSVC_VLD_DIR
 MSVC_VLD_FLAGS=-DMSVC_USE_VLD=1 -I$(MSVC_VLD_DIR)\include
-!IFDEF WIN64
-MSVC_VLD_LIB=/LIBPATH:$(MSVC_VLD_DIR)/lib/Win64
-!ELSE
-MSVC_VLD_LIB=/LIBPATH:$(MSVC_VLD_DIR)/lib/Win32
-!ENDIF
+MSVC_VLD_LIB=/LIBPATH:$(MSVC_VLD_DIR)/lib
 !ENDIF
 
 !IFDEF INCLUDE_OGR_FRMTS
@@ -590,16 +541,13 @@ OGR_FLAG = -DOGR_ENABLED
 !ENDIF
 
 #LINKER_FLAGS =	/NODEFAULTLIB:LIBC 
-LINKER_FLAGS = $(EXTRA_LINKER_FLAGS) $(MSVC_VLD_LIB) $(LDEBUG)
+LINKER_FLAGS = $(MSVC_VLD_LIB) $(LDEBUG)
 
 
-CFLAGS	=	$(OPTFLAGS) $(WARNFLAGS) $(SSEFLAGS) $(INC) $(EXTRAFLAGS) $(OGR_FLAG) $(MSVC_VLD_FLAGS)
-CPPFLAGS = $(CFLAGS) 
+CFLAGS	=	$(OPTFLAGS) $(WARNFLAGS) $(INC) $(EXTRAFLAGS) $(OGR_FLAG) $(MSVC_VLD_FLAGS)
 MAKE	=	nmake /nologo
 
-!IFNDEF CC
 CC	=	cl
-!ENDIF
 
 INSTALL	=	xcopy /y /r /d /f
 
@@ -691,6 +639,11 @@ EXTERNAL_LIBS =	$(OGDILIB) $(XERCES_LIB) $(EXPAT_LIB) $(OCI_LIB) $(PG_LIB) \
 	$(IDB_LIB) $(CURL_LIB) $(DODS_LIB) $(KAKLIB) $(PCIDSK_LIB) \
 	$(ODBCLIB) $(JASPER_LIB) $(PNG_LIB) $(ADD_LIBS) $(OPENJPEG_LIB) \
 	$(MRSID_LIDAR_LIB) $(LIBKML_LIBS) $(SOSI_LIBS) $(POPPLER_LIBS) $(PODOFO_LIBS) $(LZMA_LIBS) \
-	$(LIBICONV_LIBRARY) $(WEBP_LIBS) $(FGDB_LIB_LINK) $(FREEXL_LIBS) $(GTA_LIBS) \
-	$(INGRES_LIB) $(LIBXML2_LIB) $(PCRE_LIB) ws2_32.lib
+	$(LIBICONV_LIBRARY) $(WEBP_LIBS) $(FGDB_LIB_LINK) $(FREEXL_LIBS) $(GTA_LIBS)
 		
+.c.obj:	
+	$(CC) $(CFLAGS) /c $*.c
+
+.cpp.obj:	
+	$(CC) $(CFLAGS) /c $*.cpp
+

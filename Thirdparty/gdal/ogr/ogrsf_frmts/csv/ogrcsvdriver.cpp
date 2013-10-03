@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrcsvdriver.cpp 23830 2012-01-30 23:07:44Z rouault $
+ * $Id: ogrcsvdriver.cpp 23016 2011-08-31 21:24:12Z rouault $
  *
  * Project:  CSV Translator
  * Purpose:  Implements OGRCSVDriver.
@@ -30,7 +30,7 @@
 #include "ogr_csv.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrcsvdriver.cpp 23830 2012-01-30 23:07:44Z rouault $");
+CPL_CVSID("$Id: ogrcsvdriver.cpp 23016 2011-08-31 21:24:12Z rouault $");
 
 /************************************************************************/
 /*                           ~OGRCSVDriver()                            */
@@ -105,11 +105,6 @@ OGRDataSource *OGRCSVDriver::CreateDataSource( const char * pszName,
         osDirName = CPLGetPath(pszName);
         if( osDirName == "" )
             osDirName = ".";
-
-        /* HACK: CPLGetPath("/vsimem/foo.csv") = "/vsimem", but this is not */
-        /* recognized afterwards as a valid directory name */
-        if( osDirName == "/vsimem" )
-            osDirName = "/vsimem/";
     }
     else
     {

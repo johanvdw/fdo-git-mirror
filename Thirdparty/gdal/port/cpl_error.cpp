@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_error.cpp 25781 2013-03-22 20:57:00Z warmerdam $
+ * $Id: cpl_error.cpp 23348 2011-11-06 16:22:05Z rouault $
  *
  * Name:     cpl_error.cpp
  * Project:  CPL - Common Portability Library
@@ -40,7 +40,7 @@
  
 #define TIMESTAMP_DEBUG
 
-CPL_CVSID("$Id: cpl_error.cpp 25781 2013-03-22 20:57:00Z warmerdam $");
+CPL_CVSID("$Id: cpl_error.cpp 23348 2011-11-06 16:22:05Z rouault $");
 
 static void *hErrorMutex = NULL;
 static void *pErrorHandlerUserData = NULL; 
@@ -81,10 +81,7 @@ static CPLErrorContext *CPLGetErrorContext()
 
     if( psCtx == NULL )
     {
-        psCtx = (CPLErrorContext *) VSICalloc(sizeof(CPLErrorContext),1);
-        if (psCtx == NULL) {
-            CPLEmergencyError("Out of memory attempting to report error");
-        }
+        psCtx = (CPLErrorContext *) CPLCalloc(sizeof(CPLErrorContext),1);
         psCtx->eLastErrType = CE_None;
         psCtx->nLastErrMsgMax = sizeof(psCtx->szLastErrMsg);
         CPLSetTLS( CTLS_ERRORCONTEXT, psCtx, TRUE );
@@ -289,26 +286,25 @@ void CPLEmergencyError( const char *pszMessage )
     CPLErrorContext *psCtx = NULL;
     static int bInEmergencyError = FALSE;
 
-    // If we are already in emergency error then one of the 
-    // following failed, so avoid them the second time through.
     if( !bInEmergencyError )
     {
         bInEmergencyError = TRUE;
         psCtx = (CPLErrorContext *) CPLGetTLS( CTLS_ERRORCONTEXT );
-
-        if( psCtx != NULL && psCtx->psHandlerStack != NULL )
-        {
-            psCtx->psHandlerStack->pfnHandler( CE_Fatal, CPLE_AppDefined, 
-                                               pszMessage );
-        }
-        else if( pfnErrorHandler != NULL )
-        {
-            pfnErrorHandler( CE_Fatal, CPLE_AppDefined, pszMessage );
-        }
     }
 
-    // Ultimate fallback.
-    fprintf( stderr, "FATAL: %s\n", pszMessage );
+    if( psCtx != NULL && psCtx->psHandlerStack != NULL )
+    {
+        psCtx->psHandlerStack->pfnHandler( CE_Fatal, CPLE_AppDefined, 
+                                           pszMessage );
+    }
+    else if( pfnErrorHandler != NULL )
+    {
+        pfnErrorHandler( CE_Fatal, CPLE_AppDefined, pszMessage );
+    }
+    else
+    {
+        fprintf( stderr, "FATAL: %s\n", pszMessage );
+    }
 
     abort();
 }
@@ -397,7 +393,6 @@ void CPLDebug( const char * pszCategory, const char * pszFormat, ... )
         strcat( pszMessage, ": " );
     }
 #endif
-    //sprintf(pszMessage,"[%d] ", (int)getpid());
 
 /* -------------------------------------------------------------------- */
 /*      Add the category.                                               */
@@ -823,7 +818,7 @@ void CPL_STDCALL CPLPushErrorHandlerEx( CPLErrorHandler pfnErrorHandlerNew,
     CPLErrorContext *psCtx = CPLGetErrorContext();
     CPLErrorHandlerNode         *psNode;
 
-    psNode = (CPLErrorHandlerNode *) CPLMalloc(sizeof(CPLErrorHandlerNode));
+    psNode = (CPLErrorHandlerNode *) VSIMalloc(sizeof(CPLErrorHandlerNode));
     psNode->psNext = psCtx->psHandlerStack;
     psNode->pfnHandler = pfnErrorHandlerNew;
     psNode->pUserData = pUserData;
@@ -885,16 +880,3 @@ void CPL_STDCALL _CPLAssert( const char * pszExpression, const char * pszFile,
               pszExpression, pszFile, iLine );
 }
 
-
-/************************************************************************/
-/*                       CPLCleanupErrorMutex()                         */
-/************************************************************************/
-
-void CPLCleanupErrorMutex()
-{
-    if( hErrorMutex != NULL )
-    {
-        CPLDestroyMutex(hErrorMutex);
-        hErrorMutex = NULL;
-    }
-}

@@ -11,14 +11,6 @@
 #include <openssl/rand.h>
 #include "e_gost_err.h"
 #include "gost_lcl.h"
-
-#if !defined(CCGOST_DEBUG) && !defined(DEBUG)
-# ifndef NDEBUG
-#  define NDEBUG
-# endif
-#endif
-#include <assert.h>
-
 static int gost_cipher_init(EVP_CIPHER_CTX *ctx, const unsigned char *key, 
 	const unsigned char *iv, int enc);
 static int	gost_cipher_init_cpa(EVP_CIPHER_CTX *ctx, const unsigned char *key,
@@ -214,13 +206,12 @@ int gost_cipher_init(EVP_CIPHER_CTX *ctx, const unsigned char *key,
 static void gost_crypt_mesh (void *ctx,unsigned char *iv,unsigned char *buf)
 	{
 	struct ossl_gost_cipher_ctx *c = ctx;
-	assert(c->count%8 == 0 && c->count <= 1024);
-	if (c->key_meshing && c->count==1024)
+	if (c->count&&c->key_meshing && c->count%1024==0)
 		{
 		cryptopro_key_meshing(&(c->cctx),iv);
 		}	
 	gostcrypt(&(c->cctx),iv,buf);
-	c->count = c->count%1024 + 8;
+	c->count+=8;
 	}
 
 static void gost_cnt_next (void *ctx, unsigned char *iv, unsigned char *buf)
@@ -228,8 +219,7 @@ static void gost_cnt_next (void *ctx, unsigned char *iv, unsigned char *buf)
 	struct ossl_gost_cipher_ctx *c = ctx;
 	word32 g,go;
 	unsigned char buf1[8];
-	assert(c->count%8 == 0 && c->count <= 1024);
-	if (c->key_meshing && c->count==1024)
+	if (c->count && c->key_meshing && c->count %1024 ==0)
 		{
 		cryptopro_key_meshing(&(c->cctx),iv);
 		}
@@ -258,7 +248,7 @@ static void gost_cnt_next (void *ctx, unsigned char *iv, unsigned char *buf)
 	buf1[7]=(unsigned char)((g>>24)&0xff);
 	memcpy(iv,buf1,8);
 	gostcrypt(&(c->cctx),buf1,buf);
-	c->count = c->count%1024 + 8;
+	c->count +=8;
 	}
 
 /* GOST encryption in CFB mode */
@@ -309,7 +299,7 @@ int	gost_cipher_do_cfb(EVP_CIPHER_CTX *ctx, unsigned char *out,
 	if (i<inl)
 		{
 		gost_crypt_mesh(ctx->cipher_data,ctx->iv,ctx->buf);
-		if (!ctx->encrypt) memcpy(ctx->buf+8,in_ptr,inl-i);
+		if (!ctx->encrypt) memcpy(ctx->buf+8,in_ptr,j);
 		for (j=0;i<inl;j++,i++)
 			{
 			out_ptr[j]=ctx->buf[j]^in_ptr[j];
@@ -469,14 +459,12 @@ int  gost89_get_asn1_parameters(EVP_CIPHER_CTX *ctx,ASN1_TYPE *params)
 	int ret = -1;
 	int len; 
 	GOST_CIPHER_PARAMS *gcp = NULL;
-	unsigned char *p;
+	unsigned char *p = params->value.sequence->data;
 	struct ossl_gost_cipher_ctx *c=ctx->cipher_data;
 	if (ASN1_TYPE_get(params) != V_ASN1_SEQUENCE)
 		{
 		return ret;
 		}
-
-	p = params->value.sequence->data;
 
 	gcp = d2i_GOST_CIPHER_PARAMS(NULL, (const unsigned char **)&p,
 		params->value.sequence->length);
@@ -505,8 +493,7 @@ int  gost89_get_asn1_parameters(EVP_CIPHER_CTX *ctx,ASN1_TYPE *params)
 int gost_imit_init_cpa(EVP_MD_CTX *ctx)
 	{
 	struct ossl_gost_imit_ctx *c = ctx->md_data;
-	memset(c->buffer,0,sizeof(c->buffer));
-	memset(c->partial_block,0,sizeof(c->partial_block));
+	memset(c->buffer,0,16);
 	c->count = 0;
 	c->bytes_left=0;
 	c->key_meshing=1;
@@ -521,13 +508,12 @@ static void mac_block_mesh(struct ossl_gost_imit_ctx *c,const unsigned char *dat
 	 * interpret internal state of MAC algorithm as iv during keymeshing
 	 * (but does initialize internal state from iv in key transport
 	 */
-	assert(c->count%8 == 0 && c->count <= 1024);
-	if (c->key_meshing && c->count==1024)
+	if (c->key_meshing&& c->count && c->count %1024 ==0)
 		{
 		cryptopro_key_meshing(&(c->cctx),buffer);
 		}
 	mac_block(&(c->cctx),c->buffer,data);
-	c->count = c->count%1024 + 8;
+	c->count +=8;
 	}
 
 int gost_imit_update(EVP_MD_CTX *ctx, const void *data, size_t count)
@@ -576,12 +562,6 @@ int gost_imit_final(EVP_MD_CTX *ctx,unsigned char *md)
 		GOSTerr(GOST_F_GOST_IMIT_FINAL, GOST_R_MAC_KEY_NOT_SET);
 		return 0;
 	}
-	if (c->count==0 && c->bytes_left)
-		{
-		unsigned char buffer[8];
-		memset(buffer, 0, 8);
-		gost_imit_update(ctx, buffer, 8);
-		}
 	if (c->bytes_left)
 		{
 		int i;

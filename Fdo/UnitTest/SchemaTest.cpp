@@ -26,8 +26,10 @@
 #endif
 
 #ifndef _WIN32
-#include <limits.h> 
+#   define LLONG_MAX    9223372036854775807LL
+#   define LLONG_MIN    (-LLONG_MAX - 1LL)
 #endif
+
 
 CPPUNIT_TEST_SUITE_REGISTRATION (SchemaTest);
 CPPUNIT_TEST_SUITE_NAMED_REGISTRATION (SchemaTest, "SchemaTest");
@@ -1402,7 +1404,7 @@ void SchemaTest::testDataConstraints ()
         1
     );
 
-    FdoInt32 int32List[5] = {10, 20, 30, INT_MIN, INT_MAX};
+    FdoInt32 int32List[5] = {10, 20, 30, LONG_MIN, LONG_MAX};
     AddListProperty(
         featClass,
         L"Int32Prop", 
@@ -1546,7 +1548,7 @@ void SchemaTest::testDataConstraints ()
         4
     );
 
-    FdoInt32 int32ListValues[10] = {9, 10, 11, 20, 0, 30, INT_MIN + 1, INT_MIN, INT_MAX - 1, INT_MAX};
+    FdoInt32 int32ListValues[10] = {9, 10, 11, 20, 0, 30, LONG_MIN + 1, LONG_MIN, LONG_MAX - 1, LONG_MAX};
     CheckConstraintProperty(
         featClass,
         L"Int32Prop", 

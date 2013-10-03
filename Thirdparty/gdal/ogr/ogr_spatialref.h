@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_spatialref.h 25727 2013-03-10 14:56:33Z rouault $
+ * $Id: ogr_spatialref.h 22952 2011-08-19 21:08:31Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Classes for manipulating spatial reference systems in a
@@ -165,7 +165,6 @@ class CPL_DLL OGRSpatialReference
     OGRSpatialReference *Clone() const;
     OGRSpatialReference *CloneGeogCS() const;
 
-    void        dumpReadable();
     OGRErr      exportToWkt( char ** ) const;
     OGRErr      exportToPrettyWkt( char **, int = FALSE) const;
     OGRErr      exportToProj4( char ** ) const;
@@ -184,20 +183,15 @@ class CPL_DLL OGRSpatialReference
     OGRErr      importFromESRI( char ** );
     OGRErr      importFromPCI( const char *, const char * = NULL,
                                double * = NULL );
-#define USGS_ANGLE_DECIMALDEGREES 0
-#define USGS_ANGLE_PACKEDDMS      TRUE /* 1 */
-#define USGS_ANGLE_RADIANS        2
     OGRErr      importFromUSGS( long iProjSys, long iZone,
-                                double *padfPrjParams, long iDatum, 
-                                int nUSGSAngleFormat = USGS_ANGLE_PACKEDDMS );
+                                double *padfPrjParams,
+                                long iDatum, int bAnglesInPackedDMSFormat = TRUE );
     OGRErr      importFromPanorama( long, long, long, double* );
     OGRErr      importFromOzi( const char *, const char *, const char * );
-    OGRErr      importFromOzi( const char * const* papszLines );
     OGRErr      importFromWMSAUTO( const char *pszAutoDef );
     OGRErr      importFromXML( const char * );
     OGRErr      importFromDict( const char *pszDict, const char *pszCode );
     OGRErr      importFromURN( const char * );
-    OGRErr      importFromCRSURL( const char * );
     OGRErr      importFromERM( const char *pszProj, const char *pszDatum,
                                const char *pszUnits );
     OGRErr      importFromUrl( const char * );
@@ -213,7 +207,6 @@ class CPL_DLL OGRSpatialReference
     OGRErr      Fixup();
 
     int         EPSGTreatsAsLatLong();
-    int         EPSGTreatsAsNorthingEasting();
     const char *GetAxis( const char *pszTargetKey, int iAxis, 
                          OGRAxisOrientation *peOrientation ) const;
     OGRErr      SetAxes( const char *pszTargetKey, 
@@ -399,17 +392,6 @@ class CPL_DLL OGRSpatialReference
                             double dfLat2, double dfLong2,
                             double dfScale,
                             double dfFalseEasting, double dfFalseNorthing );
-
-    OGRErr      SetOM( double dfCenterLat, double dfCenterLong,
-                       double dfAzimuth, double dfRectToSkew,
-                       double dfScale,
-                       double dfFalseEasting, double dfFalseNorthing );
-
-    /** Hotine Oblique Mercator Azimuth Center / Variant B */
-    OGRErr      SetHOMAC( double dfCenterLat, double dfCenterLong,
-                          double dfAzimuth, double dfRectToSkew,
-                          double dfScale,
-                          double dfFalseEasting, double dfFalseNorthing );
 
     /** International Map of the World Polyconic */
     OGRErr      SetIWMPolyconic( double dfLat1, double dfLat2,

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr2gmlgeometry.cpp 25727 2013-03-10 14:56:33Z rouault $
+ * $Id: ogr2gmlgeometry.cpp 23502 2011-12-09 18:49:24Z rouault $
  *
  * Project:  GML Translator
  * Purpose:  Code to translate OGRGeometry to GML string representation.
@@ -598,13 +598,12 @@ static int OGR2GML3GeometryAppend( OGRGeometry *poGeometry,
                 pszAuthCode = poSRS->GetAuthorityCode( pszTarget );
                 if( NULL != pszAuthCode && strlen(pszAuthCode) < 10 )
                 {
-                    if (bLongSRS && !(((OGRSpatialReference*)poSRS)->EPSGTreatsAsLatLong() ||
-                                      ((OGRSpatialReference*)poSRS)->EPSGTreatsAsNorthingEasting()))
+                    if (bLongSRS && !((OGRSpatialReference*)poSRS)->EPSGTreatsAsLatLong())
                     {
                         OGRSpatialReference oSRS;
                         if (oSRS.importFromEPSGA(atoi(pszAuthCode)) == OGRERR_NONE)
                         {
-                            if (oSRS.EPSGTreatsAsLatLong() || oSRS.EPSGTreatsAsNorthingEasting())
+                            if (oSRS.EPSGTreatsAsLatLong())
                                 bCoordSwap = TRUE;
                         }
                     }

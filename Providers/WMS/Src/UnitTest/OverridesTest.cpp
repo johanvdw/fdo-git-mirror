@@ -635,13 +635,13 @@ void OverridesTest::TestRequestSpcialImageFormat()
         }
  
         connection->SetConnectionString(L"FeatureServer=http://demo.cubewerx.com/demo/cubeserv/cubeserv.cgi?version=1.3.0"); 
-        FdoIoFileStreamP fileStream = FdoIoFileStream::Create(L"newconfig1.xml", L"r");
+        FdoIoFileStreamP fileStream = FdoIoFileStream::Create(L"newconfig1.xml", L"r"); // config for WMS 3.3
   
         connection->SetConfiguration(fileStream);
         connection->Open();
         
 	    FdoPtr<FdoISelect> cmdSelect = static_cast<FdoISelect*> (connection->CreateCommand (FdoCommandType_Select));
-        cmdSelect->SetFeatureClassName (L"WMSLayers:Foundation coastl_1m");
+        cmdSelect->SetFeatureClassName (L"WMSLayers:Foundation BARRIERL_1M");
         FdoPtr<FdoIFeatureReader> featReader = cmdSelect->Execute ();
         CPPUNIT_ASSERT (featReader->ReadNext ());	    
         FdoPtr<FdoIRaster> raster = featReader->GetRaster (L"Image");

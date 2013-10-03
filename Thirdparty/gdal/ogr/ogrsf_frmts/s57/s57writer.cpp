@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: s57writer.cpp 25501 2013-01-14 19:05:28Z rouault $
+ * $Id: s57writer.cpp 21684 2011-02-11 22:14:01Z warmerdam $
  *
  * Project:  S-57 Translator
  * Purpose:  Implements S57Writer class.
@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: s57writer.cpp 25501 2013-01-14 19:05:28Z rouault $");
+CPL_CVSID("$Id: s57writer.cpp 21684 2011-02-11 22:14:01Z warmerdam $");
 
 /************************************************************************/
 /*                             S57Writer()                              */
@@ -991,8 +991,7 @@ int S57Writer::WriteATTF( DDFRecord *poRec, OGRFeature *poFeature )
         int iField = poFeature->GetFieldIndex( papszAttrList[iAttr] );
         OGRFieldType eFldType = 
             poFeature->GetDefnRef()->GetFieldDefn(iField)->GetType();
-        int nATTLInt;
-        GUInt16 nATTL;
+        GInt16 nATTL;
         const char *pszATVL;
         
         if( iField < 0 )
@@ -1001,11 +1000,10 @@ int S57Writer::WriteATTF( DDFRecord *poRec, OGRFeature *poFeature )
         if( !poFeature->IsFieldSet( iField ) )
             continue;
 
-        nATTLInt = poRegistrar->FindAttrByAcronym( papszAttrList[iAttr] );
-        if( nATTLInt == -1 )
+        nATTL = poRegistrar->FindAttrByAcronym( papszAttrList[iAttr] );
+        if( nATTL == -1 )
             continue;
 
-        nATTL = (GUInt16)nATTLInt;
         nATTL = CPL_LSBWORD16( nATTL );
         memcpy( achRawData + nRawSize, &nATTL, 2 );
         nRawSize += 2;

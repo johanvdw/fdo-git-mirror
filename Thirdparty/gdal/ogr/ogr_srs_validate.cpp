@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_srs_validate.cpp 24323 2012-04-27 05:45:18Z warmerdam $
+ * $Id: ogr_srs_validate.cpp 22786 2011-07-23 21:17:24Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implementation of the OGRSpatialReference::Validate() method and
@@ -31,7 +31,7 @@
 #include "ogr_spatialref.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogr_srs_validate.cpp 24323 2012-04-27 05:45:18Z warmerdam $");
+CPL_CVSID("$Id: ogr_srs_validate.cpp 22786 2011-07-23 21:17:24Z rouault $");
 
 /* why would fipszone and zone be paramers when they relate to a composite
    projection which renders done into a non-zoned projection? */
@@ -102,7 +102,6 @@ static const char *papszProjectionSupported[] =
     SRS_PT_POLAR_STEREOGRAPHIC,
     SRS_PT_HOTINE_OBLIQUE_MERCATOR,
     SRS_PT_HOTINE_OBLIQUE_MERCATOR_TWO_POINT_NATURAL_ORIGIN,
-    SRS_PT_HOTINE_OBLIQUE_MERCATOR_AZIMUTH_CENTER,
     SRS_PT_LABORDE_OBLIQUE_MERCATOR,
     SRS_PT_SWISS_OBLIQUE_CYLINDRICAL,
     SRS_PT_AZIMUTHAL_EQUIDISTANT,
@@ -272,16 +271,6 @@ static const char *papszProjWithParms[] = {
     NULL,
 
     SRS_PT_HOTINE_OBLIQUE_MERCATOR,
-    SRS_PP_LATITUDE_OF_CENTER,
-    SRS_PP_LONGITUDE_OF_CENTER,
-    SRS_PP_AZIMUTH,
-    SRS_PP_RECTIFIED_GRID_ANGLE,
-    SRS_PP_SCALE_FACTOR,
-    SRS_PP_FALSE_EASTING,
-    SRS_PP_FALSE_NORTHING,
-    NULL,
-
-    SRS_PT_HOTINE_OBLIQUE_MERCATOR_AZIMUTH_CENTER,
     SRS_PP_LATITUDE_OF_CENTER,
     SRS_PP_LONGITUDE_OF_CENTER,
     SRS_PP_AZIMUTH,

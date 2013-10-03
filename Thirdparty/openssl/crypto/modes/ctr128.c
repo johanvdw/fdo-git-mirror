@@ -48,8 +48,7 @@
  *
  */
 
-#include <openssl/crypto.h>
-#include "modes_lcl.h"
+#include "modes.h"
 #include <string.h>
 
 #ifndef MODES_DEBUG
@@ -59,24 +58,37 @@
 #endif
 #include <assert.h>
 
+typedef unsigned int u32;
+typedef unsigned char u8;
+
+# define GETU32(pt) (((u32)(pt)[0] << 24) ^ ((u32)(pt)[1] << 16) ^ ((u32)(pt)[2] <<  8) ^ ((u32)(pt)[3]))
+# define PUTU32(ct, st) { (ct)[0] = (u8)((st) >> 24); (ct)[1] = (u8)((st) >> 16); (ct)[2] = (u8)((st) >>  8); (ct)[3] = (u8)(st); }
+
+#define STRICT_ALIGNMENT
+#if defined(__i386) || defined(__i386__) || \
+    defined(__x86_64) || defined(__x86_64__) || \
+    defined(_M_IX86) || defined(_M_AMD64) || defined(_M_X64) || \
+    defined(__s390__) || defined(__s390x__)
+#  undef STRICT_ALIGNMENT
+#endif
+
 /* NOTE: the IV/counter CTR mode is big-endian.  The code itself
  * is endian-neutral. */
 
 /* increment counter (128-bit int) by 1 */
 static void ctr128_inc(unsigned char *counter) {
-	u32 n=16;
-	u8  c;
+	u32 c,n=16;
 
 	do {
-		--n;
-		c = counter[n];
-		++c;
-		counter[n] = c;
+		n -= 4;
+		c = GETU32(counter+n);
+		++c;	c &= 0xFFFFFFFF;
+		PUTU32(counter + n, c);
 		if (c) return;
 	} while (n);
 }
 
-#if !defined(OPENSSL_SMALL_FOOTPRINT)
+#if !defined(OPENSSL_SMALL_FOORPRINT)
 static void ctr128_inc_aligned(unsigned char *counter) {
 	size_t *data,c,n;
 	const union { long one; char little; } is_endian = {1};
@@ -139,14 +151,14 @@ void CRYPTO_ctr128_encrypt(const unsigned char *in, unsigned char *out,
 		while (len>=16) {
 			(*block)(ivec, ecount_buf, key);
 			ctr128_inc_aligned(ivec);
-			for (; n<16; n+=sizeof(size_t))
+			for (n=0; n<16; n+=sizeof(size_t))
 				*(size_t *)(out+n) =
 				*(size_t *)(in+n) ^ *(size_t *)(ecount_buf+n);
 			len -= 16;
 			out += 16;
 			in  += 16;
-			n = 0;
 		}
+		n = 0;
 		if (len) {
 			(*block)(ivec, ecount_buf, key);
  			ctr128_inc_aligned(ivec);
@@ -168,84 +180,6 @@ void CRYPTO_ctr128_encrypt(const unsigned char *in, unsigned char *out,
 		out[l] = in[l] ^ ecount_buf[n];
 		++l;
 		n = (n+1) % 16;
-	}
-
-	*num=n;
-}
-
-/* increment upper 96 bits of 128-bit counter by 1 */
-static void ctr96_inc(unsigned char *counter) {
-	u32 n=12;
-	u8  c;
-
-	do {
-		--n;
-		c = counter[n];
-		++c;
-		counter[n] = c;
-		if (c) return;
-	} while (n);
-}
-
-void CRYPTO_ctr128_encrypt_ctr32(const unsigned char *in, unsigned char *out,
-			size_t len, const void *key,
-			unsigned char ivec[16], unsigned char ecount_buf[16],
-			unsigned int *num, ctr128_f func)
-{
-	unsigned int n,ctr32;
-
-	assert(in && out && key && ecount_buf && num);
-	assert(*num < 16);
-
-	n = *num;
-
-	while (n && len) {
-		*(out++) = *(in++) ^ ecount_buf[n];
-		--len;
-		n = (n+1) % 16;
-	}
-
-	ctr32 = GETU32(ivec+12);
-	while (len>=16) {
-		size_t blocks = len/16;
-		/*
-		 * 1<<28 is just a not-so-small yet not-so-large number...
-		 * Below condition is practically never met, but it has to
-		 * be checked for code correctness.
-		 */
-		if (sizeof(size_t)>sizeof(unsigned int) && blocks>(1U<<28))
-			blocks = (1U<<28);
-		/*
-		 * As (*func) operates on 32-bit counter, caller
-		 * has to handle overflow. 'if' below detects the
-		 * overflow, which is then handled by limiting the
-		 * amount of blocks to the exact overflow point...
-		 */
-		ctr32 += (u32)blocks;
-		if (ctr32 < blocks) {
-			blocks -= ctr32;
-			ctr32   = 0;
-		}
-		(*func)(in,out,blocks,key,ivec);
-		/* (*ctr) does not update ivec, caller does: */
-		PUTU32(ivec+12,ctr32);
-		/* ... overflow was detected, propogate carry. */
-		if (ctr32 == 0)	ctr96_inc(ivec);
-		blocks *= 16;
-		len -= blocks;
-		out += blocks;
-		in  += blocks;
-	}
-	if (len) {
-		memset(ecount_buf,0,16);
-		(*func)(ecount_buf,ecount_buf,1,key,ivec);
-		++ctr32;
-		PUTU32(ivec+12,ctr32);
-		if (ctr32 == 0)	ctr96_inc(ivec);
-		while (len--) {
-			out[n] = in[n] ^ ecount_buf[n];
-			++n;
-		}
 	}
 
 	*num=n;

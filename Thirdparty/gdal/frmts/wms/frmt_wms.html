@@ -142,10 +142,6 @@
 			<td class="xml">    &lt;BandsCount&gt;<span class="value">3</span>&lt;/BandsCount&gt;</td>
 			<td class="desc">Number of bands/channels, 1 for grayscale data, 3 for RGB. (optional, defaults to 3)</td>
 		</tr>
-        <tr>
-            <td class="xml">    &lt;DataType&gt;<span class="value">Byte</span>&lt;/DataType&gt;</td>
-            <td class="desc">Band data type, amont Byte, Int16, UInt16, Int32, UInt32, Float32, Float64, etc.. (optional, defaults to Byte)</td>
-        </tr>
 		<tr>
 			<td class="xml">    &lt;BlockSizeX&gt;<span class="value">1024</span>&lt;/BlockSizeX&gt;</td>
 			<td class="desc">Block size in pixels. (optional, defaults to 1024, except for VirtualEarth)</td>
@@ -207,10 +203,6 @@
 			<td class="desc">HTTP User-agent string. Some servers might require a well-known user-agent such as "Mozilla/5.0" (optional, defaults to "GDAL WMS driver (http://www.gdal.org/frmt_wms.html)"). Added in GDAL 1.8.0</td>
 		</tr>
         <tr>
-            <td class="xml">    &lt;UserPwd&gt;<span class="value">user:password</span>&lt;/UserPwd&gt;</td>
-            <td class="desc">User and Password for HTTP authentication (optional). Added in GDAL 1.10.0</td>
-        </tr>
-        <tr>
             <td class="xml">    &lt;Referer&gt;<span class="value">http://example.foo/</span>&lt;/Referer&gt;</td>
             <td class="desc">HTTP Referer string. Some servers might require it (optional). Added in GDAL 1.9.0</td>
         </tr>
@@ -242,55 +234,6 @@
 <p>
   Communications with an OGC WMS server. Has support for both tiled and 
   untiled requests.
-</p>
-
-<p>
-     Starting with GDAL &gt;= 1.10, WMS layers can be queried (through a GetFeatureInfo request) with the gdallocationinfo utility, or
-     with a GetMetadataItem("Pixel_iCol_iLine", "LocationInfo") call on a band object.<p>
-     <pre>gdallocationinfo "WMS:http://demo.opengeo.org/geoserver/gwc/service/wms?SERVICE=WMS&amp;VERSION=1.1.1&amp;
-                            REQUEST=GetMap&amp;LAYERS=og:bugsites&amp;SRS=EPSG:900913&amp;
-                            BBOX=-1.15841845090625E7,5479006.186718751,-1.1505912992109375E7,5557277.703671876&amp;
-                            FORMAT=image/png&amp;TILESIZE=256&amp;OVERVIEWCOUNT=25&amp;MINRESOLUTION=0.0046653459640220&amp;TILED=true"
-                           -geoloc -11547071.455 5528616 -xml -b 1
-    </pre>
-    Output:
-    <pre>
-Report pixel="248595" line="191985"&gt;
-  &lt;BandReport band="1"&gt;
-    &lt;LocationInfo&gt;
-      &lt;wfs:FeatureCollection xmlns="http://www.opengis.net/wfs"
-                                xmlns:wfs="http://www.opengis.net/wfs"
-                                xmlns:gml="http://www.opengis.net/gml"
-                                xmlns:og="http://opengeo.org"
-                                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                                xsi:schemaLocation="http://opengeo.org http://demo.opengeo.org/geoserver/wfs?service=WFS&amp;version=1.0.0&amp;request=DescribeFeatureType&amp;typeName=og%3Abugsites http://www.opengis.net/wfs http://demo.opengeo.org/geoserver/schemas/wfs/1.0.0/WFS-basic.xsd"&gt;
-        &lt;gml:boundedBy&gt;
-          &lt;gml:Box srsName="http://www.opengis.net/gml/srs/epsg.xml#26713"&gt;
-            &lt;gml:coordinates xmlns:gml="http://www.opengis.net/gml" decimal="." cs="," ts=" "&gt;601228,4917635 601228,4917635&lt;/gml:coordinates&gt;
-          &lt;/gml:Box&gt;
-        &lt;/gml:boundedBy&gt;
-        &lt;gml:featureMember&gt;
-          &lt;og:bugsites fid="bugsites.40946"&gt;
-            &lt;gml:boundedBy&gt;
-              &lt;gml:Box srsName="http://www.opengis.net/gml/srs/epsg.xml#26713"&gt;
-                &lt;gml:coordinates xmlns:gml="http://www.opengis.net/gml" decimal="." cs="," ts=" "&gt;601228,4917635 601228,4917635&lt;/gml:coordinates&gt;
-              &lt;/gml:Box&gt;
-            &lt;/gml:boundedBy&gt;
-            &lt;og:cat&gt;86&lt;/og:cat&gt;
-            &lt;og:str1&gt;Beetle site&lt;/og:str1&gt;
-            &lt;og:the_geom&gt;
-              &lt;gml:Point srsName="http://www.opengis.net/gml/srs/epsg.xml#26713"&gt;
-                &lt;gml:coordinates xmlns:gml="http://www.opengis.net/gml" decimal="." cs="," ts=" "&gt;601228,4917635&lt;/gml:coordinates&gt;
-              &lt;/gml:Point&gt;
-            &lt;/og:the_geom&gt;
-          &lt;/og:bugsites&gt;
-        &lt;/gml:featureMember&gt;
-      &lt;/wfs:FeatureCollection&gt;
-    &lt;/LocationInfo&gt;
-    &lt;Value&gt;255&lt;/Value&gt;
-  &lt;/BandReport&gt;
-&lt;/Report&gt;
-    </pre>
 </p>
 
 <h3>TileService</h3>
@@ -388,10 +331,10 @@ Access to web-based Virtual Earth tile services. Access is always tile based.<p>
     <li><p>
 	<a href="frmt_wms_onearth_global_mosaic.xml">onearth_global_mosaic.xml</a> - Landsat mosaic from a <a href="http://onearth.jpl.nasa.gov/">OnEarth</a> WMS server<br>
 	<pre>gdal_translate -of JPEG -outsize 500 250 onearth_global_mosaic.xml onearth_global_mosaic.jpg</pre>
+	<img src="http://sydney.freeearthfoundation.com/gdalwms/onearth_global_mosaic.jpg" alt="example output">
 	<pre>gdal_translate -of JPEG -projwin -10 55 30 35 -outsize 500 250 onearth_global_mosaic.xml onearth_global_mosaic2.jpg</pre>
-    </p>
-    <p><i>Note : this particular server does no longer accept regular WMS queries.</i></p>
-    </li>
+	<img src="http://sydney.freeearthfoundation.com/gdalwms/onearth_global_mosaic2.jpg" alt="example output">
+    </p></li>
 
     <li><p>
 	<a href="frmt_wms_metacarta_wmsc.xml">metacarta_wmsc.xml</a> - 
@@ -438,6 +381,10 @@ Access to web-based Virtual Earth tile services. Access is always tile based.<p>
     </p></li>
 
     <li><p>
+     <a href="frmt_wms_swissgeo_tms.xml">Swiss Geoportal maps</a> accessed with the TMS minidriver (needs GDAL >= 1.9.0)
+    </p></li>
+
+    <li><p>
      OnEarth Tiled WMS <a href="frmt_twms_Clementine.xml">Clementine</a>,
      <a href="frmt_twms_daily.xml">daily</a>, and
      <a href="frmt_twms_srtm.xml">srtm</a> examples.<p>
@@ -446,7 +393,6 @@ Access to web-based Virtual Earth tile services. Access is always tile based.<p>
     <li><p>
      <a href="frmt_wms_virtualearth.xml">VirtualEarth Aerial Layer</a> accessed with the VirtualEarth minidriver.
     </p></li>
-
 </ul>
 
 <h2>Open syntax</h2>

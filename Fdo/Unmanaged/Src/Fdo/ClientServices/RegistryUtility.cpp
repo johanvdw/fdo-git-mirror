@@ -797,7 +797,7 @@ wchar_t *FdoRegistryUtility::GetFileName()
             const char *me;
             char *home;
             char *last;
-            const char *install = "/usr/local/fdo-3.8.1";
+            const char *install = "/usr/local/fdo-3.8.0";
 
             // Determine the user-specified FDO install location
             char *fdo_home = getenv( "FDOHOME" );
@@ -807,9 +807,6 @@ wchar_t *FdoRegistryUtility::GetFileName()
 
             // try where we are
             me = SELFPATH;
-            if (NULL == me)
-                me = "";
-
             home = (char*)alloca (strlen (me) + 1);
             strcpy (home, me);
             last = strrchr (home, '/');

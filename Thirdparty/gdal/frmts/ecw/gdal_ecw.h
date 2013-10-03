@@ -44,9 +44,7 @@
 
 // The following is needed on 4.x+ to enable rw support.
 #if defined(HAVE_COMPRESS)
-# ifndef ECW_COMPRESS_RW_SDK_VERSION
 #  define ECW_COMPRESS_RW_SDK_VERSION
-# endif
 #endif
 
 #if defined(_MSC_VER)
@@ -59,16 +57,9 @@
 #include <NCSFile.h>
 #include <NCSJP2FileView.h>
 
-#ifdef HAVE_ECW_BUILDNUMBER_H
-#  include <ECWJP2BuildNumber.h>
-#  if !defined(ECW_VERSION)
-#    define ECWSDK_VERSION (NCS_ECWJP2_VER_MAJOR*10+NCS_ECWJP2_VER_MINOR)
-#  endif
-#else
 /* By default, assume 3.3 SDK Version. */
-#  if !defined(ECWSDK_VERSION)
-#    define ECWSDK_VERSION 33
-#  endif
+#if !defined(ECWSDK_VERSION)
+#  define ECWSDK_VERSION 33
 #endif
 
 #if ECWSDK_VERSION < 40
@@ -77,18 +68,11 @@
 #  define HAVE_COMPRESS
 #endif
 
+#  include <NCSJP2File.h>
 #else
-    #if ECWSDK_VERSION>=50
-        #include <NCSECWHeaderEditor.h>
-        #include "NCSEcw/SDK/Box.h"
-    #else 
-        #include <HeaderEditor.h>
-    #endif
+#  include <ECWJP2BuildNumber.h>
+#  include <HeaderEditor.h>
 #  define NCS_FASTCALL
-#endif
-
-#if ECWSDK_VERSION >= 40
-#define SDK_CAN_DO_SUPERSAMPLING 1
 #endif
 
 #ifndef NCSFILEBASE_H
@@ -100,9 +84,7 @@
 
 void ECWInitialize( void );
 GDALDataset* ECWDatasetOpenJPEG2000(GDALOpenInfo* poOpenInfo);
-const char* ECWGetColorInterpretationName(GDALColorInterp eColorInterpretation, int nBandNumber);
-GDALColorInterp ECWGetColorInterpretationByName(const char *pszName);
-const char* ECWGetColorSpaceName(NCSFileColorSpace colorSpace);
+
 #ifdef HAVE_COMPRESS
 GDALDataset *
 ECWCreateCopyECW( const char * pszFilename, GDALDataset *poSrcDS, 
@@ -121,19 +103,14 @@ ECWCreateJPEG2000(const char *pszFilename, int nXSize, int nYSize, int nBands,
                   GDALDataType eType, char **papszOptions );
 #endif
 
-void ECWReportError(CNCSError& oErr, const char* pszMsg = "");
-
 /************************************************************************/
 /* ==================================================================== */
 /*                             JP2Userbox                               */
 /* ==================================================================== */
 /************************************************************************/
 #ifdef HAVE_COMPRESS
-#if ECWSDK_VERSION>=50
-class JP2UserBox : public CNCSSDKBox {
-#else 
 class JP2UserBox : public CNCSJP2Box {
-#endif
+
 private:
     int           nDataLength;
     unsigned char *pabyData;
@@ -144,10 +121,10 @@ public:
     virtual ~JP2UserBox();
 
 #if ECWSDK_VERSION >= 40
-    virtual CNCSError Parse(NCS::SDK::CFileBase &JP2File, 
+    virtual CNCSError Parse( NCS::JP2::CFile &JP2File, 
                              NCS::CIOStream &Stream);
-    virtual CNCSError UnParse(NCS::SDK::CFileBase &JP2File, 
-                                NCS::CIOStream &Stream);
+    virtual CNCSError UnParse( NCS::JP2::CFile &JP2File, 
+								NCS::CIOStream &Stream);
 #else        
     virtual CNCSError Parse(class CNCSJP2File &JP2File, 
                             CNCSJPCIOStream &Stream);
@@ -172,41 +149,23 @@ public:
 class VSIIOStream : public CNCSJPCIOStream
 
 {
-  private: 
-    char     *m_Filename;
   public:
     
     INT64    startOfJPData;
     INT64    lengthOfJPData;
     VSILFILE    *fpVSIL;
-    BOOLEAN      bWritable;
-    BOOLEAN      bSeekable;
-    int      nFileViewCount;
-    
-    int      nCOMState;
-    int      nCOMLength;
-    GByte    abyCOMType[2];
+    int      bWritable;
+	int      nFileViewCount;
+    char     *pszFilename;
 
-    VSIIOStream() : m_Filename(NULL){
+    VSIIOStream() {
         nFileViewCount = 0;
         startOfJPData = 0;
         lengthOfJPData = -1;
         fpVSIL = NULL;
-        bWritable = false;
-        bSeekable = false;
-        if( CSLTestBoolean(CPLGetConfigOption("GDAL_ECW_WRITE_COMPRESSION_SOFTWARE", "YES")) )
-            nCOMState = -1;
-        else
-            nCOMState = 0;
-        nCOMLength = 0;
-        abyCOMType[0] = 0;
-        abyCOMType[1] = 0;
     }
     virtual ~VSIIOStream() {
         Close();
-        if (m_Filename!=NULL){
-            CPLFree(m_Filename);
-        }
     }
 
     virtual CNCSError Close() {
@@ -220,22 +179,10 @@ class VSIIOStream : public CNCSJPCIOStream
     }        
         
 #if ECWSDK_VERSION >= 40
-    virtual VSIIOStream *Clone() {
-        
-        VSILFILE *fpNewVSIL = VSIFOpenL( m_Filename, "rb" );
-        if (fpNewVSIL == NULL) 
-        {
-            return NULL;
-        }else
-        {
-            VSIIOStream *pDst = new VSIIOStream();
-            pDst->Access(fpNewVSIL, bWritable, bSeekable, m_Filename, startOfJPData, lengthOfJPData);
-            return pDst;
-        }
-    }
+    virtual NCS::CIOStream *Clone() { return NULL; }
 #endif /* ECWSDK_VERSION >= 4 */
 
-    CNCSError Access( VSILFILE *fpVSILIn, BOOLEAN bWrite, BOOLEAN bSeekableIn,
+    virtual CNCSError Access( VSILFILE *fpVSILIn, BOOLEAN bWrite,
                               const char *pszFilename, 
                               INT64 start, INT64 size = -1) {
 
@@ -243,9 +190,8 @@ class VSIIOStream : public CNCSJPCIOStream
         startOfJPData = start;
         lengthOfJPData = size;
         bWritable = bWrite;
-        bSeekable = bSeekableIn;
         VSIFSeekL(fpVSIL, startOfJPData, SEEK_SET);
-        m_Filename = CPLStrdup(pszFilename);
+
         // the filename is used to establish where to put temporary files.
         // if it does not have a path to a real directory, we will 
         // substitute something. 
@@ -268,7 +214,7 @@ class VSIIOStream : public CNCSJPCIOStream
     }
 
     virtual bool NCS_FASTCALL Seek() {
-        return bSeekable;
+        return(true);
     }
     
     virtual bool NCS_FASTCALL Seek(INT64 offset, Origin origin = CURRENT) {
@@ -331,61 +277,6 @@ class VSIIOStream : public CNCSJPCIOStream
     virtual bool NCS_FASTCALL Write(void* buffer, UINT32 count) {
         if( count == 0 )
             return true;
-
-        GByte* paby = (GByte*) buffer;
-        if( nCOMState == 0 )
-        {
-            if( count == 2 && paby[0] == 0xff && paby[1] == 0x64 )
-            {
-                nCOMState ++;
-                return true;
-            }
-        }
-        else if( nCOMState == 1 )
-        {
-            if( count == 2 )
-            {
-                nCOMLength = (paby[0] << 8) | paby[1];
-                nCOMState ++;
-                return true;
-            }
-            else
-            {
-                GByte prevBuffer[] = { 0xff, 0x64 };
-                VSIFWriteL(prevBuffer, 2, 1, fpVSIL);
-                nCOMState = 0;
-            }
-        }
-        else if( nCOMState == 2 )
-        {
-            if( count == 2 )
-            {
-                abyCOMType[0] = paby[0];
-                abyCOMType[1] = paby[1];
-                nCOMState ++;
-                return true;
-            }
-            else
-            {
-                GByte prevBuffer[] = { nCOMLength >> 8, nCOMLength & 0xff };
-                VSIFWriteL(prevBuffer, 2, 1, fpVSIL);
-                nCOMState = 0;
-            }
-        }
-        else if( nCOMState == 3 )
-        {
-            if( count == (UINT32)nCOMLength - 4 )
-            {
-                nCOMState = 0;
-                return true;
-            }
-            else
-            {
-                VSIFWriteL(abyCOMType, 2, 1, fpVSIL);
-                nCOMState = 0;
-            }
-        }
-        
         if( 1 != VSIFWriteL(buffer, count, 1, fpVSIL) )
         {
             CPLDebug( "ECW", "VSIIOStream::Write(%d) failed.", 
@@ -440,21 +331,6 @@ public:
 
 class ECWRasterBand;
 
-typedef struct
-{
-    int bEnabled;
-    int nBandsTried;
-
-    int nXOff;
-    int nYOff;
-    int nXSize;
-    int nYSize;
-    int nBufXSize;
-    int nBufYSize;
-    GDALDataType eBufType;
-    GByte* pabyData;
-} ECWCachedMultiBandIO;
-
 class CPL_DLL ECWDataset : public GDALPamDataset
 {
     friend class ECWRasterBand;
@@ -487,8 +363,6 @@ class CPL_DLL ECWDataset : public GDALPamDataset
 
     char        **papszGMLMetadata;
 
-    ECWCachedMultiBandIO sCachedMultiBandIO;
-
     void        ECW2WKTProjection();
 
     void        CleanupWindow();
@@ -497,25 +371,9 @@ class CPL_DLL ECWDataset : public GDALPamDataset
                                 int, int *, int, int, int );
     CPLErr      LoadNextLine();
 
-#if ECWSDK_VERSION>=50
-
-    NCSFileStatistics* pStatistics;
-    int bStatisticsDirty;
-    int bStatisticsInitialized;
-    NCS::CError StatisticsEnsureInitialized();
-    NCS::CError StatisticsWrite();
-    void CleanupStatistics();
-	void ReadFileMetaDataFromFile();
-
-    int bFileMetaDataDirty;
-    void WriteFileMetaData(NCSFileMetaData* pFileMetaDataCopy);
-	
-#endif
-
     static CNCSJP2FileView    *OpenFileView( const char *pszDatasetName,
                                              bool bProgressive,
-                                             int &bUsingCustomStream, 
-                                             bool bWrite=false);
+                                             int &bUsingCustomStream );
 
     int         bHdrDirty;
     CPLString   m_osDatumCode;
@@ -527,33 +385,18 @@ class CPL_DLL ECWDataset : public GDALPamDataset
     int         bDatumCodeChanged;
     int         bUnitsCodeChanged;
     void        WriteHeader();
-    
-    int         bUseOldBandRasterIOImplementation;
-    
-    int         bPreventCopyingSomeMetadata;
-
-    int         nBandIndexToPromoteTo8Bit;
 
     CPLStringList oECWMetadataList;
-    CPLErr ReadBands(void * pData, int nBufXSize, int nBufYSize,
-                    GDALDataType eBufType, 
-                    int nBandCount,
-                    int nPixelSpace, int nLineSpace, int nBandSpace);
-    CPLErr ReadBandsDirectly(void * pData, int nBufXSize, int nBufYSize,
-                    GDALDataType eBufType, 
-                    int nBandCount,
-                    int nPixelSpace, int nLineSpace, int nBandSpace);
+
   public:
-        ECWDataset(int bIsJPEG2000);
-        ~ECWDataset();
+		ECWDataset(int bIsJPEG2000);
+		~ECWDataset();
                 
     static GDALDataset *Open( GDALOpenInfo *, int bIsJPEG2000 );
     static int          IdentifyJPEG2000( GDALOpenInfo * poOpenInfo );
     static GDALDataset *OpenJPEG2000( GDALOpenInfo * );
     static int          IdentifyECW( GDALOpenInfo * poOpenInfo );
     static GDALDataset *OpenECW( GDALOpenInfo * );
-
-    void        SetPreventCopyingSomeMetadata(int b) { bPreventCopyingSomeMetadata = b; }
 
     virtual CPLErr IRasterIO( GDALRWFlag, int, int, int, int,
                               void *, int, int, GDALDataType,
@@ -598,11 +441,6 @@ class CPL_DLL ECWDataset : public GDALPamDataset
 
     virtual void EndAsyncReader(GDALAsyncReader *);
 #endif /* ECWSDK_VERSION > 40 */
-#if ECWSDK_VERSION >=50
-    int GetFormatVersion() const {
-        return psFileInfo->nFormatVersion;
-    }
-#endif
 };
 
 /************************************************************************/
@@ -624,21 +462,6 @@ class ECWRasterBand : public GDALPamRasterBand
 
     std::vector<ECWRasterBand*>  apoOverviews;
 
-#if ECWSDK_VERSION>=50
-
-    int nStatsBandIndex;
-    int nStatsBandCount;
-
-#endif
-
-    int         bPromoteTo8Bit;
-
-//#if !defined(SDK_CAN_DO_SUPERSAMPLING)
-    CPLErr OldIRasterIO( GDALRWFlag, int, int, int, int,
-                              void *, int, int, GDALDataType,
-                              int, int );
-//#endif
-
     virtual CPLErr IRasterIO( GDALRWFlag, int, int, int, int,
                               void *, int, int, GDALDataType,
                               int, int );
@@ -650,7 +473,7 @@ class ECWRasterBand : public GDALPamRasterBand
 
     virtual CPLErr IReadBlock( int, int, void * );
     virtual int    HasArbitraryOverviews() { return apoOverviews.size() == 0; }
-    virtual int    GetOverviewCount() { return (int)apoOverviews.size(); }
+    virtual int    GetOverviewCount() { return apoOverviews.size(); }
     virtual GDALRasterBand *GetOverview(int);
 
     virtual GDALColorInterp GetColorInterpretation();
@@ -659,23 +482,6 @@ class ECWRasterBand : public GDALPamRasterBand
     virtual CPLErr AdviseRead( int nXOff, int nYOff, int nXSize, int nYSize,
                                int nBufXSize, int nBufYSize, 
                                GDALDataType eDT, char **papszOptions );
-#if ECWSDK_VERSION >= 50
-    void GetBandIndexAndCountForStatistics(int &bandIndex, int &bandCount);
-    virtual CPLErr GetDefaultHistogram( double *pdfMin, double *pdfMax,
-                                    int *pnBuckets, int ** ppanHistogram,
-                                    int bForce,
-                                    GDALProgressFunc, void *pProgressData);
-    virtual CPLErr SetDefaultHistogram( double dfMin, double dfMax,
-                                        int nBuckets, int *panHistogram );
-    virtual double GetMinimum( int* pbSuccess );
-    virtual double GetMaximum( int* pbSuccess );
-    virtual CPLErr GetStatistics( int bApproxOK, int bForce,
-                                  double *pdfMin, double *pdfMax, 
-                                  double *pdfMean, double *padfStdDev );
-    virtual CPLErr SetStatistics( double dfMin, double dfMax, 
-                                  double dfMean, double dfStdDev );
-#endif
-
 };
 
 int ECWTranslateFromWKT( const char *pszWKT,

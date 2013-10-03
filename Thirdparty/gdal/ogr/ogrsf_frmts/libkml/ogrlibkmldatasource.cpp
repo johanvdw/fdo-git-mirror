@@ -476,7 +476,7 @@ SchemaPtr OGRLIBKMLDataSource::FindSchema (
 {
     char *pszID = NULL;
     char *pszFile = NULL;
-    char *pszSchemaName = NULL;
+    char *pszName = NULL;
     char *pszPound;
     DocumentPtr poKmlDocument = NULL;
     SchemaPtr poKmlSchemaResult = NULL;
@@ -509,7 +509,7 @@ SchemaPtr OGRLIBKMLDataSource::FindSchema (
     }
 
     else {
-        pszSchemaName = CPLStrdup ( pszSchemaUrl );
+        pszName = CPLStrdup ( pszSchemaUrl );
 
         /***** kml *****/
 
@@ -540,8 +540,8 @@ SchemaPtr OGRLIBKMLDataSource::FindSchema (
                 }
             }
 
-            else if ( poKmlSchema->has_name (  ) && pszSchemaName) {
-                if ( EQUAL ( pszSchemaName, poKmlSchema->get_name (  ).c_str (  ) ) ) {
+            else if ( poKmlSchema->has_name (  ) && pszName) {
+                if ( EQUAL ( pszName, poKmlSchema->get_name (  ).c_str (  ) ) ) {
                     poKmlSchemaResult = poKmlSchema;
                     break;
                 }
@@ -554,8 +554,6 @@ SchemaPtr OGRLIBKMLDataSource::FindSchema (
         CPLFree ( pszFile );
     if ( pszID )
         CPLFree ( pszID );
-    if ( pszSchemaName )
-        CPLFree ( pszSchemaName );
 
     return poKmlSchemaResult;
 
@@ -718,8 +716,6 @@ static ContainerPtr GetContainerFromRoot (
 {
     ContainerPtr poKmlContainer = NULL;
 
-    int bReadGroundOverlay = CSLTestBoolean(CPLGetConfigOption("LIBKML_READ_GROUND_OVERLAY", "YES"));
-
     if ( poKmlRoot ) {
 
         /***** skip over the <kml> we want the container *****/
@@ -733,12 +729,12 @@ static ContainerPtr GetContainerFromRoot (
 
                 if ( poKmlFeat->IsA ( kmldom::Type_Container ) )
                     poKmlContainer = AsContainer ( poKmlFeat );
-                else if ( poKmlFeat->IsA ( kmldom::Type_Placemark ) ||
-                          (bReadGroundOverlay && poKmlFeat->IsA ( kmldom::Type_GroundOverlay )) ) 
+                else if ( poKmlFeat->IsA ( kmldom::Type_Placemark ) )
                 {
                     poKmlContainer = m_poKmlFactory->CreateDocument (  );
                     poKmlContainer->add_feature ( kmldom::AsFeature(kmlengine::Clone(poKmlFeat)) );
                 }
+
             }
 
         }
@@ -818,7 +814,7 @@ int OGRLIBKMLDataSource::OpenKml (
         catch(std::bad_alloc& e)
         {
             VSIFCloseL(fp);
-            return FALSE;
+            return NULL;
         }
     }
     VSIFCloseL(fp);
@@ -915,7 +911,7 @@ int OGRLIBKMLDataSource::OpenKmz (
         catch(std::bad_alloc& e)
         {
             VSIFCloseL(fp);
-            return FALSE;
+            return NULL;
         }
     }
     VSIFCloseL(fp);
@@ -1784,13 +1780,6 @@ OGRLayer *OGRLIBKMLDataSource::CreateLayer (
 
     if ( !bUpdate )
         return NULL;
-    
-    if( (IsKmz () || IsDir ()) && EQUAL(pszLayerName, "doc") )
-    {
-        CPLError(CE_Failure, CPLE_AppDefined,
-                 "'doc' is an invalid layer name in a KMZ file");
-        return NULL;
-    }
 
     OGRLayer *poOgrLayer = NULL;
 

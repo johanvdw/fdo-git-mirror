@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: kml.cpp 25440 2013-01-03 20:20:32Z rouault $
+ * $Id: kml.cpp 23589 2011-12-17 14:21:01Z rouault $
  *
  * Project:  KML Driver
  * Purpose:  Class for reading, parsing and handling a kmlfile.
@@ -175,9 +175,7 @@ void KML::checkValidity()
                 aBuf[nLen] = 0;
             else
                 aBuf[BUFSIZ-1] = 0;
-            if( strstr(aBuf, "<?xml") && (
-                    strstr(aBuf, "<kml") ||
-                    (strstr(aBuf, "<Document") && strstr(aBuf, "/kml/2.")) ) )
+            if (strstr(aBuf, "<?xml") && strstr(aBuf, "<kml"))
             {
                 CPLError(CE_Failure, CPLE_AppDefined,
                         "XML parsing of KML file failed : %s at line %d, column %d",
@@ -275,7 +273,7 @@ void XMLCALL KML::startElementValidate(void* pUserData, const char* pszName, con
 
     poKML->validity = KML_VALIDITY_INVALID;
 
-    if(strcmp(pszName, "kml") == 0 || strcmp(pszName, "Document") == 0)
+    if(strcmp(pszName, "kml") == 0)
     {
         // Check all Attributes
         for (i = 0; ppszAttr[i]; i += 2)
@@ -557,15 +555,10 @@ bool KML::isRest(std::string const& elem) const
     return false;
 };
 
-void KML::findLayers(KMLNode* poNode, int bKeepEmptyContainers)
+void KML::findLayers(KMLNode* poNode)
 {
     // idle
 };
-
-bool KML::hasOnlyEmpty() const
-{
-    return poTrunk_->hasOnlyEmpty();
-}
 
 int KML::getNumLayers() const
 {

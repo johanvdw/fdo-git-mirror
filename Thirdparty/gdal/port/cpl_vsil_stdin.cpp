@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_vsil_stdin.cpp 24432 2012-05-17 16:20:57Z rouault $
+ * $Id: cpl_vsil_stdin.cpp 21689 2011-02-12 12:18:14Z rouault $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  Implement VSI large file api for stdin
@@ -30,6 +30,7 @@
 #include "cpl_port.h"
 #include "cpl_error.h"
 #include "cpl_vsi_virtual.h"
+#include "cpl_multiproc.h"
 
 #include <stdio.h>
 #ifdef WIN32
@@ -37,13 +38,14 @@
 #include <fcntl.h>
 #endif
 
-CPL_CVSID("$Id: cpl_vsil_stdin.cpp 24432 2012-05-17 16:20:57Z rouault $");
+CPL_CVSID("$Id: cpl_vsil_stdin.cpp 21689 2011-02-12 12:18:14Z rouault $");
 
 /* We buffer the first 1MB of standard input to enable drivers */
 /* to autodetect data. In the first MB, backward and forward seeking */
 /* is allowed, after only forward seeking will work */
 #define BUFFER_SIZE (1024 * 1024)
 
+static void* hStdinMutex;
 static GByte* pabyBuffer;
 static GUInt32 nBufferLen;
 static GUIntBig nRealPos;
@@ -56,10 +58,15 @@ static void VSIStdinInit()
 {
     if (pabyBuffer == NULL)
     {
+        CPLMutexHolder oHolder(&hStdinMutex);
+        if (pabyBuffer == NULL)
+        {
 #ifdef WIN32
-        setmode( fileno( stdin ), O_BINARY );
+            setmode( fileno( stdin ), O_BINARY );
 #endif
-        pabyBuffer = (GByte*)CPLMalloc(BUFFER_SIZE);
+            pabyBuffer = (GByte*)CPLMalloc(BUFFER_SIZE);
+            nRealPos = nBufferLen = fread(pabyBuffer, 1, BUFFER_SIZE, stdin);
+        }
     }
 }
 
@@ -91,7 +98,6 @@ class VSIStdinHandle : public VSIVirtualHandle
 {
   private:
     GUIntBig nCurOff;
-    int               ReadAndCache( void* pBuffer, int nToRead );
 
   public:
                       VSIStdinHandle();
@@ -122,30 +128,6 @@ VSIStdinHandle::~VSIStdinHandle()
 {
 }
 
-
-/************************************************************************/
-/*                              ReadAndCache()                          */
-/************************************************************************/
-
-int VSIStdinHandle::ReadAndCache( void* pBuffer, int nToRead )
-{
-    CPLAssert(nCurOff == nRealPos);
-
-    int nRead = fread(pBuffer, 1, nToRead, stdin);
-
-    if (nRealPos < BUFFER_SIZE)
-    {
-        int nToCopy = MIN(BUFFER_SIZE - (int)nRealPos, nRead);
-        memcpy(pabyBuffer + nRealPos, pBuffer, nToCopy);
-        nBufferLen += nToCopy;
-    }
-
-    nCurOff += nRead;
-    nRealPos = nCurOff;
-
-    return nRead;
-}
-
 /************************************************************************/
 /*                                Seek()                                */
 /************************************************************************/
@@ -153,12 +135,7 @@ int VSIStdinHandle::ReadAndCache( void* pBuffer, int nToRead )
 int VSIStdinHandle::Seek( vsi_l_offset nOffset, int nWhence )
 
 {
-    if (nWhence == SEEK_SET && nOffset == nCurOff)
-        return 0;
-
     VSIStdinInit();
-    if (nBufferLen == 0)
-        nRealPos = nBufferLen = fread(pabyBuffer, 1, BUFFER_SIZE, stdin);
 
     if (nWhence == SEEK_END)
     {
@@ -207,10 +184,11 @@ int VSIStdinHandle::Seek( vsi_l_offset nOffset, int nWhence )
     while(TRUE)
     {
         int nToRead = (int) MIN(8192, nOffset - nCurOff);
-        int nRead = ReadAndCache( abyTemp, nToRead );
-
+        int nRead = fread(abyTemp, 1, nToRead, stdin);
         if (nRead < nToRead)
             return -1;
+        nCurOff += nRead;
+        nRealPos = nCurOff;
         if (nToRead < 8192)
             break;
     }
@@ -245,19 +223,26 @@ size_t VSIStdinHandle::Read( void * pBuffer, size_t nSize, size_t nCount )
             return nCount;
         }
 
-        int nAlreadyCached = (int)(nBufferLen - nCurOff);
-        memcpy(pBuffer, pabyBuffer + nCurOff, nAlreadyCached);
+        memcpy(pBuffer, pabyBuffer + nCurOff, (size_t)(nBufferLen - nCurOff));
 
-        nCurOff += nAlreadyCached;
+        int nRead = fread((GByte*)pBuffer + nBufferLen - nCurOff, 1,
+                          (size_t)(nSize*nCount - (nBufferLen-nCurOff)), stdin);
 
-        int nRead = ReadAndCache( (GByte*)pBuffer + nAlreadyCached,
-                                  (int)(nSize*nCount - nAlreadyCached) );
+        int nRet = (int) ((nRead + nBufferLen - nCurOff) / nSize);
 
-        return ((nRead + nAlreadyCached) / nSize);
+        nRealPos = nCurOff = nBufferLen + nRead;
+
+        return nRet;
     }
 
-    int nRead = ReadAndCache( pBuffer, (int)(nSize * nCount) );
-    return nRead / nSize;
+    int nRet = fread(pBuffer, nSize, nCount, stdin);
+    if (nRet < 0)
+        return nRet;
+
+    nCurOff += nRet * nSize;
+    nRealPos = nCurOff;
+
+    return nRet;
 }
 
 /************************************************************************/
@@ -307,6 +292,7 @@ int VSIStdinHandle::Close()
 
 VSIStdinFilesystemHandler::VSIStdinFilesystemHandler()
 {
+    hStdinMutex = NULL;
     pabyBuffer = NULL;
     nBufferLen = 0;
     nRealPos = 0;
@@ -318,6 +304,10 @@ VSIStdinFilesystemHandler::VSIStdinFilesystemHandler()
 
 VSIStdinFilesystemHandler::~VSIStdinFilesystemHandler()
 {
+    if( hStdinMutex != NULL )
+        CPLDestroyMutex( hStdinMutex );
+    hStdinMutex = NULL;
+
     CPLFree(pabyBuffer);
     pabyBuffer = NULL;
 }
@@ -359,15 +349,9 @@ int VSIStdinFilesystemHandler::Stat( const char * pszFilename,
     if (strcmp(pszFilename, "/vsistdin/") != 0)
         return -1;
 
-    if ((nFlags & VSI_STAT_SIZE_FLAG))
-    {
-        VSIStdinInit();
-        if (nBufferLen == 0)
-            nRealPos = nBufferLen = fread(pabyBuffer, 1, BUFFER_SIZE, stdin);
+    VSIStdinInit();
 
-        pStatBuf->st_size = nBufferLen;
-    }
-
+    pStatBuf->st_size = nBufferLen;
     pStatBuf->st_mode = S_IFREG;
     return 0;
 }

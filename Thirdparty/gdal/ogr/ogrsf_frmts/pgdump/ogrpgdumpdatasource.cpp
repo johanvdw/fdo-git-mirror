@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrpgdumpdatasource.cpp 25366 2012-12-27 18:38:53Z rouault $
+ * $Id: ogrpgdumpdatasource.cpp 22821 2011-07-28 17:54:47Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRPGDumpDataSource class.
@@ -32,7 +32,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrpgdumpdatasource.cpp 25366 2012-12-27 18:38:53Z rouault $");
+CPL_CVSID("$Id: ogrpgdumpdatasource.cpp 22821 2011-07-28 17:54:47Z rouault $");
 
 /************************************************************************/
 /*                      OGRPGDumpDataSource()                           */
@@ -319,9 +319,6 @@ OGRPGDumpDataSource::CreateLayer( const char * pszLayerName,
 /*      adding tot the srs table if needed.                             */
 /* -------------------------------------------------------------------- */
     int nSRSId = -1;
-    const char* pszPostgisVersion = CSLFetchNameValue( papszOptions, "POSTGIS_VERSION" );
-    if( pszPostgisVersion != NULL && atoi(pszPostgisVersion) >= 2 )
-        nSRSId = 0;
 
     if( CSLFetchNameValue( papszOptions, "SRID") != NULL )
         nSRSId = atoi(CSLFetchNameValue( papszOptions, "SRID"));
@@ -357,19 +354,15 @@ OGRPGDumpDataSource::CreateLayer( const char * pszLayerName,
         else
             pszGFldName = "wkb_geometry";
 
-        if( pszPostgisVersion == NULL || atoi(pszPostgisVersion) < 2 )
-        {
-            /* Sometimes there is an old cruft entry in the geometry_columns
-            * table if things were not properly cleaned up before.  We make
-            * an effort to clean out such cruft.
-            * Note: PostGIS 2.0 defines geometry_columns as a view (no clean up is needed)
-            */
-            osCommand.Printf(
-                    "DELETE FROM geometry_columns WHERE f_table_name = %s AND f_table_schema = '%s'",
-                    pszEscapedTableNameSingleQuote, pszSchemaName );
-            if (bCreateTable)
-                Log(osCommand);
-        }
+        /* Sometimes there is an old cruft entry in the geometry_columns
+        * table if things were not properly cleaned up before.  We make
+        * an effort to clean out such cruft.
+        */
+        osCommand.Printf(
+                "DELETE FROM geometry_columns WHERE f_table_name = %s AND f_table_schema = '%s'",
+                pszEscapedTableNameSingleQuote, pszSchemaName );
+        if (bCreateTable)
+            Log(osCommand);
     }
 
 
@@ -479,9 +472,6 @@ OGRPGDumpDataSource::CreateLayer( const char * pszLayerName,
                                   pszFIDColumnName, nDimension, nSRSId, bWriteAsHex, bCreateTable );
     poLayer->SetLaunderFlag( CSLFetchBoolean(papszOptions,"LAUNDER",TRUE) );
     poLayer->SetPrecisionFlag( CSLFetchBoolean(papszOptions,"PRECISION",TRUE));
-
-    const char* pszOverrideColumnTypes = CSLFetchNameValue( papszOptions, "COLUMN_TYPES" );
-    poLayer->SetOverrideColumnTypes(pszOverrideColumnTypes);
 
 /* -------------------------------------------------------------------- */
 /*      Add layer to data source layer list.                            */

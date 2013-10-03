@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gmtdataset.cpp 25593 2013-02-02 13:03:03Z rouault $
+ * $Id: gmtdataset.cpp 23060 2011-09-05 17:58:30Z rouault $
  *
  * Project:  netCDF read/write Driver
  * Purpose:  GDAL bindings over netCDF library for GMT Grids.
@@ -30,11 +30,8 @@
 #include "gdal_pam.h"
 #include "gdal_frmts.h"
 #include "netcdf.h"
-#include "cpl_multiproc.h"
 
-CPL_CVSID("$Id: gmtdataset.cpp 25593 2013-02-02 13:03:03Z rouault $");
-
-extern void *hNCMutex; /* shared with netcdf. See netcdfdataset.cpp */
+CPL_CVSID("$Id: gmtdataset.cpp 23060 2011-09-05 17:58:30Z rouault $");
 
 /************************************************************************/
 /* ==================================================================== */
@@ -134,8 +131,6 @@ CPLErr GMTRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
     size_t start[2], edge[2];
     int    nErr = NC_NOERR;
     int    cdfid = ((GMTDataset *) poDS)->cdfid;
-    
-    CPLMutexHolderD(&hNCMutex);
 
     start[0] = nBlockYOff * nBlockXSize;
     edge[0] = nBlockXSize;
@@ -219,8 +214,6 @@ GDALDataset *GMTDataset::Open( GDALOpenInfo * poOpenInfo )
         || poOpenInfo->pabyHeader[2] != 'F' 
         || poOpenInfo->pabyHeader[3] != 1 )
         return NULL;
-    
-    CPLMutexHolderD(&hNCMutex);
 
 /* -------------------------------------------------------------------- */
 /*      Try opening the dataset.                                        */
@@ -265,9 +258,7 @@ GDALDataset *GMTDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
     GMTDataset 	*poDS;
 
-    CPLReleaseMutex(hNCMutex);  // Release mutex otherwise we'll deadlock with GDALDataset own mutex
     poDS = new GMTDataset();
-    CPLAcquireMutex(hNCMutex, 1000.0);
 
     poDS->cdfid = cdfid;
     poDS->z_id = z_id;
@@ -365,15 +356,12 @@ GDALDataset *GMTDataset::Open( GDALOpenInfo * poOpenInfo )
 /*      Initialize any PAM information.                                 */
 /* -------------------------------------------------------------------- */
     poDS->SetDescription( poOpenInfo->pszFilename );
-
-    CPLReleaseMutex(hNCMutex); // Release mutex otherwise we'll deadlock with GDALDataset own mutex
     poDS->TryLoadXML();
 
 /* -------------------------------------------------------------------- */
 /*      Check for external overviews.                                   */
 /* -------------------------------------------------------------------- */
     poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename, poOpenInfo->papszSiblingFiles );
-    CPLAcquireMutex(hNCMutex, 1000.0);
 
     return( poDS );
 }
@@ -396,8 +384,6 @@ GMTCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     nc_type nc_datatype;
     GDALRasterBand *poBand;
     int nXSize, nYSize;
-    
-    CPLMutexHolderD(&hNCMutex);
 
     if( poSrcDS->GetRasterCount() != 1 )
     {

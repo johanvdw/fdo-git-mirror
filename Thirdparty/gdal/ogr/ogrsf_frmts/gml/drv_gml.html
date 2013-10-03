@@ -54,8 +54,6 @@ the coordinates in the file are in (latitude, longitude) order. By default, OGR 
 not consider the EPSG axis order and will report the coordinates in (latitude,longitude)
 order. However, if you set the configuration option <b>GML_CONSIDER_EPSG_AS_URN</b> to
 <b>YES</b>, the rules explained in the previous paragraph will be applied.<p>
-Since OGR 1.10, the above also applied for projected coordinate systems whose EPSG
-preferred axis order is (northing, easting).<p>
 
 <h2>Schema</h2>
 
@@ -67,9 +65,6 @@ the feature classes and their associated properties by scanning the file and
 looking for "known" gml objects in the gml namespace to determine the organization.
 While this approach is error prone, it has the advantage of working for GML files
 even if the associated schema (.xsd) file has been lost.<p>
-
-Starting with OGR 1.10, it is possible to specify an explicit filename for the XSD
-schema to use, by using "a_filename.gml,xsd=another_filename.xsd" as a connection string.<p>
 
 The first time a GML file is opened, if the associated .xsd is absent or could not been
 parsed correctly, it is completely scanned in order to
@@ -103,9 +98,6 @@ environment variables.<p>
 
 When reading a feature, the driver will by default only take into account the
 last recognized GML geometry found (in case they are multiples) in the XML subtree describing the feature.<p>
-
-Starting with OGR 1.10, in case of multiple geometry occurences, if a geometry is in a &lt;geometry&gt; element,
-this will be the one selected. This will make default behaviour consistant with Inspire objects.<p>
 
 Starting with OGR 1.8.0, the user can change the .gfs file to select the appropriate
 geometry by specifying its path with the &lt;GeometryElementPath&gt; element. See the
@@ -249,14 +241,10 @@ encoding mentionned in the file header is.<p>
 If the GML file is not encoded in one of the previous encodings and the only parser available
 is Expat, it will not be parsed by the GML driver. You may convert it into one of the supported
 encodings with the <i>iconv</i> utility for example and change accordingly the <i>encoding</i>
-parameter value in the XML header.<p>
+parameter value in the XML header.<br>
+<p>
 
 When writing a GML file, the driver expects UTF-8 content to be passed in.<p>
-
-Note: The .xsd schema files are parsed with an integrated XML parser which
-does not currently understand XML encodings specified in the XML header. It expects encoding to be always
-UTF-8. If attribute names in the schema file contains non-ascii characters, it is
-better to use <i>iconv</i> utility and convert the .xsd file into UTF-8 encoding first.<p>
 
 <h2>Feature id (fid / gml:id)</h2>
 
@@ -337,10 +325,6 @@ EXTERNAL.  This writes a GML application schema file to a corresponding .xsd fil
 (with the same basename). If INTERNAL is used the schema is written within the GML
 file, but this is experimental and almost certainly not valid XML.
 OFF disables schema generation (and is implicit if XSISCHEMAURI is used).<p>
-
-<li> <b>PREFIX</b> (OGR &gt;= 1.10) Defaults to 'ogr'. This is the prefix for the application target namespace.</p>
-
-<li> <b>TARGET_NAMESPACE</b> (OGR &gt;= 1.10) Defaults to 'http://ogr.maptools.org/'. This is the application target namespace.</p>
 
 <li> <b>FORMAT</b>: (OGR &gt;= 1.8.0) This can be set to :
 <ul>

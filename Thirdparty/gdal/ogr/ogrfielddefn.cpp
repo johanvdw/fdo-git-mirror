@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrfielddefn.cpp 24286 2012-04-21 19:17:26Z rouault $
+ * $Id: ogrfielddefn.cpp 21018 2010-10-30 11:30:51Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRFieldDefn class implementation.
@@ -31,7 +31,7 @@
 #include "ogr_api.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrfielddefn.cpp 24286 2012-04-21 19:17:26Z rouault $");
+CPL_CVSID("$Id: ogrfielddefn.cpp 21018 2010-10-30 11:30:51Z rouault $");
 
 /************************************************************************/
 /*                            OGRFieldDefn()                            */
@@ -704,23 +704,4 @@ int OGR_Fld_IsIgnored( OGRFieldDefnH hDefn )
 void OGR_Fld_SetIgnored( OGRFieldDefnH hDefn, int ignore )
 {
     ((OGRFieldDefn *) hDefn)->SetIgnored( ignore );
-}
-
-/************************************************************************/
-/*                             IsSame()                                 */
-/************************************************************************/
-
-/**
- * \brief Test if the field definition is identical to the other one.
- *
- * @param poOtherFieldDefn the other field definition to compare to.
- * @return TRUE if the field definition is identical to the other one.
- */
-
-int OGRFieldDefn::IsSame( const OGRFieldDefn * poOtherFieldDefn ) const
-{
-    return (strcmp(pszName, poOtherFieldDefn->pszName) == 0 &&
-            eType == poOtherFieldDefn->eType &&
-            nWidth == poOtherFieldDefn->nWidth &&
-            nPrecision == poOtherFieldDefn->nPrecision);
 }

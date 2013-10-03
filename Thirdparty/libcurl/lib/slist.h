@@ -1,5 +1,5 @@
-#ifndef HEADER_CURL_SLIST_H
-#define HEADER_CURL_SLIST_H
+#ifndef __SLIST_H
+#define __SLIST_H
 /***************************************************************************
  *                                  _   _ ____  _
  *  Project                     ___| | | |  _ \| |
@@ -20,6 +20,7 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
+ * $Id: slist.h,v 1.1 2009-03-09 12:21:47 bagder Exp $
  ***************************************************************************/
 
 /*
@@ -29,5 +30,4 @@
  */
 struct curl_slist *Curl_slist_duplicate(struct curl_slist *inlist);
 
-#endif /* HEADER_CURL_SLIST_H */
-
+#endif /* __SLIST_H */

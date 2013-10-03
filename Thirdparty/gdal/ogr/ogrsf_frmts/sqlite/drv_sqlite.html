@@ -1,45 +1,15 @@
 <html>
 <head>
-<title>SQLite / Spatialite RDBMS</title>
+<title>SQLite RDBMS</title>
 </head>
 
 <body bgcolor="#ffffff">
 
-<h1>SQLite / Spatialite  RDBMS</h1>
+<h1>SQLite RDBMS</h1>
 
 <p>OGR optionally supports spatial and non-spatial tables stored in SQLite 3.x
 database files.  SQLite is a "light weight" single file based RDBMS engine
 with fairly complete SQL semantics and respectible performance.</p>
-
-<p>The driver can handle "regular" SQLite databases, as well as Spatialite
-databases (spatial enabled SQLite databases).</p>
-
-<p>The SQLite database is essentially typeless, but the SQLite driver will
-attempt to classify attributes field as text, integer or floating point
-based on the contents of the first record in a table.  None of the list
-attribute field types existing in SQLite. Starting with OGR 1.10, datetime
-field types are also handled.</p>
-
-<p>SQLite databases often due not work well over NFS, or some other networked
-file system protocols due to the poor support for locking.  It is safest
-to operate only on SQLite files on a physical disk of the local system.</p>
-
-<p>SQLite is an optionally compiled in driver.  It is not compiled in by default.</p>
-
-<p>By default, SQL statements are passed directly to the SQLite database engine.
-It's also possible to request the driver to handle SQL commands 
-with <a href="/ogr/ogr_sql.html">OGR SQL</a> engine, 
-by passing <strong>"OGRSQL"</strong> string to the ExecuteSQL() 
-method, as name of the SQL dialect.</p>
-
-<p>Starting with OGR 1.8.0, the OGR_SQLITE_SYNCHRONOUS configuration option has been added.
-When set to OFF, this issues a 'PRAGMA synchronous = OFF' command to the SQLite database.
-This has the advantage of speeding-up some write operations (e.g. on EXT4 filesystems), but
-at the expense of data safety w.r.t system/OS crashes. So use it carefully in
-production environments and read the SQLite
-<a href="http://www.sqlite.org/pragma.html#pragma_synchronous">related documentation</a>.</p>
-
-<h2>"Regular" SQLite databases</h2>
 
 <p>The driver looks for a geometry_columns table layed out as defined
 loosely according to OGC Simple Features standards, particularly as defined
@@ -53,24 +23,35 @@ WKT_GEOMETRY column will be read as Well Known Text geometry.</p>
 <p>If geometry_columns is found, it will be used to lookup spatial reference
 systems in the spatial_ref_sys table.</P>
 
+<p>The SQLite database is essentially typeless, but the SQLite driver will
+attempt to classify attributes field as text, integer or floating point
+based on the contents of the first record in a table.  None of the list
+attribute field types existing in SQLite.</p>
+
+<p>SQLite databases often due not work well over NFS, or some other networked
+file system protocols due to the poor support for locking.  It is safest
+to operate only on SQLite files on a physical disk of the local system.</p>
+
+<p>SQLite is an optionally compiled in driver.  It is not compiled in by default.</p>
+
 <p>While the SQLite driver supports reading spatial data from records, there is
-no support for spatial indexing, so spatial queries will tend to be slow (use Spatialite for that).
+no support for spatial indexing, so spatial queries will tend to be slow.
 Attributes queries may be fast, especially if indexes are built for 
 appropriate attribute columns using the "CREATE INDEX <indexname> 
 ON <tablename> ( <columnname> )" SQL command.</p>
 
-<h2>Tables with multiple geometries</h2>
+<p>By default, SQL statements are passed directly to the SQLite database engine.
+It's also possible to request the driver to handle SQL commands 
+with <a href="/ogr/ogr_sql.html">OGR SQL</a> engine, 
+by passing <strong>"OGRSQL"</strong> string to the ExecuteSQL() 
+method, as name of the SQL dialect.</p>
 
-Starting with OGR 1.10, tables that have multiple geometry columns registered in geometry_columns can be used by OGR.
-For such tables, there are as many OGR layers exposed as there are geometry columns. They are named
-"table_name(geometry_column_name)".<p>
-
-Note: this support is limited to read-only operations.<p>
-
-<h2>REGEXP operator</h2>
-
-By default, the REGEXP operator has no implementation in SQLite. With OGR &gt;= 1.10 built against
-the PCRE library, the REGEXP operator is available in SQL statements run by OGR.
+<p>Starting with OGR 1.8.0, the OGR_SQLITE_SYNCHRONOUS configuration option has been added.
+When set to OFF, this issues a 'PRAGMA synchronous = OFF' command to the SQLite database.
+This has the advantage of speeding-up some write operations (e.g. on EXT4 filesystems), but
+at the expense of data safety w.r.t system/OS crashes. So use it carefully in
+production environments and read the SQLite
+<a href="http://www.sqlite.org/pragma.html#pragma_synchronous">related documentation</a>.</p>
 
 <h2>VSI Virtual File System API support</h2>
 
@@ -110,78 +91,6 @@ datasource is "VirtualShape:/path/to/shapefile.shp" (the shapefile must be a "re
 This gives the capability to use the spatial operations of Spatialite (note that spatial indexes on virtual
 tables are not available).<p>
 
-<h2>The SQLite SQL dialect</h2>
-
-Starting with OGR 1.10, the SQLite SQL engine can be used to run SQL queries
-on any OGR datasource if using the <a href="ogr_sql_sqlite.html">SQLite SQL</a> dialect.
-
-<h2>The VirtualOGR SQLite extension</h2>
-
-Starting with OGR 1.10, the GDAL/OGR library can be loaded as a <a href="http://www.sqlite.org/lang_corefunc.html#load_extension">SQLite extension</a>.
-
-The extension is loaded with the load_extension(gdal_library_name) SQL function, where gdal_library_name is
-typically libgdal.so on Unix/Linux, gdal110.dll on Windows, etc..<p>
-
-After the extension is loaded, a virtual table, corresponding to a OGR layer, can be created with one of
-the following SQL statement :
-<pre>
-CREATE VIRTUAL TABLE table_name USING VirtualOGR(datasource_name);
-CREATE VIRTUAL TABLE table_name USING VirtualOGR(datasource_name, update_mode);
-CREATE VIRTUAL TABLE table_name USING VirtualOGR(datasource_name, update_mode, layer_name);
-CREATE VIRTUAL TABLE table_name USING VirtualOGR(datasource_name, update_mode, layer_name, expose_ogr_style);
-</pre>
-
-where :
-<ul>
-<li><i>datasource_name</i> is the connexion string to any OGR datasource.</li>
-<li><i>update_mode</i> = 0 for read-only mode (default value) or 1 for update mode.</li>
-<li><i>layer_name</i> = the name of a layer of the opened datasource.</li>
-<li><i>expose_ogr_style</i> = 0 to prevent the OGR_STYLE special from being displayed (default value) or 1 to expose it.</li>
-</ul>
-
-Note: <i>layer_name</i> does not need to be specified if the datasource has only one single layer.
-
-<p>
-
-From the sqlite3 console, a typical use case is :
-<pre>
-sqlite> SELECT load_extension('libgdal.so');
-
-sqlite> SELECT load_extension('libspatialite.so');
-
-sqlite> CREATE VIRTUAL TABLE poly USING VirtualOGR('poly.shp');
-
-sqlite> SELECT *, ST_Area(GEOMETRY) FROM POLY;
-215229.266|168.0|35043411||215229.265625
-247328.172|179.0|35043423||247328.171875
-261752.781|171.0|35043414||261752.78125
-547597.188|173.0|35043416||547597.2109375
-15775.758|172.0|35043415||15775.7578125
-101429.977|169.0|35043412||101429.9765625
-268597.625|166.0|35043409||268597.625
-1634833.375|158.0|35043369||1634833.390625
-596610.313|165.0|35043408||596610.3359375
-5268.813|170.0|35043413||5268.8125
-</pre>
-
-<p>
-
-Alternatively, you can use the <i>ogr_datasource_load_layers(datasource_name[, update_mode[, prefix]])</i>
-function to automatically load all the layers of a datasource.
-
-<pre>
-sqlite> SELECT load_extension('libgdal.so');
-
-sqlite> SELECT load_extension('libspatialite.so');
-
-sqlite> SELECT ogr_datasource_load_layers('poly.shp');
-1
-sqlite> SELECT * FROM sqlite_master;
-table|poly|poly|0|CREATE VIRTUAL TABLE "poly" USING VirtualOGR('poly.shp', 0, 'poly')
-</pre>
-
-Refer to the <a href="ogr_sql_sqlite.html">SQLite SQL</a> dialect for an overview of the capabilities of VirtualOGR tables.<p>
-
 <h2>Creation Issues</h2>
 
 <p>The SQLite driver supports creating new SQLite database files, or adding
@@ -191,12 +100,12 @@ created over an existing file.</p>
 <h3>Database Creation Options</h3>
 
 <ul>
-
-<li><p><b>METADATA=yes/no</b>: This can be used to avoid creating the 
+	
+<li> <b>METADATA=yes/no</b>: This can be used to avoid creating the 
 geometry_columns and spatial_ref_sys tables in a new database.  By default
-these metadata tables are created when a new database is created.</p></li>
+these metadata tables are created when a new database is created.
 
-<li><p><b>SPATIALITE=yes/no</b>: (Starting with GDAL 1.7.0) Create the SpatiaLite flavour of the metadata
+<li> <b>SPATIALITE=yes/no</b>: (Starting with GDAL 1.7.0) Create the SpatiaLite flavour of the metadata
 tables, which are a bit differ from the metadata used by this OGR driver and
 from OGC specifications. Implies <b>METADATA=yes</b>.<br>
 Please note: (Starting with GDAL 1.9.0) OGR must be linked against <i>libspatialite</i> in order to support
@@ -204,59 +113,42 @@ insert/write on SpatiaLite; if not, <i>read-only</i> mode is enforced.<br>
 Attempting to perform any insert/write on SpatiaLite skipping the appropriate library support simply produces broken (corrupted) DB-files.<br>
 Important notice: when the underlaying <i>libspatialite</i> is v.2.3.1 (or any previous
 version) any Geometry will be casted to 2D [XY], because earlier versions of this library
-are simply able to support 2D [XY] dimensions. Version 2.4.0 (or any subsequent) is required in order to support 2.5D [XYZ].</p></li>
+are simply able to support 2D [XY] dimensions. Version 2.4.0 (or any subsequent) is required in order to support 2.5D [XYZ].
 
-<li><p><b>INIT_WITH_EPSG=yes/no</b>: (Starting with GDAL 1.8.0) Insert the content of the EPSG CSV files
-into the spatial_ref_sys table. Defaults to NO for regular SQLite databases</b>.<br>
-Please note: if <b>SPATIALITE=yes</b> and the underlaying <i>libspatialite</i> is v2.4 or v3.X,
-<b>INIT_WITH_EPSG</b> is ignored; those library versions will unconditionally load the EPSG 
-dataset into the spatial_ref_sys table when creating a new DB (<i>self-initialization</i>). Starting
-with libspatialite 4.0, INIT_WITH_EPSG defaults to YES, but can be set to NO.</p></li>
-
+<li> <b>INIT_WITH_EPSG=yes/no</b>: (Starting with GDAL 1.8.0) Insert the content of the EPSG CSV files
+into the spatial_ref_sys table. Defaults to no</b>.<br>
+Please note: if <b>SPATIALITE=yes</b> and the underlaying <i>libspatialite</i> is v.2.4 (or any subsequent 
+version) <b>INIT_WITH_EPSG</b> is ignored anyway;
+any recent version of this library will unconditionally load the EPSG 
+dataset into the spatial_ref_sys table when creating a new DB (<i>self-initialization</i>).
 </ul>
 
 <h3>Layer Creation Options</h3>
 
 <ul>
 
-<li><p><b>FORMAT=WKB/WKT/SPATIALITE</b>: Controls the format used for the
+<li> <b>FORMAT=WKB/WKT/SPATIALITE</b>: Controls the format used for the
 geometry column. By default WKB (Well Known Binary) is used.  This is
 generally more space and processing efficient, but harder to inspect or use in
 simple applications than WKT (Well Known Text). SpatiaLite extension uses its
 own binary format to store geometries and you can choose it as well. It will
 be selected automatically when SpatiaLite database is opened or created with
-<b>SPATIALITE=yes</b> option. SPATIALITE value is available starting with GDAL 1.7.0.</p></li>
+<b>SPATIALITE=yes</b> option. SPATIALITE value is available starting with GDAL 1.7.0 
 
-<li><p><b>LAUNDER=yes/no</b>: Controls whether layer and field names will be 
+<li> <b>LAUNDER=yes/no</b>: Controls whether layer and field names will be 
 laundered for easier use in SQLite.  Laundered names will be convered to lower 
-case and some special characters(' - #) will be changed to underscores. Default
-to yes.</p></li>
+case and some special characters will be changed to underscores. 
 
-<li><p><b>SPATIAL_INDEX=yes/no</b>: (Starting with GDAL 1.7.0) If the database is
+<li> <b>SPATIAL_INDEX=yes/no</b>: (Starting with GDAL 1.7.0) If the database is
 of the SpatiaLite flavour, and if OGR is linked against libspatialite, this option
-can be used to control if a spatial index must be created. Default to yes.</p></li>
+can be used to control if a spatial index must be created. Default to yes.
 
-<li><p><b>COMPRESS_GEOM=yes/no</b>: (Starting with GDAL 1.9.0) If the format of the
+<li> <b>COMPRESS_GEOM=yes/no</b>: (Starting with GDAL 1.9.0) If the format of the
 geometry BLOB is of the SpatiaLite flavour, this option can be used to control
 if the compressed format for geometries (LINESTRINGs, POLYGONs) must be used. This
 format is understood by Spatialite v2.4 (or any subsequent version). Default to no.
 Note: when updating an existing Spatialite DB, the COMPRESS_GEOM configuration option
-can be set to produce similar results for appended/overwritten features.</p></li>
-
-<li><p><b>SRID=srid</b>: (Starting with GDAL 1.10) Used to force the SRID number of the
-SRS associated with the layer. When this option isn't specified and that a SRS is
-associated with the layer, a search is made in the spatial_ref_sys to find a match for the SRS,
-and, if there is no match, a new entry is inserted for the SRS in the spatial_ref_sys table.
-When the SRID option is specified, this search (and the eventual insertion of a new entry) will
-not be done : the specified SRID is used as such.</p></li>
-
-<li><p><b>COMPRESS_COLUMNS=column_name1[,column_name2, ...]</b>: (Starting with GDAL 1.10.0)
-A list of (String) columns that must be compressed with ZLib DEFLATE algorithm. This might be beneficial
-for databases that have big string blobs. However, use with care, since the value of such columns
-will be seen as compressed binary content with other SQLite utilities (or previous OGR versions).
-With OGR, when inserting, modifying or queryings compressed columns, compression/decompression is done transparently.
-However, such columns cannot be (easily) queried with an attribute filter or WHERE clause.
-Note: in table definition, such columns have the "VARCHAR_deflate" declaration type.</p></li>
+can be set to produce similar results for appended/overwritten features.
 
 </ul>
 
@@ -282,11 +174,7 @@ help to get a noticeably better performance.
 Starting since GDAL 1.9.0 you can explicitly set the internal Page Cache size using the 
 configuration option <b>OGR_SQLITE_CACHE</b> <i>value</i> [<i>value</i> being measured in MB];
 if your HW has enough available RAM, defining a Cache size as big as 512MB (or even 1024MB) 
-may sometimes help a lot in order to get better performance.<p>
-
-Setting the <b>OGR_SQLITE_SYNCHRONOUS</b> configuration option to <i>OFF</i> might also
-increase performance when creating SQLite databases (altough at the expense of integrity in case of
-interruption/crash ).<p>
+may sometimes help a lot in order to get better performance.
 
 <h2>Credits</h2>
 <ul>

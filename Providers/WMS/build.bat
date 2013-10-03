@@ -140,7 +140,7 @@ echo %MSACTION% %TYPEBUILD% WMS provider dlls
 SET FDOACTIVEBUILD=%cd%\Src\WMSOS%VCBEXTENSION%
 cscript //Nologo //job:prepare preparebuilds.wsf
 pushd Src
-msbuild WMSOS%VCBEXTENSION%_temp.sln /t:%MSACTION% /p:Configuration=%TYPEBUILD% /p:Platform=%TYPEPLATFORM% %EXTRA_MSBUILD_PROPERTIES% /nologo /consoleloggerparameters:NoSummary /maxcpucount:4
+msbuild WMSOS%VCBEXTENSION%_temp.sln /t:%MSACTION% /p:Configuration=%TYPEBUILD% /p:Platform=%TYPEPLATFORM% %EXTRA_MSBUILD_PROPERTIES% /nologo /consoleloggerparameters:NoSummary
 SET FDOERROR=%errorlevel%
 if exist WMSOS%VCBEXTENSION%_temp.sln del /Q /F WMSOS%VCBEXTENSION%_temp.sln
 popd
@@ -161,10 +161,6 @@ copy /y "Bin\%INTERMEDIATEDIR%\%TYPEBUILD%\WmsProvider.pdb" "%FDOBINPATH%"
 copy /y "Managed\Bin\%INTERMEDIATEMANAGEDDIR%\OSGeo.FDO.Providers.WMS.Overrides.dll" "%FDOBINPATH%"
 copy /y "Managed\Bin\%INTERMEDIATEMANAGEDDIR%\OSGeo.FDO.Providers.WMS.Overrides.pdb" "%FDOBINPATH%"
 copy /y "Lib\%INTERMEDIATEDIR%\%TYPEBUILD%\WMSOverrides.lib" "%FDOLIBPATH%"
-copy /y "%FDOTHIRDPARTY%\boost\stage\%INTERMEDIATEDIR%\%TYPEBUILDTHR%\lib\boost_thread-%VC_COMPILER%-mt%TYPEBUILDTHRPATH%-1_54.dll" "%FDOBINPATHTHR%"
-copy /y "%FDOTHIRDPARTY%\boost\stage\%INTERMEDIATEDIR%\%TYPEBUILDTHR%\lib\boost_date_time-%VC_COMPILER%-mt%TYPEBUILDTHRPATH%-1_54.dll" "%FDOBINPATHTHR%"
-copy /y "%FDOTHIRDPARTY%\boost\stage\%INTERMEDIATEDIR%\%TYPEBUILDTHR%\lib\boost_system-%VC_COMPILER%-mt%TYPEBUILDTHRPATH%-1_54.dll" "%FDOBINPATHTHR%"
-copy /y "%FDOTHIRDPARTY%\boost\stage\%INTERMEDIATEDIR%\%TYPEBUILDTHR%\lib\boost_chrono-%VC_COMPILER%-mt%TYPEBUILDTHRPATH%-1_54.dll" "%FDOBINPATHTHR%"
 
 echo copy header files
 xcopy /S /C /Q /R /Y Inc\WMS\*.h "%FDOINCPATH%\WMS\"
@@ -174,18 +170,12 @@ if "%DOCENABLE%"=="skip" goto install_docs
 echo Creating WMS provider html and chm documentation
 if exist "Docs\HTML\WMS" rmdir /S /Q "Docs\HTML\WMS"
 if not exist "Docs\HTML\WMS" mkdir "Docs\HTML\WMS"
-copy ..\..\DocResources\geospatial.css Docs\HTML\WMS
 copy ..\..\DocResources\geospatial.js Docs\HTML\WMS
 copy ..\..\DocResources\osgeo.css Docs\HTML\WMS
-if exist ..\..\DocResources\comment.htm copy ..\..\DocResources\comment.htm Docs\HTML\WMS
-if exist ..\..\DocResources\comment.js copy ..\..\DocResources\comment.js Docs\HTML\WMS
 if exist "Docs\HTML\WMS_managed" rmdir /S /Q "Docs\HTML\WMS_managed"
 if not exist "Docs\HTML\WMS_managed" mkdir "Docs\HTML\WMS_managed"
-copy ..\..\DocResources\geospatial.css Docs\HTML\WMS_managed
 copy ..\..\DocResources\geospatial.js Docs\HTML\WMS_managed
 copy ..\..\DocResources\osgeo.css Docs\HTML\WMS_managed
-if exist ..\..\DocResources\comment.htm copy ..\..\DocResources\comment.htm Docs\HTML\WMS_managed
-if exist ..\..\DocResources\comment.js copy ..\..\DocResources\comment.js Docs\HTML\WMS_managed
 if exist Docs\WMS_Provider_API.chm attrib -r Docs\WMS_Provider_API.chm
 pushd Docs\doc_src
 doxygen Doxyfile_WMS_managed

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: biggifdataset.cpp 24608 2012-06-24 21:55:29Z rouault $
+ * $Id: biggifdataset.cpp 22684 2011-07-10 19:30:49Z rouault $
  *
  * Project:  BIGGIF Driver
  * Purpose:  Implement GDAL support for reading large GIF files in a 
@@ -33,7 +33,7 @@
 #include "cpl_string.h"
 #include "gifabstractdataset.h"
 
-CPL_CVSID("$Id: biggifdataset.cpp 24608 2012-06-24 21:55:29Z rouault $");
+CPL_CVSID("$Id: biggifdataset.cpp 22684 2011-07-10 19:30:49Z rouault $");
 
 CPL_C_START
 void	GDALRegister_BIGGIF(void);
@@ -371,12 +371,7 @@ CPLErr BIGGIFDataset::ReOpen()
     VSIFSeekL( fp, 0, SEEK_SET );
 
     nLastLineRead = -1;
-#if defined(GIFLIB_MAJOR) && GIFLIB_MAJOR >= 5
-    int nError;
-    hGifFile = DGifOpen( fp, VSIGIFReadFunc, &nError );
-#else
     hGifFile = DGifOpen( fp, VSIGIFReadFunc );
-#endif
     if( hGifFile == NULL )
     {
         CPLError( CE_Failure, CPLE_OpenFailed, 

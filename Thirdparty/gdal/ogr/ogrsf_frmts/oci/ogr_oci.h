@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_oci.h 25656 2013-02-19 15:40:20Z ilucena $
+ * $Id: ogr_oci.h 22346 2011-05-10 03:02:15Z warmerdam $
  *
  * Project:  Oracle Spatial Driver
  * Purpose:  Oracle Spatial OGR Driver Declarations. 
@@ -412,7 +412,6 @@ class OGROCITableLayer : public OGROCIWritableLayer
 
     void                UpdateLayerExtents();
     void                FinalizeNewLayer();
-    void                CreateSpatialIndex();
 
     void                TestForSpatialIndex( const char * );
 
@@ -464,8 +463,6 @@ class OGROCITableLayer : public OGROCIWritableLayer
 
     // following methods are not base class overrides
     int                 IsValid() { return bValidTable; }
-
-    int                 GetMaxFID();
 };
 
 /************************************************************************/
@@ -518,7 +515,6 @@ class OGROCIDataSource : public OGRDataSource
     const char          *GetName() { return pszName; }
     int                 GetLayerCount() { return nLayers; }
     OGRLayer            *GetLayer( int );
-    OGRLayer            *GetLayerByName(const char * pszName);
 
     virtual OGRErr      DeleteLayer(int);
     virtual OGRLayer    *CreateLayer( const char *, 

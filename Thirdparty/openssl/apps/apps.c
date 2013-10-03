@@ -109,7 +109,7 @@
  *
  */
 
-#if !defined(_POSIX_C_SOURCE) && defined(OPENSSL_SYS_VMS)
+#ifndef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 2	/* On VMS, you need to define this to get
 				   the declaration of fileno().  The value
 				   2 is to make sure no function defined
@@ -257,8 +257,6 @@ int args_from_file(char *file, int *argc, char **argv[])
 
 int str2fmt(char *s)
 	{
-	if (s == NULL)
-		return FORMAT_UNDEF;
 	if 	((*s == 'D') || (*s == 'd'))
 		return(FORMAT_ASN1);
 	else if ((*s == 'T') || (*s == 't'))
@@ -379,12 +377,13 @@ void program_name(char *in, char *out, int size)
 
 int chopup_args(ARGS *arg, char *buf, int *argc, char **argv[])
 	{
-	int num,i;
+	int num,len,i;
 	char *p;
 
 	*argc=0;
 	*argv=NULL;
 
+	len=strlen(buf);
 	i=0;
 	if (arg->count == 0)
 		{
@@ -798,9 +797,7 @@ X509 *load_cert(BIO *err, const char *file, int format,
 	if (file == NULL)
 		{
 #ifdef _IONBF
-# ifndef OPENSSL_NO_SETVBUF_IONBF
 		setvbuf(stdin, NULL, _IONBF, 0);
-# endif /* ndef OPENSSL_NO_SETVBUF_IONBF */
 #endif
 		BIO_set_fp(cert,stdin,BIO_NOCLOSE);
 		}
@@ -878,17 +875,10 @@ EVP_PKEY *load_key(BIO *err, const char *file, int format, int maybe_stdin,
 	if (format == FORMAT_ENGINE)
 		{
 		if (!e)
-			BIO_printf(err,"no engine specified\n");
+			BIO_printf(bio_err,"no engine specified\n");
 		else
-			{
 			pkey = ENGINE_load_private_key(e, file,
 				ui_method, &cb_data);
-			if (!pkey) 
-				{
-				BIO_printf(err,"cannot load %s from engine\n",key_descrip);
-				ERR_print_errors(err);
-				}	
-			}
 		goto end;
 		}
 #endif
@@ -901,9 +891,7 @@ EVP_PKEY *load_key(BIO *err, const char *file, int format, int maybe_stdin,
 	if (file == NULL && maybe_stdin)
 		{
 #ifdef _IONBF
-# ifndef OPENSSL_NO_SETVBUF_IONBF
 		setvbuf(stdin, NULL, _IONBF, 0);
-# endif /* ndef OPENSSL_NO_SETVBUF_IONBF */
 #endif
 		BIO_set_fp(key,stdin,BIO_NOCLOSE);
 		}
@@ -935,7 +923,7 @@ EVP_PKEY *load_key(BIO *err, const char *file, int format, int maybe_stdin,
 				&pkey, NULL, NULL))
 			goto end;
 		}
-#if !defined(OPENSSL_NO_RSA) && !defined(OPENSSL_NO_DSA) && !defined (OPENSSL_NO_RC4)
+#if !defined(OPENSSL_NO_RSA) && !defined(OPENSSL_NO_DSA)
 	else if (format == FORMAT_MSBLOB)
 		pkey = b2i_PrivateKey_bio(key);
 	else if (format == FORMAT_PVK)
@@ -949,11 +937,8 @@ EVP_PKEY *load_key(BIO *err, const char *file, int format, int maybe_stdin,
 		}
  end:
 	if (key != NULL) BIO_free(key);
-	if (pkey == NULL) 
-		{
+	if (pkey == NULL)
 		BIO_printf(err,"unable to load %s\n", key_descrip);
-		ERR_print_errors(err);
-		}	
 	return(pkey);
 	}
 
@@ -992,9 +977,7 @@ EVP_PKEY *load_pubkey(BIO *err, const char *file, int format, int maybe_stdin,
 	if (file == NULL && maybe_stdin)
 		{
 #ifdef _IONBF
-# ifndef OPENSSL_NO_SETVBUF_IONBF
 		setvbuf(stdin, NULL, _IONBF, 0);
-# endif /* ndef OPENSSL_NO_SETVBUF_IONBF */
 #endif
 		BIO_set_fp(key,stdin,BIO_NOCLOSE);
 		}
@@ -1215,8 +1198,7 @@ STACK_OF(X509) *load_certs(BIO *err, const char *file, int format,
 	const char *pass, ENGINE *e, const char *desc)
 	{
 	STACK_OF(X509) *certs;
-	if (!load_certs_crls(err, file, format, pass, e, desc, &certs, NULL))
-		return NULL;
+	load_certs_crls(err, file, format, pass, e, desc, &certs, NULL);
 	return certs;
 	}	
 
@@ -1224,8 +1206,7 @@ STACK_OF(X509_CRL) *load_crls(BIO *err, const char *file, int format,
 	const char *pass, ENGINE *e, const char *desc)
 	{
 	STACK_OF(X509_CRL) *crls;
-	if (!load_certs_crls(err, file, format, pass, e, desc, NULL, &crls))
-		return NULL;
+	load_certs_crls(err, file, format, pass, e, desc, NULL, &crls);
 	return crls;
 	}	
 
@@ -2132,7 +2113,7 @@ X509_NAME *parse_name(char *subject, long chtype, int multirdn)
 	X509_NAME *n = NULL;
 	int nid;
 
-	if (!buf || !ne_types || !ne_values || !mval)
+	if (!buf || !ne_types || !ne_values)
 		{
 		BIO_printf(bio_err, "malloc error\n");
 		goto error;
@@ -2236,7 +2217,6 @@ X509_NAME *parse_name(char *subject, long chtype, int multirdn)
 	OPENSSL_free(ne_values);
 	OPENSSL_free(ne_types);
 	OPENSSL_free(buf);
-	OPENSSL_free(mval);
 	return n;
 
 error:
@@ -2245,8 +2225,6 @@ error:
 		OPENSSL_free(ne_values);
 	if (ne_types)
 		OPENSSL_free(ne_types);
-	if (mval)
-		OPENSSL_free(mval);
 	if (buf)
 		OPENSSL_free(buf);
 	return NULL;
@@ -2261,7 +2239,6 @@ int args_verify(char ***pargs, int *pargc,
 	int purpose = 0, depth = -1;
 	char **oldargs = *pargs;
 	char *arg = **pargs, *argn = (*pargs)[1];
-	time_t at_time = 0;
 	if (!strcmp(arg, "-policy"))
 		{
 		if (!argn)
@@ -2311,27 +2288,6 @@ int args_verify(char ***pargs, int *pargc,
 				BIO_printf(err, "invalid depth\n");
 				*badarg = 1;
 				}
-			}
-		(*pargs)++;
-		}
-	else if (strcmp(arg,"-attime") == 0)
-		{
-		if (!argn)
-			*badarg = 1;
-		else
-			{
-			long timestamp;
-			/* interpret the -attime argument as seconds since
-			 * Epoch */
-			if (sscanf(argn, "%li", &timestamp) != 1)
-				{
-				BIO_printf(bio_err,
-						"Error parsing timestamp %s\n",
-					   	argn);
-				*badarg = 1;
-				}
-			/* on some platforms time_t may be a float */
-			at_time = (time_t) timestamp;
 			}
 		(*pargs)++;
 		}
@@ -2388,9 +2344,6 @@ int args_verify(char ***pargs, int *pargc,
 
 	if (depth >= 0)
 		X509_VERIFY_PARAM_set_depth(*pm, depth);
-
-	if (at_time) 
-		X509_VERIFY_PARAM_set_time(*pm, at_time);
 
 	end:
 
@@ -2722,50 +2675,6 @@ void jpake_server_auth(BIO *out, BIO *conn, const char *secret)
 	}
 
 #endif
-
-#if !defined(OPENSSL_NO_TLSEXT) && !defined(OPENSSL_NO_NEXTPROTONEG)
-/* next_protos_parse parses a comma separated list of strings into a string
- * in a format suitable for passing to SSL_CTX_set_next_protos_advertised.
- *   outlen: (output) set to the length of the resulting buffer on success.
- *   err: (maybe NULL) on failure, an error message line is written to this BIO.
- *   in: a NUL termianted string like "abc,def,ghi"
- *
- *   returns: a malloced buffer or NULL on failure.
- */
-unsigned char *next_protos_parse(unsigned short *outlen, const char *in)
-	{
-	size_t len;
-	unsigned char *out;
-	size_t i, start = 0;
-
-	len = strlen(in);
-	if (len >= 65535)
-		return NULL;
-
-	out = OPENSSL_malloc(strlen(in) + 1);
-	if (!out)
-		return NULL;
-
-	for (i = 0; i <= len; ++i)
-		{
-		if (i == len || in[i] == ',')
-			{
-			if (i - start > 255)
-				{
-				OPENSSL_free(out);
-				return NULL;
-				}
-			out[start] = i - start;
-			start = i + 1;
-			}
-		else
-			out[i+1] = in[i];
-		}
-
-	*outlen = len + 1;
-	return out;
-	}
-#endif  /* !OPENSSL_NO_TLSEXT && !OPENSSL_NO_NEXTPROTONEG */
 
 /*
  * Platform-specific sections

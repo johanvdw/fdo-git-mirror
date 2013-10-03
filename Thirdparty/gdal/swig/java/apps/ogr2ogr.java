@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr2ogr.java 25229 2012-11-16 19:06:58Z rouault $
+ * $Id: ogr2ogr.java 23515 2011-12-10 21:14:02Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Java port of a simple client for translating between formats.
@@ -140,8 +140,7 @@ public class ogr2ogr
     /* -------------------------------------------------------------------- */
     /*      Register format(s).                                             */
     /* -------------------------------------------------------------------- */
-        if( ogr.GetDriverCount() == 0 )
-            ogr.RegisterAll();
+        ogr.RegisterAll();
     
     /* -------------------------------------------------------------------- */
     /*      Processing command line arguments.                              */
@@ -1162,8 +1161,7 @@ public class ogr2ogr
             /*CPLAssert( null != poSourceSRS );
             CPLAssert( null != poOutputSRS );*/
     
-            /* New in GDAL 1.10. Before was "new CoordinateTransformation(srs,dst)". */
-            poCT = CoordinateTransformation.CreateCoordinateTransformation( poSourceSRS, poOutputSRS );
+            poCT = new CoordinateTransformation( poSourceSRS, poOutputSRS );
             if( poCT == null )
             {
                 String pszWKT = null;
@@ -1403,14 +1401,14 @@ public class ogr2ogr
                     boolean bFieldRequested = false;
                     for( iField=0; iField < papszSelFields.size(); iField++)
                     {
-                        if (pszFieldName.equalsIgnoreCase((String)papszSelFields.get(iField)))
+                        if (pszFieldName.equals((String)papszSelFields.get(iField)))
                         {
                             bFieldRequested = true;
                             break;
                         }
                     }
 
-                    if (pszZField != null && pszFieldName.equalsIgnoreCase(pszZField))
+                    if (pszZField != null && pszFieldName.equals(pszZField))
                         bFieldRequested = true;
 
                     /* If source field not requested, add it to ignored files list */

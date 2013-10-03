@@ -39,15 +39,10 @@ OBJ	=	cpl_conv.obj \
 		cpl_vsil_abstract_archive.obj \
 		cpl_vsil_tar.obj \
 		cpl_vsil_curl.obj \
-		cpl_vsil_curl_streaming.obj \
 		cpl_vsil_stdin.obj \
 		cpl_vsil_buffered_reader.obj \
 		cpl_vsil_cache.obj \
 		cpl_base64.obj \
-		cpl_xml_validate.obj \
-		cpl_spawn.obj \
-		cpl_google_oauth2.obj \
-		cpl_progress.obj \
 		$(ODBC_OBJ)
 
 LIB	=	cpl.lib
@@ -64,10 +59,6 @@ EXTRAFLAGS =	$(EXTRAFLAGS) -DHAVE_ICONV $(LIBICONV_CFLAGS) $(LIBICONV_INCLUDE)
 
 !IFDEF CURL_INC
 EXTRAFLAGS =	$(EXTRAFLAGS) -DHAVE_CURL $(CURL_CFLAGS) $(CURL_INC)
-!ENDIF
-
-!IFDEF LIBXML2_INC
-EXTRAFLAGS =	$(EXTRAFLAGS) -DHAVE_LIBXML2 $(LIBXML2_INC)
 !ENDIF
 
 !IFDEF ODBC_SUPPORTED

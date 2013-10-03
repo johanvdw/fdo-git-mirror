@@ -37,7 +37,7 @@ CPL_CVSID("$Id: gdaltransform.cpp 12380 2007-10-12 17:35:00Z rouault $");
 /*                               Usage()                                */
 /************************************************************************/
 
-static void Usage(const char* pszErrorMsg = NULL)
+static void Usage()
 
 {
     printf( 
@@ -47,10 +47,6 @@ static void Usage(const char* pszErrorMsg = NULL)
         "    [-gcp pixel line easting northing [elevation]]*\n" 
         "    [srcfile [dstfile]]\n" 
         "\n" );
-
-    if( pszErrorMsg != NULL )
-        fprintf(stderr, "\nFAILURE: %s\n", pszErrorMsg);
-
     exit( 1 );
 }
 
@@ -85,10 +81,6 @@ char *SanitizeSRS( const char *pszUserInput )
 /************************************************************************/
 /*                                main()                                */
 /************************************************************************/
-
-#define CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(nExtraArg) \
-    do { if (i + nExtraArg >= argc) \
-        Usage(CPLSPrintf("%s option requires %d argument(s)", argv[i], nExtraArg)); } while(0)
 
 int main( int argc, char ** argv )
 
@@ -130,25 +122,20 @@ int main( int argc, char ** argv )
                    argv[0], GDAL_RELEASE_NAME, GDALVersionInfo("RELEASE_NAME"));
             return 0;
         }
-        else if( EQUAL(argv[i],"--help") )
-            Usage();
-        else if( EQUAL(argv[i],"-t_srs") )
+        else if( EQUAL(argv[i],"-t_srs") && i < argc-1 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             char *pszSRS = SanitizeSRS(argv[++i]);
             papszTO = CSLSetNameValue( papszTO, "DST_SRS", pszSRS );
             CPLFree( pszSRS );
         }
-        else if( EQUAL(argv[i],"-s_srs") )
+        else if( EQUAL(argv[i],"-s_srs") && i < argc-1 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             char *pszSRS = SanitizeSRS(argv[++i]);
             papszTO = CSLSetNameValue( papszTO, "SRC_SRS", pszSRS );
             CPLFree( pszSRS );
         }
-        else if( EQUAL(argv[i],"-order") )
+        else if( EQUAL(argv[i],"-order") && i < argc-1 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             nOrder = atoi(argv[++i]);
             papszTO = CSLSetNameValue( papszTO, "MAX_GCP_ORDER", argv[i] );
         }
@@ -169,14 +156,12 @@ int main( int argc, char ** argv )
         {
             bInverse = TRUE;
         }
-        else if( EQUAL(argv[i],"-to")  )
+        else if( EQUAL(argv[i],"-to") && i < argc-1 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             papszTO = CSLAddString( papszTO, argv[++i] );
         }
-        else if( EQUAL(argv[i],"-gcp") )
+        else if( EQUAL(argv[i],"-gcp") && i < argc - 4 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(4);
             char* endptr = NULL;
             /* -gcp pixel line easting northing [elev] */
 
@@ -202,7 +187,7 @@ int main( int argc, char ** argv )
         }   
 
         else if( argv[i][0] == '-' )
-            Usage(CPLSPrintf("Unkown option name '%s'", argv[i]));
+            Usage();
 
         else if( pszSrcFilename == NULL )
             pszSrcFilename = argv[i];
@@ -211,7 +196,7 @@ int main( int argc, char ** argv )
             pszDstFilename = argv[i];
 
         else
-            Usage("Too many command options.");
+            Usage();
     }
 
 /* -------------------------------------------------------------------- */

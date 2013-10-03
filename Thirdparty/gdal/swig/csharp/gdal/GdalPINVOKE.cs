@@ -219,23 +219,11 @@ class GdalPINVOKE {
   [DllImport("gdal_wrap", EntryPoint="CSharp_Debug")]
   public static extern void Debug(string jarg1, string jarg2);
 
-  [DllImport("gdal_wrap", EntryPoint="CSharp_SetErrorHandler")]
-  public static extern int SetErrorHandler(string jarg1);
-
   [DllImport("gdal_wrap", EntryPoint="CSharp_PushErrorHandler__SWIG_0")]
   public static extern int PushErrorHandler__SWIG_0(string jarg1);
 
   [DllImport("gdal_wrap", EntryPoint="CSharp_Error")]
   public static extern void Error(int jarg1, int jarg2, string jarg3);
-
-  [DllImport("gdal_wrap", EntryPoint="CSharp_GOA2GetAuthorizationURL")]
-  public static extern string GOA2GetAuthorizationURL(string jarg1);
-
-  [DllImport("gdal_wrap", EntryPoint="CSharp_GOA2GetRefreshToken")]
-  public static extern string GOA2GetRefreshToken(string jarg1, string jarg2);
-
-  [DllImport("gdal_wrap", EntryPoint="CSharp_GOA2GetAccessToken")]
-  public static extern string GOA2GetAccessToken(string jarg1, string jarg2);
 
   [DllImport("gdal_wrap", EntryPoint="CSharp_PushErrorHandler__SWIG_1")]
   public static extern void PushErrorHandler__SWIG_1(Gdal.GDALErrorHandlerDelegate jarg1);
@@ -272,9 +260,6 @@ class GdalPINVOKE {
 
   [DllImport("gdal_wrap", EntryPoint="CSharp_ReadDir")]
   public static extern IntPtr ReadDir(string jarg1);
-
-  [DllImport("gdal_wrap", EntryPoint="CSharp_ReadDirRecursive")]
-  public static extern IntPtr ReadDirRecursive(string jarg1);
 
   [DllImport("gdal_wrap", EntryPoint="CSharp_SetConfigOption")]
   public static extern void SetConfigOption(string jarg1, string jarg2);
@@ -971,9 +956,6 @@ class GdalPINVOKE {
 
   [DllImport("gdal_wrap", EntryPoint="CSharp_Transformer_TransformPoints")]
   public static extern int Transformer_TransformPoints(HandleRef jarg1, int jarg2, int jarg3, double[] jarg4, double[] jarg5, double[] jarg6, double[] jarg7);
-
-  [DllImport("gdal_wrap", EntryPoint="CSharp_Transformer_TransformGeolocations")]
-  public static extern int Transformer_TransformGeolocations(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3, HandleRef jarg4, Gdal.GDALProgressFuncDelegate jarg5, string jarg6, IntPtr[] jarg7);
 
   [DllImport("gdal_wrap", EntryPoint="CSharp_ApplyGeoTransform")]
   public static extern void ApplyGeoTransform(double[] jarg1, double jarg2, double jarg3, out double jarg4, out double jarg5);

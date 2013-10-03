@@ -7,7 +7,7 @@ include ../GDALmake.opt
 CPPFLAGS	:=	$(GDAL_INCLUDE) -I$(GDAL_ROOT)/frmts $(CPPFLAGS)
 LNK_FLAGS   :=  $(LDFLAGS)
 DEP_LIBS	=	$(EXE_DEP_LIBS) $(XTRAOBJ)
-BIN_LIST	=	gdalinfo$(EXE) gdalserver$(EXE) gdal_translate$(EXE) gdaladdo$(EXE) \
+BIN_LIST	=	gdalinfo$(EXE) gdal_translate$(EXE) gdaladdo$(EXE) \
 			gdalwarp$(EXE) nearblack$(EXE) gdalmanage$(EXE) \
 			gdalenhance$(EXE) gdaltransform$(EXE) gdaldem$(EXE) \
 			gdallocationinfo$(EXE) gdalsrsinfo$(EXE) 
@@ -37,10 +37,7 @@ lib-depend:
 	(cd ../gcore ; $(MAKE) )
 	(cd ../port ; $(MAKE) )
 
-gdalinfo$(EXE):	gdalinfo.$(OBJ_EXT) commonutils.$(OBJ_EXT) $(DEP_LIBS)
-	$(LD) $(LNK_FLAGS) $< commonutils.$(OBJ_EXT) $(XTRAOBJ) $(CONFIG_LIBS) -o $@
-
-gdalserver$(EXE):	gdalserver.$(OBJ_EXT) $(DEP_LIBS)
+gdalinfo$(EXE):	gdalinfo.$(OBJ_EXT)  $(DEP_LIBS)
 	$(LD) $(LNK_FLAGS) $< $(XTRAOBJ) $(CONFIG_LIBS) -o $@
 
 gdal_translate$(EXE):	gdal_translate.$(OBJ_EXT) commonutils.$(OBJ_EXT) $(DEP_LIBS)
@@ -94,8 +91,8 @@ gdaltransform$(EXE): gdaltransform.$(OBJ_EXT) $(DEP_LIBS)
 gdallocationinfo$(EXE): gdallocationinfo.$(OBJ_EXT) $(DEP_LIBS)
 	$(LD) $(LNK_FLAGS) $< $(XTRAOBJ) $(CONFIG_LIBS) -o $@
 
-gdalsrsinfo$(EXE):	gdalsrsinfo.$(OBJ_EXT) commonutils.$(OBJ_EXT)  $(DEP_LIBS)
-	$(LD) $(LNK_FLAGS) $< commonutils.$(OBJ_EXT) $(XTRAOBJ) $(CONFIG_LIBS) -o $@
+gdalsrsinfo$(EXE):	gdalsrsinfo.$(OBJ_EXT)  $(DEP_LIBS)
+	$(LD) $(LNK_FLAGS) $< $(XTRAOBJ) $(CONFIG_LIBS) -o $@
 
 gdalflattenmask$(EXE): gdalflattenmask.$(OBJ_EXT) $(DEP_LIBS)
 	$(LD) $(LNK_FLAGS) $< $(XTRAOBJ) $(CONFIG_LIBS) -o $@
@@ -106,11 +103,11 @@ gdaltorture$(EXE): gdaltorture.$(OBJ_EXT) $(DEP_LIBS)
 gdal2ogr$(EXE):	gdal2ogr.$(OBJ_EXT) $(DEP_LIBS)
 	$(LD) $(LNK_FLAGS) $< $(XTRAOBJ) $(CONFIG_LIBS) -o $@
 
-ogrinfo$(EXE):	ogrinfo.$(OBJ_EXT) commonutils.$(OBJ_EXT)  $(DEP_LIBS)
-	$(LD) $(LNK_FLAGS) $< commonutils.$(OBJ_EXT)  $(XTRAOBJ) $(CONFIG_LIBS) -o $@
+ogrinfo$(EXE):	ogrinfo.$(OBJ_EXT) $(DEP_LIBS)
+	$(LD) $(LNK_FLAGS) $< $(XTRAOBJ) $(CONFIG_LIBS) -o $@
 
-ogr2ogr$(EXE):	ogr2ogr.$(OBJ_EXT) commonutils.$(OBJ_EXT)  $(DEP_LIBS)
-	$(LD) $(LNK_FLAGS) $< commonutils.$(OBJ_EXT) $(XTRAOBJ) $(CONFIG_LIBS) -o $@
+ogr2ogr$(EXE):	ogr2ogr.$(OBJ_EXT) $(DEP_LIBS)
+	$(LD) $(LNK_FLAGS) $< $(XTRAOBJ) $(CONFIG_LIBS) -o $@
 
 testepsg$(EXE):	testepsg.$(OBJ_EXT) $(DEP_LIBS)
 	$(LD) $(LNK_FLAGS) $< $(XTRAOBJ) $(CONFIG_LIBS) -o $@
@@ -118,8 +115,8 @@ testepsg$(EXE):	testepsg.$(OBJ_EXT) $(DEP_LIBS)
 ogrtindex$(EXE):	ogrtindex.$(OBJ_EXT) $(DEP_LIBS)
 	$(LD) $(LNK_FLAGS) $< $(XTRAOBJ) $(CONFIG_LIBS) -o $@
 
-test_ogrsf$(EXE):	test_ogrsf.$(OBJ_EXT) commonutils.$(OBJ_EXT)  $(DEP_LIBS)
-	$(LD) $(LNK_FLAGS) $< commonutils.$(OBJ_EXT) $(XTRAOBJ) $(CONFIG_LIBS) -o $@
+test_ogrsf$(EXE):	test_ogrsf.$(OBJ_EXT) $(DEP_LIBS)
+	$(LD) $(LNK_FLAGS) $< $(XTRAOBJ) $(CONFIG_LIBS) -o $@
 
 gdalasyncread$(EXE):	gdalasyncread.$(OBJ_EXT) $(DEP_LIBS)
 	$(LD) $(LNK_FLAGS) $< $(XTRAOBJ) $(CONFIG_LIBS) -o $@
@@ -139,7 +136,7 @@ gdal-config:	gdal-config.in ../GDALmake.opt ./GNUmakefile ../VERSION
 	echo 'CONFIG_LIBS="$(CONFIG_LIBS)"' >> gdal-config
 	echo 'CONFIG_DEP_LIBS="$(LIBS)"' >> gdal-config
 	echo 'CONFIG_PREFIX="$(GDAL_ROOT)"' >> gdal-config
-	echo 'CONFIG_CFLAGS="-I$(GDAL_ROOT)/port -I$(GDAL_ROOT)/gcore -I$(GDAL_ROOT)/alg -I$(GDAL_ROOT)/ogr -I$(GDAL_ROOT)/ogr/ogrsf_frmts -I$(GDAL_ROOT)/frmts/vrt"' >> gdal-config
+	echo 'CONFIG_CFLAGS="-I$(GDAL_ROOT)/port -I$(GDAL_ROOT)/gcore -I$(GDAL_ROOT)/alg -I$(GDAL_ROOT)/ogr -I$(GDAL_ROOT)/ogr/ogrsf_frmts"' >> gdal-config
 	echo 'CONFIG_DATA="$(GDAL_ROOT)/data"' >> gdal-config
 	echo 'CONFIG_VERSION="'`cat ../VERSION`'"' >> gdal-config
 	echo 'CONFIG_OGR_ENABLED=$(OGR_ENABLED)' >> gdal-config

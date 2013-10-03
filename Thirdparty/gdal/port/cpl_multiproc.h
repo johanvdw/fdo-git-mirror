@@ -1,5 +1,5 @@
 /**********************************************************************
- * $Id: cpl_multiproc.h 25716 2013-03-09 12:09:29Z rouault $
+ * $Id: cpl_multiproc.h 20088 2010-07-17 20:41:29Z rouault $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  CPL Multi-Threading, and process handling portability functions.
@@ -41,9 +41,6 @@
 
 #if defined(WIN32) && !defined(CPL_MULTIPROC_STUB)
 #  define CPL_MULTIPROC_WIN32
-/* MinGW can have pthread support, so disable it to avoid issues */
-/* in cpl_multiproc.cpp */
-#  undef  CPL_MULTIPROC_PTHREAD
 #endif
 
 #if !defined(CPL_MULTIPROC_WIN32) && !defined(CPL_MULTIPROC_PTHREAD) \
@@ -63,23 +60,12 @@ int   CPL_DLL CPLCreateOrAcquireMutex( void **, double dfWaitInSeconds );
 int   CPL_DLL CPLAcquireMutex( void *hMutex, double dfWaitInSeconds );
 void  CPL_DLL CPLReleaseMutex( void *hMutex );
 void  CPL_DLL CPLDestroyMutex( void *hMutex );
-void  CPL_DLL CPLCleanupMasterMutex();
-
-void  CPL_DLL *CPLCreateCond();
-void  CPL_DLL  CPLCondWait( void *hCond, void* hMutex );
-void  CPL_DLL  CPLCondSignal( void *hCond );
-void  CPL_DLL  CPLCondBroadcast( void *hCond );
-void  CPL_DLL  CPLDestroyCond( void *hCond );
 
 GIntBig CPL_DLL CPLGetPID();
 int   CPL_DLL CPLCreateThread( CPLThreadFunc pfnMain, void *pArg );
-void  CPL_DLL* CPLCreateJoinableThread( CPLThreadFunc pfnMain, void *pArg );
-void  CPL_DLL CPLJoinThread(void* hJoinableThread); 
 void  CPL_DLL CPLSleep( double dfWaitInSeconds );
 
 const char CPL_DLL *CPLGetThreadingModel();
-
-int CPL_DLL CPLGetNumCPUs();
 
 CPL_C_END
 
@@ -108,14 +94,14 @@ class CPL_DLL CPLMutexHolder
 /* -------------------------------------------------------------------- */
 
 #define CTLS_RLBUFFERINFO     		1         /* cpl_conv.cpp */
-#define CTLS_WIN32_COND                 2         /* cpl_multiproc.cpp */
+#define CTLS_DECDMSBUFFER               2	  /* cpl_conv.cpp */
 #define CTLS_CSVTABLEPTR                3         /* cpl_csv.cpp */
 #define CTLS_CSVDEFAULTFILENAME         4         /* cpl_csv.cpp */
 #define CTLS_ERRORCONTEXT               5         /* cpl_error.cpp */
-#define CTLS_GDALDATASET_REC_PROTECT_MAP 6        /* gdaldataset.cpp */
+#define CTLS_UNUSED1                    6
 #define CTLS_PATHBUF                    7         /* cpl_path.cpp */
-#define CTLS_UNUSED3                    8
-#define CTLS_UNUSED4                    9
+#define CTLS_SPRINTFBUF                 8         /* cpl_string.cpp */
+#define CTLS_SWQ_ERRBUF                 9         /* swq.c */
 #define CTLS_CPLSPRINTF                10         /* cpl_string.h */
 #define CTLS_RESPONSIBLEPID            11         /* gdaldataset.cpp */
 #define CTLS_VERSIONINFO               12         /* gdal_misc.cpp */

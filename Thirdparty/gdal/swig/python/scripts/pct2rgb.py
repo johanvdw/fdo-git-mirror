@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #******************************************************************************
-#  $Id: pct2rgb.py 25674 2013-02-23 15:21:10Z rouault $
+#  $Id: pct2rgb.py 19762 2010-05-23 18:34:46Z rouault $
 # 
 #  Name:     pct2rgb
 #  Project:  GDAL Python Interface
@@ -97,7 +97,7 @@ while i < len(argv):
 
 if dst_filename is None:
     Usage()
-
+    
 # ----------------------------------------------------------------------------
 # Open source file
 
@@ -119,16 +119,15 @@ if dst_driver is None:
 # ----------------------------------------------------------------------------
 # Build color table.
 
+lookup = [ Numeric.arrayrange(256), 
+           Numeric.arrayrange(256), 
+           Numeric.arrayrange(256), 
+           Numeric.ones(256)*255 ]
+
 ct = src_band.GetRasterColorTable()
 
-ct_size = max(256, ct.GetCount())
-lookup = [Numeric.arrayrange(ct_size),
-          Numeric.arrayrange(ct_size),
-          Numeric.arrayrange(ct_size),
-          Numeric.ones(ct_size) * 255]
-
 if ct is not None:
-    for i in range(ct_size):
+    for i in range(min(256,ct.GetCount())):
         entry = ct.GetColorEntry(i)
         for c in range(4):
             lookup[c][i] = entry[c]
@@ -156,7 +155,7 @@ if src_ds.GetGCPCount() > 0:
     tif_ds.SetGCPs( src_ds.GetGCPs(), src_ds.GetGCPProjection() )
 
 # ----------------------------------------------------------------------------
-# Do the processing one scanline at a time.
+# Do the processing one scanline at a time. 
 
 progress( 0.0 )
 for iY in range(src_ds.RasterYSize):
@@ -169,7 +168,7 @@ for iY in range(src_ds.RasterYSize):
         tif_ds.GetRasterBand(iBand+1).WriteArray(dst_data,0,iY)
 
     progress( (iY+1.0) / src_ds.RasterYSize )
-
+    
 
 tif_ds = None
 

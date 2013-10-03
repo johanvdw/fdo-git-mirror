@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: Dataset.i 25738 2013-03-12 18:39:09Z rouault $
+ * $Id: Dataset.i 20641 2010-09-18 11:35:15Z rouault $
  *
  * Name:     Dataset.i
  * Project:  GDAL Python Interface
@@ -721,7 +721,6 @@ CPLErr ReadRaster(  int xoff, int yoff, int xsize, int ysize,
 %clear(int*);
 
   void EndAsyncReader(GDALAsyncReaderShadow* ario){
-    if( ario == NULL ) return;
     GDALAsyncReaderH hReader = AsyncReaderWrapperGetReader(ario);
     if (hReader == NULL)
     {

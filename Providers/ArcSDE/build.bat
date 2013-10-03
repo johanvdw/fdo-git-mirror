@@ -143,7 +143,7 @@ SET FDOACTIVEBUILD=%cd%\Src\ArcSDE%VCBEXTENSION%
 cscript //Nologo //job:prepare preparebuilds.wsf
 pushd Src
 
-msbuild ArcSDE%VCBEXTENSION%_temp.sln /t:%MSACTION% /p:Configuration=%ARCSDEVERSIONACTIVE% /p:Platform=%TYPEPLATFORM% %EXTRA_MSBUILD_PROPERTIES% /nologo /consoleloggerparameters:NoSummary /maxcpucount:4
+msbuild ArcSDE%VCBEXTENSION%_temp.sln /t:%MSACTION% /p:Configuration=%ARCSDEVERSIONACTIVE% /p:Platform=%TYPEPLATFORM% %EXTRA_MSBUILD_PROPERTIES% /nologo /consoleloggerparameters:NoSummary
 
 SET FDOERROR=%errorlevel%
 if exist ArcSDE%VCBEXTENSION%_temp.sln del /Q /F ArcSDE%VCBEXTENSION%_temp.sln
@@ -176,11 +176,8 @@ if "%DOCENABLE%"=="skip" goto install_docs
 echo Creating ArcSDE provider html and chm documentation
 if exist "Docs\HTML\ArcSDE" rmdir /S /Q "Docs\HTML\ArcSDE"
 if not exist "Docs\HTML\ArcSDE" mkdir "Docs\HTML\ArcSDE"
-copy ..\..\DocResources\geospatial.css Docs\HTML\ArcSDE
 copy ..\..\DocResources\geospatial.js Docs\HTML\ArcSDE
 copy ..\..\DocResources\osgeo.css Docs\HTML\ArcSDE
-if exist ..\..\DocResources\comment.htm copy ..\..\DocResources\comment.htm Docs\HTML\ArcSDE
-if exist ..\..\DocResources\comment.js copy ..\..\DocResources\comment.js Docs\HTML\ArcSDE
 if exist Docs\ArcSDE_Provider_API.chm attrib -r Docs\ArcSDE_Provider_API.chm
 pushd Docs\doc_src
 doxygen Doxyfile_ArcSDE

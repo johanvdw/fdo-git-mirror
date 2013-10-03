@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgpsbabelwritedatasource.cpp 25598 2013-02-05 22:24:35Z rouault $
+ * $Id: ogrgpsbabelwritedatasource.cpp 20996 2010-10-28 18:38:15Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRGPSBabelWriteDataSource class.
@@ -32,9 +32,8 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 #include "cpl_error.h"
-#include "cpl_spawn.h"
 
-CPL_CVSID("$Id: ogrgpsbabelwritedatasource.cpp 25598 2013-02-05 22:24:35Z rouault $");
+CPL_CVSID("$Id: ogrgpsbabelwritedatasource.cpp 20996 2010-10-28 18:38:15Z rouault $");
 
 /************************************************************************/
 /*                    OGRGPSBabelWriteDataSource()                      */
@@ -72,7 +71,7 @@ OGRGPSBabelWriteDataSource::~OGRGPSBabelWriteDataSource()
 
 int OGRGPSBabelWriteDataSource::Convert()
 {
-    int nRet = -1;
+    int bRet = FALSE;
     if (osTmpFileName.size() > 0 && pszFilename != NULL && pszGPSBabelDriverName != NULL)
     {
         if (OGRGPSBabelDataSource::IsSpecialFile(pszFilename))
@@ -83,7 +82,7 @@ int OGRGPSBabelWriteDataSource::Convert()
             VSILFILE* tmpfp = VSIFOpenL(osTmpFileName.c_str(), "rb");
             if (tmpfp)
             {
-                nRet = CPLSpawn(argv, tmpfp, NULL, TRUE);
+                bRet = ForkAndPipe(argv, tmpfp, NULL);
 
                 VSIFCloseL(tmpfp);
                 tmpfp = NULL;
@@ -104,7 +103,7 @@ int OGRGPSBabelWriteDataSource::Convert()
                 VSILFILE* tmpfp = VSIFOpenL(osTmpFileName.c_str(), "rb");
                 if (tmpfp)
                 {
-                    nRet = CPLSpawn(argv, tmpfp, fp, TRUE);
+                    bRet = ForkAndPipe(argv, tmpfp, fp);
 
                     VSIFCloseL(tmpfp);
                     tmpfp = NULL;
@@ -119,7 +118,7 @@ int OGRGPSBabelWriteDataSource::Convert()
         osTmpFileName = "";
     }
 
-    return nRet == 0;
+    return bRet;
 }
 
 /************************************************************************/

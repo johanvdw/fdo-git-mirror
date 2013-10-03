@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: kmlnode.h 24175 2012-03-30 20:41:29Z rouault $
+ * $Id: kmlnode.h 23589 2011-12-17 14:21:01Z rouault $
  *
  * Project:  KML Driver
  * Purpose:  Class for building up the node structure of the kml file.
@@ -37,6 +37,7 @@
 #include <vector>
 
 std::string Nodetype2String(Nodetype const& type);
+bool isNumberDigit(const char cIn);
 
 class KMLNode
 {
@@ -48,7 +49,6 @@ public:
     void print(unsigned int what = 3);
     int classify(KML* poKML, int nRecLevel = 0);
     void eliminateEmpty(KML* poKML);
-    bool hasOnlyEmpty() const;
     
     void setType(Nodetype type);
     Nodetype getType() const;

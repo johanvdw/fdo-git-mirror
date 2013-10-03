@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_dgn.h 25311 2012-12-15 12:48:14Z rouault $
+ * $Id: ogr_dgn.h 15583 2008-10-23 00:04:33Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  OGR Driver for DGN Reader.
@@ -42,6 +42,7 @@ class OGRDGNLayer : public OGRLayer
     OGRFeatureDefn     *poFeatureDefn;
 
     int                 iNextShapeId;
+    int                 nTotalShapeCount;
 
     DGNHandle           hDGN;
     int                 bUpdate;

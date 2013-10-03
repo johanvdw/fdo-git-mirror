@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hdf4dataset.cpp 25847 2013-04-03 09:45:20Z dron $
+ * $Id: hdf4dataset.cpp 22838 2011-07-30 17:55:35Z rouault $
  *
  * Project:  Hierarchical Data Format Release 4 (HDF4)
  * Purpose:  HDF4 Datasets. Open HDF4 file, fetch metadata and list of
@@ -36,20 +36,16 @@
 
 #include "gdal_priv.h"
 #include "cpl_string.h"
-#include "cpl_multiproc.h"
-
 #include "hdf4compat.h"
 #include "hdf4dataset.h"
 
-CPL_CVSID("$Id: hdf4dataset.cpp 25847 2013-04-03 09:45:20Z dron $");
+CPL_CVSID("$Id: hdf4dataset.cpp 22838 2011-07-30 17:55:35Z rouault $");
 
 CPL_C_START
 void	GDALRegister_HDF4(void);
 CPL_C_END
 
 extern const char *pszGDALSignature;
-
-void *hHDF4Mutex = NULL;
 
 /************************************************************************/
 /* ==================================================================== */
@@ -82,8 +78,6 @@ HDF4Dataset::HDF4Dataset()
 HDF4Dataset::~HDF4Dataset()
 
 {
-    CPLMutexHolderD(&hHDF4Mutex);
-
     if ( hSD )
 	SDend( hSD );
     if ( hGR )
@@ -155,7 +149,7 @@ char *SPrintArray( GDALDataType eDataType, const void *paDataArray,
                      (i < nValues - 1)?pszDelimiter:"" );
                 break;
             case GDT_Float32:
-                sprintf( pszField, "%.10g%s", ((float *)paDataArray)[i],
+                sprintf( pszField, "%.7g%s", ((float *)paDataArray)[i],
                      (i < nValues - 1)?pszDelimiter:"" );
                 break;
             case GDT_Float64:
@@ -595,7 +589,7 @@ CPLErr HDF4Dataset::ReadGlobalAttributes( int32 iHandler )
         // parameter is an SD interface identifier.
         SDattrinfo( iHandler, iAttribute, szAttrName, &iNumType, &nValues );
 
-        if ( EQUALN( szAttrName, "coremetadata", 12 )    ||
+        if ( EQUALN( szAttrName, "coremetadata.", 13 )    ||
 	     EQUALN( szAttrName, "archivemetadata.", 16 ) ||
 	     EQUALN( szAttrName, "productmetadata.", 16 ) ||
              EQUALN( szAttrName, "badpixelinformation", 19 ) ||
@@ -659,25 +653,12 @@ GDALDataset *HDF4Dataset::Open( GDALOpenInfo * poOpenInfo )
 
     if( !Identify( poOpenInfo ) )
         return NULL;
-    
-    CPLMutexHolderD(&hHDF4Mutex);
 
 /* -------------------------------------------------------------------- */
 /*      Try opening the dataset.                                        */
 /* -------------------------------------------------------------------- */
     int32	hHDF4;
     
-    // Attempt to increase maximum number of opened HDF files
-#ifdef HDF4_HAS_MAXOPENFILES
-    intn        nCurrMax, nSysLimit;
-
-    if ( SDget_maxopenfiles(&nCurrMax, &nSysLimit) >= 0
-         && nCurrMax < nSysLimit )
-    {
-        intn res = SDreset_maxopenfiles( nSysLimit );
-    }
-#endif /* HDF4_HAS_MAXOPENFILES */
-
     hHDF4 = Hopen(poOpenInfo->pszFilename, DFACC_READ, 0);
     
     if( hHDF4 <= 0 )
@@ -690,9 +671,7 @@ GDALDataset *HDF4Dataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
     HDF4Dataset *poDS;
 
-    CPLReleaseMutex(hHDF4Mutex); // Release mutex otherwise we'll deadlock with GDALDataset own mutex
     poDS = new HDF4Dataset();
-    CPLAcquireMutex(hHDF4Mutex, 1000.0);
 
     poDS->fp = poOpenInfo->fp;
     poOpenInfo->fp = NULL;
@@ -704,12 +683,7 @@ GDALDataset *HDF4Dataset::Open( GDALOpenInfo * poOpenInfo )
 
     if ( poDS->hSD == -1 )
     {
-        CPLReleaseMutex(hHDF4Mutex); // Release mutex otherwise we'll deadlock with GDALDataset own mutex
-        delete poDS;
-        CPLAcquireMutex(hHDF4Mutex, 1000.0);
-        CPLError( CE_Failure, CPLE_OpenFailed,
-                  "Failed to open HDF4 file \"%s\" for SDS reading.\n",
-                  poOpenInfo->pszFilename );
+	delete poDS;
         return NULL;
     }
    
@@ -718,12 +692,7 @@ GDALDataset *HDF4Dataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
     if ( poDS->ReadGlobalAttributes( poDS->hSD ) != CE_None )
     {
-        CPLReleaseMutex(hHDF4Mutex); // Release mutex otherwise we'll deadlock with GDALDataset own mutex
-        delete poDS;
-        CPLAcquireMutex(hHDF4Mutex, 1000.0);
-        CPLError( CE_Failure, CPLE_OpenFailed,
-                  "Failed to read global attributes from HDF4 file \"%s\".\n",
-                  poOpenInfo->pszFilename );
+	delete poDS;
         return NULL;
     }
 
@@ -804,12 +773,8 @@ GDALDataset *HDF4Dataset::Open( GDALOpenInfo * poOpenInfo )
         hHDF4 = SWopen( poOpenInfo->pszFilename, DFACC_READ );
         if( hHDF4 < 0)
         {
-            CPLReleaseMutex(hHDF4Mutex); // Release mutex otherwise we'll deadlock with GDALDataset own mutex
             delete poDS;
-            CPLAcquireMutex(hHDF4Mutex, 1000.0);
-            CPLError( CE_Failure, CPLE_OpenFailed,
-                      "Failed to open HDF-EOS file \"%s\" for swath reading.\n",
-                      poOpenInfo->pszFilename );
+            CPLError( CE_Failure, CPLE_OpenFailed, "Failed to open HDF4 `%s'.\n", poOpenInfo->pszFilename );
             return NULL;
         } 
         nSubDatasets = SWinqswath(poOpenInfo->pszFilename, NULL, &nStrBufSize);
@@ -836,9 +801,7 @@ GDALDataset *HDF4Dataset::Open( GDALOpenInfo * poOpenInfo )
             if ( nSubDatasets != CSLCount(papszSwaths) )
             {
                 CSLDestroy( papszSwaths );
-                CPLReleaseMutex(hHDF4Mutex); // Release mutex otherwise we'll deadlock with GDALDataset own mutex
                 delete poDS;
-                CPLAcquireMutex(hHDF4Mutex, 1000.0);
                 CPLDebug( "HDF4", "Can not parse list of HDF-EOS grids." );
                 return NULL;
             }
@@ -945,10 +908,7 @@ GDALDataset *HDF4Dataset::Open( GDALOpenInfo * poOpenInfo )
             if ( nSubDatasets != CSLCount(papszGrids) )
             {
                 CSLDestroy( papszGrids );
-                GDclose( hHDF4 ); 
-                CPLReleaseMutex(hHDF4Mutex); // Release mutex otherwise we'll deadlock with GDALDataset own mutex
                 delete poDS;
-                CPLAcquireMutex(hHDF4Mutex, 1000.0);
                 CPLDebug( "HDF4", "Can not parse list of HDF-EOS grids." );
                 return NULL;
             }
@@ -1024,6 +984,7 @@ GDALDataset *HDF4Dataset::Open( GDALOpenInfo * poOpenInfo )
             }
 
             CSLDestroy( papszGrids );
+            GDclose( hHDF4 );
         }
         GDclose( hHDF4 );
 
@@ -1085,23 +1046,14 @@ GDALDataset *HDF4Dataset::Open( GDALOpenInfo * poOpenInfo )
 /*      Build a list of raster images. Note, that HDF-EOS dataset may   */
 /*      contain a raster image as well.                                 */
 /* -------------------------------------------------------------------- */
-
     hHDF4 = Hopen(poOpenInfo->pszFilename, DFACC_READ, 0);
     poDS->hGR = GRstart( hHDF4 );
 
     if ( poDS->hGR != -1 )
     {
         if ( GRfileinfo( poDS->hGR, &poDS->nImages, &nAttrs ) == -1 )
-        {
-            CPLReleaseMutex(hHDF4Mutex); // Release mutex otherwise we'll deadlock with GDALDataset own mutex
-            GRend( poDS->hGR );
-            poDS->hGR = 0;
-            Hclose( hHDF4 );
-            delete poDS;
-            CPLAcquireMutex(hHDF4Mutex, 1000.0);
             return NULL;
-        }
-
+        
         for ( i = 0; i < poDS->nImages; i++ )
         {
             int32   iInterlaceMode; 
@@ -1111,15 +1063,7 @@ GDALDataset *HDF4Dataset::Open( GDALOpenInfo * poOpenInfo )
             // of samples per pixel. aiDimSizes has only two dimensions.
             if ( GRgetiminfo( iGR, szName, &iRank, &iNumType, &iInterlaceMode,
                               aiDimSizes, &nAttrs ) != 0 )
-            {
-                CPLReleaseMutex(hHDF4Mutex); // Release mutex otherwise we'll deadlock with GDALDataset own mutex
-                GRend( poDS->hGR );
-                poDS->hGR = 0;
-                Hclose( hHDF4 );
-                delete poDS;
-                CPLAcquireMutex(hHDF4Mutex, 1000.0);
                 return NULL;
-            }
             nCount = CSLCount( poDS->papszSubDatasets ) / 2;
             sprintf( szTemp, "SUBDATASET_%d_NAME", nCount + 1 );
             poDS->papszSubDatasets = CSLSetNameValue(poDS->papszSubDatasets,
@@ -1154,14 +1098,11 @@ GDALDataset *HDF4Dataset::Open( GDALOpenInfo * poOpenInfo )
         char *pszSDSName;
         pszSDSName = CPLStrdup( CSLFetchNameValue( poDS->papszSubDatasets,
                             "SUBDATASET_1_NAME" ));
-        CPLReleaseMutex(hHDF4Mutex); // Release mutex otherwise we'll deadlock with GDALDataset own mutex
         delete poDS;
         poDS = NULL;
 
         GDALDataset* poRetDS = (GDALDataset*) GDALOpen( pszSDSName, poOpenInfo->eAccess );
         CPLFree( pszSDSName );
-
-        CPLAcquireMutex(hHDF4Mutex, 1000.0);
 
         if (poRetDS)
         {
@@ -1177,10 +1118,7 @@ GDALDataset *HDF4Dataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
         if( poOpenInfo->eAccess == GA_Update )
         {
-            CPLReleaseMutex(hHDF4Mutex); // Release mutex otherwise we'll deadlock with GDALDataset own mutex
             delete poDS;
-            CPLAcquireMutex(hHDF4Mutex, 1000.0);
-
             CPLError( CE_Failure, CPLE_NotSupported, 
                       "The HDF4 driver does not support update access to existing"
                       " datasets.\n" );
@@ -1190,17 +1128,6 @@ GDALDataset *HDF4Dataset::Open( GDALOpenInfo * poOpenInfo )
     }
 
     return( poDS );
-}
-
-/************************************************************************/
-/*                           HDF4UnloadDriver()                         */
-/************************************************************************/
-
-static void HDF4UnloadDriver(GDALDriver* poDriver)
-{
-    if( hHDF4Mutex != NULL )
-        CPLDestroyMutex(hHDF4Mutex);
-    hHDF4Mutex = NULL;
 }
 
 /************************************************************************/
@@ -1224,12 +1151,9 @@ void GDALRegister_HDF4()
                                    "Hierarchical Data Format Release 4" );
         poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, 
                                    "frmt_hdf4.html" );
-        poDriver->SetMetadataItem( GDAL_DMD_EXTENSION, "hdf" );
-        poDriver->SetMetadataItem( GDAL_DMD_SUBDATASETS, "YES" );
 
         poDriver->pfnOpen = HDF4Dataset::Open;
         poDriver->pfnIdentify = HDF4Dataset::Identify;
-        poDriver->pfnUnloadDriver = HDF4UnloadDriver;
 
         GetGDALDriverManager()->RegisterDriver( poDriver );
     }

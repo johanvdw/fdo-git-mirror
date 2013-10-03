@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: rmfdataset.cpp 24731 2012-08-03 17:02:56Z rouault $
+ * $Id: rmfdataset.cpp 22766 2011-07-23 10:14:28Z rouault $
  *
  * Project:  Raster Matrix Format
  * Purpose:  Read/write raster files used in GIS "Integratsia"
@@ -32,7 +32,7 @@
 
 #include "rmfdataset.h"
 
-CPL_CVSID("$Id: rmfdataset.cpp 24731 2012-08-03 17:02:56Z rouault $");
+CPL_CVSID("$Id: rmfdataset.cpp 22766 2011-07-23 10:14:28Z rouault $");
 
 CPL_C_START
 void    GDALRegister_RMF(void);
@@ -1486,10 +1486,8 @@ do {                                                                    \
         {
             if ( poDS->sExtHeader.nZone == 0 )
             {
-                double centerXCoord = poDS->sHeader.dfLLX +
-                    (poDS->nRasterXSize * poDS->sHeader.dfPixelSize / 2.0);
                 padfPrjParams[7] =
-                    floor((centerXCoord - 500000.0 ) / 1000000.0);
+                    floor((poDS->sHeader.dfLLX - 500000.0 ) / 1000000.0);
             }
             else
                 padfPrjParams[7] = poDS->sExtHeader.nZone;

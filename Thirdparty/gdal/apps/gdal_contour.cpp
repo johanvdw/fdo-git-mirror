@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdal_contour.cpp 25643 2013-02-12 13:50:42Z bishop $
+ * $Id: gdal_contour.cpp 21191 2010-12-03 20:02:34Z rouault $
  *
  * Project:  Contour Generator
  * Purpose:  Contour Generator mainline.
@@ -34,7 +34,7 @@
 #include "ogr_api.h"
 #include "ogr_srs_api.h"
 
-CPL_CVSID("$Id: gdal_contour.cpp 25643 2013-02-12 13:50:42Z bishop $");
+CPL_CVSID("$Id: gdal_contour.cpp 21191 2010-12-03 20:02:34Z rouault $");
 
 /************************************************************************/
 /*                            ArgIsNumeric()                            */
@@ -43,37 +43,41 @@ CPL_CVSID("$Id: gdal_contour.cpp 25643 2013-02-12 13:50:42Z bishop $");
 static int ArgIsNumeric( const char *pszArg )
 
 {
-    return CPLGetValueType(pszArg) != CPL_VALUE_STRING;
+    if( pszArg[0] == '-' )
+        pszArg++;
+
+    if( *pszArg == '\0' )
+        return FALSE;
+
+    while( *pszArg != '\0' )
+    {
+        if( (*pszArg < '0' || *pszArg > '9') && *pszArg != '.' )
+            return FALSE;
+        pszArg++;
+    }
+
+    return TRUE;
 }
 
 /************************************************************************/
 /*                               Usage()                                */
 /************************************************************************/
 
-static void Usage(const char* pszErrorMsg = NULL)
+static void Usage()
 
 {
     printf( 
         "Usage: gdal_contour [-b <band>] [-a <attribute_name>] [-3d] [-inodata]\n"
         "                    [-snodata n] [-f <formatname>] [-i <interval>]\n"
-        "                    [-f <formatname>] [[-dsco NAME=VALUE] ...] [[-lco NAME=VALUE] ...]\n"   
         "                    [-off <offset>] [-fl <level> <level>...]\n" 
         "                    [-nln <outlayername>] [-q]\n"
         "                    <src_filename> <dst_filename>\n" );
-
-    if( pszErrorMsg != NULL )
-        fprintf(stderr, "\nFAILURE: %s\n", pszErrorMsg);
-
     exit( 1 );
 }
 
 /************************************************************************/
 /*                                main()                                */
 /************************************************************************/
-
-#define CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(nExtraArg) \
-    do { if (i + nExtraArg >= argc) \
-        Usage(CPLSPrintf("%s option requires %d argument(s)", argv[i], nExtraArg)); } while(0)
 
 int main( int argc, char ** argv )
 
@@ -86,7 +90,6 @@ int main( int argc, char ** argv )
     const char *pszDstFilename = NULL;
     const char *pszElevAttrib = NULL;
     const char *pszFormat = "ESRI Shapefile";
-    char        **papszDSCO = NULL, **papszLCO = NULL;
     double adfFixedLevels[1000];
     int    nFixedLevelCount = 0;
     const char *pszNewLayerName = "contour";
@@ -118,66 +121,45 @@ int main( int argc, char ** argv )
                    argv[0], GDAL_RELEASE_NAME, GDALVersionInfo("RELEASE_NAME"));
             return 0;
         }
-        else if( EQUAL(argv[i], "--help") )
-            Usage();
-        else if( EQUAL(argv[i],"-a") )
+        else if( EQUAL(argv[i],"-a") && i < argc-1 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             pszElevAttrib = argv[++i];
         }
-        else if( EQUAL(argv[i],"-off") )
+        else if( EQUAL(argv[i],"-off") && i < argc-1 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             dfOffset = atof(argv[++i]);
         }
-        else if( EQUAL(argv[i],"-i") )
+        else if( EQUAL(argv[i],"-i") && i < argc-1 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             dfInterval = atof(argv[++i]);
         }
-        else if( EQUAL(argv[i],"-fl") )
+        else if( EQUAL(argv[i],"-fl") && i < argc-1 )
         {
-            if( i >= argc-1 )
-                Usage(CPLSPrintf("%s option requires at least 1 argument", argv[i]));
             while( i < argc-1 
                    && nFixedLevelCount 
                              < (int)(sizeof(adfFixedLevels)/sizeof(double))
                    && ArgIsNumeric(argv[i+1]) )
                 adfFixedLevels[nFixedLevelCount++] = atof(argv[++i]);
         }
-        else if( EQUAL(argv[i],"-b") )
+        else if( EQUAL(argv[i],"-b") && i < argc-1 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             nBandIn = atoi(argv[++i]);
         }
-        else if( EQUAL(argv[i],"-f") )
+        else if( EQUAL(argv[i],"-f") && i < argc-1 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             pszFormat = argv[++i];
-        }
-        else if( EQUAL(argv[i],"-dsco") )
-        {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
-            papszDSCO = CSLAddString(papszDSCO, argv[++i] );
-        }
-        else if( EQUAL(argv[i],"-lco") )
-        {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
-            papszLCO = CSLAddString(papszLCO, argv[++i] );
         }
         else if( EQUAL(argv[i],"-3d")  )
         {
             b3D = TRUE;
         }
-        else if( EQUAL(argv[i],"-snodata") )
+        else if( EQUAL(argv[i],"-snodata")  && i < argc-1 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             bNoDataSet = TRUE;
             dfNoData = atof(argv[++i]);
         }
-        else if( EQUAL(argv[i],"-nln") )
+        else if( EQUAL(argv[i],"-nln")  && i < argc-1 )
         {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
             pszNewLayerName = argv[++i];
         }
         else if( EQUAL(argv[i],"-inodata") )
@@ -197,22 +179,24 @@ int main( int argc, char ** argv )
             pszDstFilename = argv[i];
         }
         else
-            Usage("Too many command options.");
+            Usage();
     }
 
     if( dfInterval == 0.0 && nFixedLevelCount == 0 )
     {
-        Usage("Neither -i nor -fl are specified.");
+        Usage();
     }
 
     if (pszSrcFilename == NULL)
     {
-        Usage("Missing source filename.");
+        fprintf(stderr, "Missing source filename.\n");
+        Usage();
     }
 
     if (pszDstFilename == NULL)
     {
-        Usage("Missing destination filename.");
+        fprintf(stderr, "Missing destination filename.\n");
+        Usage();
     }
     
     if (!bQuiet)
@@ -264,13 +248,13 @@ int main( int argc, char ** argv )
         exit( 10 );
     }
 
-    hDS = OGR_Dr_CreateDataSource( hDriver, pszDstFilename, papszDSCO );
+    hDS = OGR_Dr_CreateDataSource( hDriver, pszDstFilename, NULL );
     if( hDS == NULL )
         exit( 1 );
 
     hLayer = OGR_DS_CreateLayer( hDS, pszNewLayerName, hSRS, 
                                  b3D ? wkbLineString25D : wkbLineString,
-                                 papszLCO );
+                                 NULL );
     if( hLayer == NULL )
         exit( 1 );
 
@@ -310,8 +294,6 @@ int main( int argc, char ** argv )
         OSRDestroySpatialReference( hSRS );
 
     CSLDestroy( argv );
-    CSLDestroy( papszDSCO );
-    CSLDestroy( papszLCO );
     GDALDestroyDriverManager();
     OGRCleanupAll();
 

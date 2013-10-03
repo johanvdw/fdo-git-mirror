@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr.i 25532 2013-01-20 03:56:31Z warmerdam $
+ * $Id: ogr.i 23513 2011-12-10 21:12:59Z rouault $
  *
  * Project:  OGR Core SWIG Interface declarations.
  * Purpose:  OGR declarations.
@@ -373,15 +373,12 @@ public:
 #endif
   OGRDataSourceShadow *Open( const char* utf8_path, 
                         int update=0 ) {
-    CPLErrorReset();
     OGRDataSourceShadow* ds = (OGRDataSourceShadow*) OGR_Dr_Open(self, utf8_path, update);
     if( CPLGetLastErrorType() == CE_Failure && ds != NULL )
     {
-        CPLDebug(
-            "SWIG",
-            "OGR_Dr_Open() succeeded, but an error is posted, so we destroy"
-            " the datasource and fail at swig level.\nError:%s",
-            CPLGetLastErrorMsg() );
+        CPLDebug( "SWIG",
+          "OGR_Dr_Open() succeeded, but an error is posted, so we destroy"
+          " the datasource and fail at swig level." );
         OGRReleaseDataSource(ds);
         ds = NULL;
     }
@@ -732,86 +729,6 @@ public:
 
   OGRErr SetIgnoredFields( const char **options ) {
     return OGR_L_SetIgnoredFields( self, options );
-  }
-
-%apply Pointer NONNULL {OGRFieldDefnShadow *method_layer};
-%apply Pointer NONNULL {OGRFieldDefnShadow *result_layer};
-
-#ifndef SWIGJAVA
-  %feature( "kwargs" ) Intersection;
-#endif
-  OGRErr Intersection( OGRLayerShadow *method_layer, 
-                       OGRLayerShadow *result_layer, 
-                       char **options=NULL,
-                       GDALProgressFunc callback=NULL,
-                       void* callback_data=NULL ) {
-    return OGR_L_Intersection( self, method_layer, result_layer, options, callback, callback_data );
-  }
-
-#ifndef SWIGJAVA
-  %feature( "kwargs" ) Union;
-#endif
-  OGRErr Union( OGRLayerShadow *method_layer, 
-                OGRLayerShadow *result_layer, 
-                char **options=NULL,
-                GDALProgressFunc callback=NULL,
-                void* callback_data=NULL ) {
-    return OGR_L_Union( self, method_layer, result_layer, options, callback, callback_data );
-  }
-
-#ifndef SWIGJAVA
-  %feature( "kwargs" ) SymDifference;
-#endif
-  OGRErr SymDifference( OGRLayerShadow *method_layer, 
-                        OGRLayerShadow *result_layer, 
-                        char **options=NULL,
-                        GDALProgressFunc callback=NULL,
-                        void* callback_data=NULL ) {
-    return OGR_L_SymDifference( self, method_layer, result_layer, options, callback, callback_data );
-  }
-
-#ifndef SWIGJAVA
-  %feature( "kwargs" ) Identity;
-#endif
-  OGRErr Identity( OGRLayerShadow *method_layer, 
-                   OGRLayerShadow *result_layer, 
-                   char **options=NULL,
-                   GDALProgressFunc callback=NULL,
-                   void* callback_data=NULL ) {
-    return OGR_L_Identity( self, method_layer, result_layer, options, callback, callback_data );
-  }
-
-#ifndef SWIGJAVA
-  %feature( "kwargs" ) Update;
-#endif
-  OGRErr Update( OGRLayerShadow *method_layer, 
-                 OGRLayerShadow *result_layer, 
-                 char **options=NULL,
-                 GDALProgressFunc callback=NULL,
-                 void* callback_data=NULL ) {
-    return OGR_L_Update( self, method_layer, result_layer, options, callback, callback_data );
-  }
-
-#ifndef SWIGJAVA
-  %feature( "kwargs" ) Clip;
-#endif
-  OGRErr Clip( OGRLayerShadow *method_layer, 
-               OGRLayerShadow *result_layer, 
-               char **options=NULL,
-               GDALProgressFunc callback=NULL,
-               void* callback_data=NULL ) {
-    return OGR_L_Clip( self, method_layer, result_layer, options, callback, callback_data );
-  }
-
-#ifndef SWIGJAVA
-  %feature( "kwargs" ) Erase;
-#endif
-  OGRErr Erase( OGRLayerShadow *method_layer, 
-                OGRLayerShadow *result_layer, 
-                char **options=NULL,
-                GDALProgressFunc callback=NULL,
-                void* callback_data=NULL ) {
-    return OGR_L_Erase( self, method_layer, result_layer, options, callback, callback_data );
   }
 
 } /* %extend */
@@ -1545,17 +1462,6 @@ OGRGeometryShadow* ForceToPolygon( OGRGeometryShadow *geom_in ) {
 }
 %}
 
-%newobject ForceToLineString;
-/* Contrary to the C/C++ method, the passed geometry is preserved */
-/* This avoids dirty trick for Java */
-%inline %{
-OGRGeometryShadow* ForceToLineString( OGRGeometryShadow *geom_in ) {
- if (geom_in == NULL)
-     return NULL;
- return (OGRGeometryShadow* )OGR_G_ForceToLineString( OGR_G_Clone(geom_in) );
-}
-%}
-
 %newobject ForceToMultiPolygon;
 /* Contrary to the C/C++ method, the passed geometry is preserved */
 /* This avoids dirty trick for Java */
@@ -2072,18 +1978,15 @@ public:
   }
 #endif  
 
+#ifndef SWIGJAVA
   %newobject Centroid;
   OGRGeometryShadow* Centroid() {
     OGRGeometryShadow *pt = (OGRGeometryShadow*) OGR_G_CreateGeometry( wkbPoint );
     OGR_G_Centroid( self, pt );
     return pt;
   }
+#endif
   
-  %newobject PointOnSurface;
-  OGRGeometryShadow* PointOnSurface() {
-    return (OGRGeometryShadow*) OGR_G_PointOnSurface( self );
-  }
-
   int WkbSize() {
     return OGR_G_WkbSize(self);
   }
@@ -2267,26 +2170,6 @@ class GeometryNative {
   GeometryNative();
   ~GeometryNative();
 };
-#endif
-
-
-/************************************************************************/
-/*                            TermProgress()                            */
-/************************************************************************/
-
-#if !defined(SWIGCSHARP) && !defined(SWIGJAVA)
-%rename (TermProgress_nocb) GDALTermProgress_nocb;
-%feature( "kwargs" ) GDALTermProgress_nocb;
-%inline %{
-int GDALTermProgress_nocb( double dfProgress, const char * pszMessage=NULL, void *pData=NULL ) {
-  return GDALTermProgress( dfProgress, pszMessage, pData);
-}
-%}
-
-%rename (TermProgress) GDALTermProgress;
-%callback("%s");
-int GDALTermProgress( double, const char *, void * );
-%nocallback;
 #endif
 
 //************************************************************************

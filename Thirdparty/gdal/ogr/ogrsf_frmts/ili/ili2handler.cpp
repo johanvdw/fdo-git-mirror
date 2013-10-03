@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ili2handler.cpp 24408 2012-05-11 21:31:45Z pka $
+ * $Id: ili2handler.cpp 17910 2009-10-27 02:07:33Z chaitanya $
  *
  * Project:  Interlis 2 Reader
  * Purpose:  Implementation of ILI2Handler class.
@@ -34,31 +34,37 @@
 #include "ili2readerp.h"
 #include <xercesc/sax2/Attributes.hpp>
 
-CPL_CVSID("$Id: ili2handler.cpp 24408 2012-05-11 21:31:45Z pka $");
+CPL_CVSID("$Id: ili2handler.cpp 17910 2009-10-27 02:07:33Z chaitanya $");
 
 // 
 // constants
 // 
 static const char* ILI2_DATASECTION = "DATASECTION";
 
-//
+// 
 // ILI2Handler
 // 
 ILI2Handler::ILI2Handler( ILI2Reader *poReader ) {
   m_poReader = poReader;
   
-  XMLCh *tmpCh = XMLString::transcode("CORE");
-  DOMImplementation *impl = DOMImplementationRegistry::getDOMImplementation(tmpCh);
-  XMLString::release(&tmpCh);
-
-  // the root element
-  tmpCh = XMLString::transcode("ROOT");
-  dom_doc = impl->createDocument(0,tmpCh,0);
-  XMLString::release(&tmpCh);
-
-  // the first element is root
-  dom_elem = dom_doc->getDocumentElement();
-
+  // initialize once
+  static int ili2DomTreeInitialized = FALSE;
+  
+  if (!ili2DomTreeInitialized) {
+    XMLCh *tmpCh = XMLString::transcode("CORE");
+    DOMImplementation *impl = DOMImplementationRegistry::getDOMImplementation(tmpCh);
+    XMLString::release(&tmpCh);
+    
+    // the root element
+    tmpCh = XMLString::transcode("ROOT");
+    dom_doc = impl->createDocument(0,tmpCh,0);
+    XMLString::release(&tmpCh);
+  
+    // the first element is root
+    dom_elem = dom_doc->getDocumentElement();
+    
+    ili2DomTreeInitialized = TRUE;
+  }
 }
 
 ILI2Handler::~ILI2Handler() {
@@ -72,7 +78,7 @@ ILI2Handler::~ILI2Handler() {
   
   // release the dom tree
   dom_doc->release();
-
+    
 }
 
     
@@ -93,7 +99,7 @@ void ILI2Handler::startElement(
         const   Attributes& attrs
     ) {
   
-  // start to add the layers, features with the DATASECTION
+  // start to add the layers, features with the DATASECTION  
   char *tmpC = NULL;
   m_nEntityCounter = 0;
   if ((level >= 0) || (cmpStr(ILI2_DATASECTION, tmpC = XMLString::transcode(qname)) == 0)) {
@@ -128,9 +134,9 @@ void ILI2Handler::endElement(
       // go to the parent element and parse the child element
       DOMElement* childElem = dom_elem;
       dom_elem = (DOMElement*)dom_elem->getParentNode();
-
+       
       m_poReader->AddFeature(childElem);
-
+      
       // remove the child element
       childElem = (DOMElement*)dom_elem->removeChild(childElem);
     } else if (level >= 3) {
@@ -175,9 +181,9 @@ void ILI2Handler::characters( const XMLCh *const chars,
     char *tmpC = XMLString::transcode(chars);
     
     // only add the text if it is not empty
-    if (trim(tmpC) != "")
+    if (trim(tmpC) != "") 
       dom_elem->appendChild(dom_doc->createTextNode(chars));
-
+    
     XMLString::release(&tmpC);
   }
 }
@@ -185,7 +191,7 @@ void ILI2Handler::characters( const XMLCh *const chars,
 
 void ILI2Handler::startEntity (const XMLCh *const name)
 {
-    m_nEntityCounter++;
+    m_nEntityCounter ++;
     if (m_nEntityCounter > 1000)
     {
         throw SAXNotSupportedException ("File probably corrupted (million laugh pattern)");

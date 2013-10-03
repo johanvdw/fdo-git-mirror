@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrregisterall.cpp 24669 2012-07-10 16:04:24Z rouault $
+ * $Id: ogrregisterall.cpp 23381 2011-11-17 21:55:45Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Function to register all known OGR drivers.
@@ -29,7 +29,7 @@
 
 #include "ogrsf_frmts.h"
 
-CPL_CVSID("$Id: ogrregisterall.cpp 24669 2012-07-10 16:04:24Z rouault $");
+CPL_CVSID("$Id: ogrregisterall.cpp 23381 2011-11-17 21:55:45Z rouault $");
 
 /************************************************************************/
 /*                           OGRRegisterAll()                           */
@@ -183,10 +183,6 @@ void OGRRegisterAll()
 #ifdef PGDUMP_ENABLED
     RegisterOGRPGDump();
 #endif
-#ifdef OSM_ENABLED
-    /* Register before GPSBabel, that could recognize .osm file too */
-    RegisterOGROSM();
-#endif
 #ifdef GPSBABEL_ENABLED
     RegisterOGRGPSBabel();
 #endif
@@ -240,17 +236,5 @@ void OGRRegisterAll()
 #endif
 #ifdef FREEXL_ENABLED
     RegisterOGRXLS();
-#endif
-#ifdef ODS_ENABLED
-    RegisterOGRODS();
-#endif
-#ifdef XLSX_ENABLED
-    RegisterOGRXLSX();
-#endif
-#ifdef ELASTIC_ENABLED
-    RegisterOGRElastic();
-#endif
-#ifdef PDF_ENABLED
-    RegisterOGRPDF();
 #endif
 } /* OGRRegisterAll */

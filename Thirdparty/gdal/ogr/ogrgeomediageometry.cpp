@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrgeomediageometry.cpp 24656 2012-07-03 17:35:34Z rouault $
+ * $Id: ogrgeomediageometry.cpp 21561 2011-01-23 12:22:58Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements decoder of geomedia geometry blobs
@@ -30,7 +30,7 @@
 #include "ogrgeomediageometry.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrgeomediageometry.cpp 24656 2012-07-03 17:35:34Z rouault $");
+CPL_CVSID("$Id: ogrgeomediageometry.cpp 21561 2011-01-23 12:22:58Z rouault $");
 
 #define GEOMEDIA_POINT          0xC0
 #define GEOMEDIA_ORIENTED_POINT 0xC8
@@ -175,7 +175,7 @@ OGRErr OGRCreateFromGeomedia( GByte *pabyGeom,
         if (OGRCreateFromGeomedia( pabyGeom, &poExteriorGeom, nExteriorSize ) != OGRERR_NONE)
             return OGRERR_FAILURE;
 
-        if ( wkbFlatten( poExteriorGeom->getGeometryType() ) != wkbPolygon )
+        if (poExteriorGeom->getGeometryType() != wkbPolygon)
         {
             delete poExteriorGeom;
             return OGRERR_FAILURE;
@@ -210,20 +210,11 @@ OGRErr OGRCreateFromGeomedia( GByte *pabyGeom,
             return OGRERR_FAILURE;
         }
 
-        OGRwkbGeometryType interiorGeomType = wkbFlatten( poInteriorGeom->getGeometryType() );
-        if ( interiorGeomType == wkbPolygon )
+        if (poInteriorGeom->getGeometryType() == wkbPolygon)
         {
             ((OGRPolygon*)poExteriorGeom)->addRing(((OGRPolygon*)poInteriorGeom)->getExteriorRing());
-        }
-        else if ( interiorGeomType == wkbMultiPolygon )
-        {
-            int numGeom = ((OGRMultiPolygon*)poInteriorGeom)->getNumGeometries();
-            for ( int i = 0; i < numGeom; ++i )
-            {
-                OGRPolygon* poInteriorPolygon = 
-                    (OGRPolygon*)((OGRMultiPolygon*)poInteriorGeom)->getGeometryRef(i);
-                ((OGRPolygon*)poExteriorGeom)->addRing( poInteriorPolygon->getExteriorRing() );
-            }
+            delete poInteriorGeom;
+            *ppoGeom = poExteriorGeom;
         }
         else
         {
@@ -231,9 +222,6 @@ OGRErr OGRCreateFromGeomedia( GByte *pabyGeom,
             delete poInteriorGeom;
             return OGRERR_FAILURE;
         }
-
-        delete poInteriorGeom;
-        *ppoGeom = poExteriorGeom;
 
         return OGRERR_NONE;
     }

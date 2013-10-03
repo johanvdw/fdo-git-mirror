@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gifdataset.cpp 24608 2012-06-24 21:55:29Z rouault $
+ * $Id: gifdataset.cpp 23621 2011-12-20 23:26:56Z rouault $
  *
  * Project:  GIF Driver
  * Purpose:  Implement GDAL GIF Support using libungif code.  
@@ -31,22 +31,13 @@
 #include "cpl_string.h"
 #include "gifabstractdataset.h"
 
-CPL_CVSID("$Id: gifdataset.cpp 24608 2012-06-24 21:55:29Z rouault $");
+CPL_CVSID("$Id: gifdataset.cpp 23621 2011-12-20 23:26:56Z rouault $");
 
 CPL_C_START
 void	GDALRegister_GIF(void);
 
-#if !(defined(GIFLIB_MAJOR) && GIFLIB_MAJOR >= 5)
-
 // This prototype seems to have been messed up!
 GifFileType * EGifOpen(void* userData, OutputFunc writeFunc);
-
-// Define alias compatible with giflib >= 5.0.0
-#define GifMakeMapObject MakeMapObject
-#define GifFreeMapObject FreeMapObject
-
-#endif // defined(GIFLIB_MAJOR) && GIFLIB_MAJOR < 5
-
 CPL_C_END
 
 static const int InterlacedOffset[] = { 0, 4, 2, 1 }; 
@@ -331,12 +322,7 @@ GDALDataset *GIFDataset::Open( GDALOpenInfo * poOpenInfo )
     if( fp == NULL )
         return NULL;
 
-#if defined(GIFLIB_MAJOR) && GIFLIB_MAJOR >= 5
-    int nError;
-    hGifFile = DGifOpen( fp, VSIGIFReadFunc, &nError );
-#else
     hGifFile = DGifOpen( fp, VSIGIFReadFunc );
-#endif
     if( hGifFile == NULL )
     {
         VSIFCloseL( fp );
@@ -394,12 +380,7 @@ GDALDataset *GIFDataset::Open( GDALOpenInfo * poOpenInfo )
     DGifCloseFile( hGifFile );
 
     VSIFSeekL( fp, 0, SEEK_SET);
-
-#if defined(GIFLIB_MAJOR) && GIFLIB_MAJOR >= 5
-    hGifFile = DGifOpen( fp, VSIGIFReadFunc, &nError );
-#else
     hGifFile = DGifOpen( fp, VSIGIFReadFunc );
-#endif
     if( hGifFile == NULL )
     {
         VSIFCloseL( fp );
@@ -489,33 +470,6 @@ GDALDataset *GIFDataset::Open( GDALOpenInfo * poOpenInfo )
 }
 
 /************************************************************************/
-/*                        GDALPrintGifError()                           */
-/************************************************************************/
-
-static void GDALPrintGifError(GifFileType *hGifFile, const char* pszMsg)
-{
-/* GIFLIB_MAJOR is only defined in libgif >= 4.2.0 */
-/* libgif 4.2.0 has retired PrintGifError() and added GifErrorString() */
-#if defined(GIFLIB_MAJOR) && defined(GIFLIB_MINOR) && \
-        ((GIFLIB_MAJOR == 4 && GIFLIB_MINOR >= 2) || GIFLIB_MAJOR > 4)
-    /* Static string actually, hence the const char* cast */
-
-#if GIFLIB_MAJOR >= 5
-    const char* pszGIFLIBError = (const char*) GifErrorString(hGifFile->Error);
-#else
-    const char* pszGIFLIBError = (const char*) GifErrorString();
-#endif
-    if (pszGIFLIBError == NULL)
-        pszGIFLIBError = "Unknown error";
-    CPLError( CE_Failure, CPLE_AppDefined,
-              "%s. GIFLib Error : %s", pszMsg, pszGIFLIBError );
-#else
-    PrintGifError();
-    CPLError( CE_Failure, CPLE_AppDefined, "%s", pszMsg );
-#endif
-}
-
-/************************************************************************/
 /*                             CreateCopy()                             */
 /************************************************************************/
 
@@ -581,12 +535,7 @@ GIFDataset::CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
         return NULL;
     }
 
-#if defined(GIFLIB_MAJOR) && GIFLIB_MAJOR >= 5
-    int nError;
-    hGifFile = EGifOpen( fp, VSIGIFWriteFunc, &nError );
-#else
     hGifFile = EGifOpen( fp, VSIGIFWriteFunc );
-#endif
     if( hGifFile == NULL )
     {
         VSIFCloseL( fp );
@@ -606,7 +555,7 @@ GIFDataset::CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 
     if( poBand->GetColorTable() == NULL )
     {
-        psGifCT = GifMakeMapObject( 256, NULL );
+        psGifCT = MakeMapObject( 256, NULL );
         for( iColor = 0; iColor < 256; iColor++ )
         {
             psGifCT->Colors[iColor].Red = (GifByteType) iColor;
@@ -622,7 +571,7 @@ GIFDataset::CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
         while( nFullCount < poCT->GetColorEntryCount() )
             nFullCount = nFullCount * 2;
 
-        psGifCT = GifMakeMapObject( nFullCount, NULL );
+        psGifCT = MakeMapObject( nFullCount, NULL );
         for( iColor = 0; iColor < poCT->GetColorEntryCount(); iColor++ )
         {
             GDALColorEntry	sEntry;
@@ -646,14 +595,16 @@ GIFDataset::CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     if (EGifPutScreenDesc(hGifFile, nXSize, nYSize, 
                           psGifCT->ColorCount, 255, psGifCT) == GIF_ERROR)
     {
-        GifFreeMapObject(psGifCT);
-        GDALPrintGifError(hGifFile, "Error writing gif file.");
+        FreeMapObject(psGifCT);
+        PrintGifError();
+        CPLError( CE_Failure, CPLE_AppDefined, 
+                  "Error writing gif file." );
         EGifCloseFile(hGifFile);
         VSIFCloseL( fp );
         return NULL;
     }
     
-    GifFreeMapObject(psGifCT);
+    FreeMapObject(psGifCT);
     psGifCT = NULL;
 
     /* Support for transparency */
@@ -671,7 +622,9 @@ GIFDataset::CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 
     if (EGifPutImageDesc(hGifFile, 0, 0, nXSize, nYSize, bInterlace, NULL) == GIF_ERROR )
     {
-        GDALPrintGifError(hGifFile, "Error writing gif file.");
+        PrintGifError();
+        CPLError( CE_Failure, CPLE_AppDefined, 
+                  "Error writing gif file." );
         EGifCloseFile(hGifFile);
         VSIFCloseL( fp );
         return NULL;

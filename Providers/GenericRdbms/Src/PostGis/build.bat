@@ -138,7 +138,7 @@ if "%TYPEACTION%"=="install" goto install_files
 echo %MSACTION% %TYPEBUILD% PostgreSQL Provider DLLs
 SET FDOACTIVEBUILD=%cd%\PostGIS%VCBEXTENSION%
 cscript //Nologo //job:prepare ../../preparebuilds.wsf
-msbuild PostGIS%VCBEXTENSION%_temp.sln /t:%MSACTION% /p:Configuration=%TYPEBUILD% /p:Platform=%TYPEPLATFORM% %EXTRA_MSBUILD_PROPERTIES% /nologo /consoleloggerparameters:NoSummary /maxcpucount:4
+msbuild PostGIS%VCBEXTENSION%_temp.sln /t:%MSACTION% /p:Configuration=%TYPEBUILD% /p:Platform=%TYPEPLATFORM% %EXTRA_MSBUILD_PROPERTIES% /nologo /consoleloggerparameters:NoSummary
 SET FDOERROR=%errorlevel%
 if exist PostGIS%VCBEXTENSION%_temp.sln del /Q /F PostGIS%VCBEXTENSION%_temp.sln
 if "%FDOERROR%"=="1" goto error
@@ -164,10 +164,6 @@ copy /y "..\..\Lib\%INTERMEDIATEDIR%\%TYPEBUILD%\PostgreSQLOverrides.lib" "%FDOL
 copy /y "..\..\com\fdosys_sys.sql" "%FDOBINPATH%\com"
 copy /y "..\..\com\fdo_sys_idx.sql" "%FDOBINPATH%\com"
 copy /y "..\..\com\fdo_sys.sql" "%FDOBINPATH%\com"
-copy /y "%FDOTHIRDPARTY%\boost\stage\%INTERMEDIATEDIR%\%TYPEBUILDTHR%\lib\boost_thread-%VC_COMPILER%-mt%TYPEBUILDTHRPATH%-1_54.dll" "%FDOBINPATHTHR%"
-copy /y "%FDOTHIRDPARTY%\boost\stage\%INTERMEDIATEDIR%\%TYPEBUILDTHR%\lib\boost_date_time-%VC_COMPILER%-mt%TYPEBUILDTHRPATH%-1_54.dll" "%FDOBINPATHTHR%"
-copy /y "%FDOTHIRDPARTY%\boost\stage\%INTERMEDIATEDIR%\%TYPEBUILDTHR%\lib\boost_system-%VC_COMPILER%-mt%TYPEBUILDTHRPATH%-1_54.dll" "%FDOBINPATHTHR%"
-copy /y "%FDOTHIRDPARTY%\boost\stage\%INTERMEDIATEDIR%\%TYPEBUILDTHR%\lib\boost_chrono-%VC_COMPILER%-mt%TYPEBUILDTHRPATH%-1_54.dll" "%FDOBINPATHTHR%"
 
 rem copy /y "..\..\Managed\Bin\%INTERMEDIATEMANAGEDDIR%\OSGeo.FDO.Providers.PostgreSQL.Overrides.dll" "%FDOBINPATH%"
 rem copy /y "..\..\Managed\Bin\%INTERMEDIATEMANAGEDDIR%\OSGeo.FDO.Providers.PostgreSQL.Overrides.pdb" "%FDOBINPATH%"

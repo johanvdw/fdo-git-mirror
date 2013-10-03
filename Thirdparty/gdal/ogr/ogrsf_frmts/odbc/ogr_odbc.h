@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_odbc.h 24957 2012-09-23 17:03:30Z rouault $
+ * $Id: ogr_odbc.h 17870 2009-10-22 04:47:29Z warmerdam $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Private definitions for OGR/ODBC driver.
@@ -183,8 +183,6 @@ class OGRODBCDataSource : public OGRDataSource
     int                 nKnownSRID;
     int                *panSRID;
     OGRSpatialReference **papoSRS;
-    
-    int                 OpenMDB( const char *, int bUpdate );
     
   public:
                         OGRODBCDataSource();

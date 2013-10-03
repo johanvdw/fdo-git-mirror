@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalallregister.cpp 25798 2013-03-25 14:42:33Z aboudreault $
+ * $Id: gdalallregister.cpp 23473 2011-12-05 22:17:02Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of GDALAllRegister(), primary format registration.
@@ -30,7 +30,7 @@
 #include "gdal_priv.h"
 #include "gdal_frmts.h"
 
-CPL_CVSID("$Id: gdalallregister.cpp 25798 2013-03-25 14:42:33Z aboudreault $");
+CPL_CVSID("$Id: gdalallregister.cpp 23473 2011-12-05 22:17:02Z rouault $");
 
 #ifdef notdef
 // we may have a use for this some day
@@ -143,10 +143,6 @@ void CPL_STDCALL GDALAllRegister()
     GDALRegister_PNG();
 #endif
 
-#ifdef FRMT_dds
-    GDALRegister_DDS();
-#endif
-    
 #ifdef FRMT_gta
     GDALRegister_GTA();
 #endif
@@ -361,10 +357,6 @@ void CPL_STDCALL GDALAllRegister()
     GDALRegister_R();
 #endif
 
-#ifdef FRMT_map
-    GDALRegister_MAP();
-#endif
-
 /* -------------------------------------------------------------------- */
 /*      Put raw formats at the end of the list. These drivers support   */
 /*      various ASCII-header labeled formats, so the driver could be    */
@@ -396,13 +388,8 @@ void CPL_STDCALL GDALAllRegister()
     GDALRegister_GTX();
     GDALRegister_LOSLAS();
     GDALRegister_NTv2();
-    GDALRegister_CTable2();
     GDALRegister_ACE2();
     GDALRegister_SNODAS();
-#endif
-
-#ifdef FRMT_arg
-    GDALRegister_ARG();
 #endif
 
 /* -------------------------------------------------------------------- */
@@ -441,8 +428,8 @@ void CPL_STDCALL GDALAllRegister()
 #endif
 
 #ifdef FRMT_northwood
-    GDALRegister_NWT_GRD();
-    GDALRegister_NWT_GRC();
+	GDALRegister_NWT_GRD();
+	GDALRegister_NWT_GRC();
 #endif
 
 #ifdef FRMT_adrg
@@ -522,13 +509,6 @@ void CPL_STDCALL GDALAllRegister()
     GDALRegister_NGSGEOID();
 #endif
 
-#ifdef FRMT_mbtiles
-    GDALRegister_MBTiles();
-#endif
-
-#ifdef FRMT_iris
-    GDALRegister_IRIS();
-#endif
 /* -------------------------------------------------------------------- */
 /*      Deregister any drivers explicitly marked as supressed by the    */
 /*      GDAL_SKIP environment variable.                                 */

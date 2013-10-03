@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdalpamrasterband.cpp 25873 2013-04-07 11:06:58Z rouault $
+ * $Id: gdalpamrasterband.cpp 22858 2011-08-02 18:18:19Z rouault $
  *
  * Project:  GDAL Core
  * Purpose:  Implementation of GDALPamRasterBand, a raster band base class
@@ -33,7 +33,7 @@
 #include "gdal_rat.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: gdalpamrasterband.cpp 25873 2013-04-07 11:06:58Z rouault $");
+CPL_CVSID("$Id: gdalpamrasterband.cpp 22858 2011-08-02 18:18:19Z rouault $");
 
 /************************************************************************/
 /*                         GDALPamRasterBand()                          */
@@ -438,11 +438,6 @@ CPLErr GDALPamRasterBand::XMLInit( CPLXMLNode *psTree, const char *pszUnused )
         CPLXMLNode *psNext = psHist->psNext;
         psHist->psNext = NULL;
 
-        if (psPam->psSavedHistograms != NULL)
-        {
-            CPLDestroyXMLNode (psPam->psSavedHistograms );
-            psPam->psSavedHistograms = NULL;
-        }
         psPam->psSavedHistograms = CPLCloneXMLTree( psHist );
         psHist->psNext = psNext;
     }
@@ -453,11 +448,6 @@ CPLErr GDALPamRasterBand::XMLInit( CPLXMLNode *psTree, const char *pszUnused )
     CPLXMLNode *psRAT = CPLGetXMLNode( psTree, "GDALRasterAttributeTable" );
     if( psRAT != NULL )
     {
-        if( psPam->poDefaultRAT != NULL )
-        {
-            delete psPam->poDefaultRAT;
-            psPam->poDefaultRAT = NULL;
-        }
         psPam->poDefaultRAT = new GDALRasterAttributeTable();
         psPam->poDefaultRAT->XMLInit( psRAT, "" );
     }
@@ -983,7 +973,7 @@ PamParseHistogram( CPLXMLNode *psHistItem,
     *pdfMin = atof(CPLGetXMLValue( psHistItem, "HistMin", "0"));
     *pdfMax = atof(CPLGetXMLValue( psHistItem, "HistMax", "1"));
     *pnBuckets = atoi(CPLGetXMLValue( psHistItem, "BucketCount","2"));
-    if (*pnBuckets <= 0 || *pnBuckets > INT_MAX / 2)
+    if (*pnBuckets <= 0)
         return FALSE;
 
     if( ppanHistogram == NULL )
@@ -993,14 +983,6 @@ PamParseHistogram( CPLXMLNode *psHistItem,
     int iBucket;
     const char *pszHistCounts = CPLGetXMLValue( psHistItem, 
                                                 "HistCounts", "" );
-
-    /* Sanity check to test consistency of BucketCount and HistCounts */
-    if( strlen(pszHistCounts) < 2 * (size_t)(*pnBuckets) -1 )
-    {
-        CPLError(CE_Failure, CPLE_AppDefined,
-                 "HistCounts content isn't consistant with BucketCount value");
-        return FALSE;
-    }
 
     *ppanHistogram = (int *) VSICalloc(sizeof(int),*pnBuckets);
     if (*ppanHistogram == NULL)
@@ -1074,17 +1056,10 @@ PamHistogramToXMLTree( double dfMin, double dfMax,
                        int bIncludeOutOfRange, int bApprox )
 
 {
-    char *pszHistCounts;
+    char *pszHistCounts = (char *) CPLMalloc(12 * nBuckets + 10);
     int iBucket, iHistOffset;
     CPLXMLNode *psXMLHist;
     CPLString oFmt;
-
-    if( nBuckets > (INT_MAX - 10) / 12 )
-        return NULL;
-
-    pszHistCounts = (char *) VSIMalloc(12 * nBuckets + 10);
-    if( pszHistCounts == NULL )
-        return NULL;
 
     psXMLHist = CPLCreateXMLNode( NULL, CXT_Element, "HistItem" );
 
@@ -1228,8 +1203,6 @@ CPLErr GDALPamRasterBand::SetDefaultHistogram( double dfMin, double dfMax,
 
     psHistItem = PamHistogramToXMLTree( dfMin, dfMax, nBuckets, 
                                         panHistogram, TRUE, FALSE );
-    if( psHistItem == NULL )
-        return CE_Failure;
 
 /* -------------------------------------------------------------------- */
 /*      Insert our new default histogram at the front of the            */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: aaigriddataset.cpp 25032 2012-10-03 00:00:02Z rcoup $
+ * $Id: aaigriddataset.cpp 23297 2011-10-31 11:41:52Z rouault $
  *
  * Project:  GDAL
  * Purpose:  Implements Arc/Info ASCII Grid Format.
@@ -33,7 +33,7 @@
 #include "cpl_string.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: aaigriddataset.cpp 25032 2012-10-03 00:00:02Z rcoup $");
+CPL_CVSID("$Id: aaigriddataset.cpp 23297 2011-10-31 11:41:52Z rouault $");
 
 CPL_C_START
 void    GDALRegister_AAIGrid(void);
@@ -1052,14 +1052,14 @@ GDALDataset * AAIGDataset::CreateCopy(
 /*     Builds the format string used for printing float values.         */
 /* -------------------------------------------------------------------- */
     char szFormatFloat[32];
-    strcpy(szFormatFloat, " %.20g");
+    strcpy(szFormatFloat, " %6.20g");
     const char *pszDecimalPrecision = 
         CSLFetchNameValue( papszOptions, "DECIMAL_PRECISION" );
     if (pszDecimalPrecision)
     {
         int nDecimal = atoi(pszDecimalPrecision);
         if (nDecimal >= 0)
-            sprintf(szFormatFloat, " %%.%dg", nDecimal);
+            sprintf(szFormatFloat, " %%.%df", nDecimal);
     }
 
 /* -------------------------------------------------------------------- */
@@ -1144,9 +1144,6 @@ GDALDataset * AAIGDataset::CreateCopy(
     CPLFree( panScanline );
     CPLFree( padfScanline );
     VSIFCloseL( fpImage );
-
-    if( eErr != CE_None )
-        return NULL;
 
 /* -------------------------------------------------------------------- */
 /*      Try to write projection file.                                   */

@@ -405,15 +405,12 @@ SWIGINTERN OGRDataSourceShadow *OGRDriverShadow_CopyDataSource(OGRDriverShadow *
     return ds;
   }
 SWIGINTERN OGRDataSourceShadow *OGRDriverShadow_Open(OGRDriverShadow *self,char const *utf8_path,int update=0){
-    CPLErrorReset();
     OGRDataSourceShadow* ds = (OGRDataSourceShadow*) OGR_Dr_Open(self, utf8_path, update);
     if( CPLGetLastErrorType() == CE_Failure && ds != NULL )
     {
-        CPLDebug(
-            "SWIG",
-            "OGR_Dr_Open() succeeded, but an error is posted, so we destroy"
-            " the datasource and fail at swig level.\nError:%s",
-            CPLGetLastErrorMsg() );
+        CPLDebug( "SWIG",
+          "OGR_Dr_Open() succeeded, but an error is posted, so we destroy"
+          " the datasource and fail at swig level." );
         OGRReleaseDataSource(ds);
         ds = NULL;
     }
@@ -624,27 +621,6 @@ SWIGINTERN GIntBig OGRLayerShadow_GetFeaturesRead(OGRLayerShadow *self){
   }
 SWIGINTERN OGRErr OGRLayerShadow_SetIgnoredFields(OGRLayerShadow *self,char const **options){
     return OGR_L_SetIgnoredFields( self, options );
-  }
-SWIGINTERN OGRErr OGRLayerShadow_Intersection(OGRLayerShadow *self,OGRLayerShadow *method_layer,OGRLayerShadow *result_layer,char **options=NULL,GDALProgressFunc callback=NULL,void *callback_data=NULL){
-    return OGR_L_Intersection( self, method_layer, result_layer, options, callback, callback_data );
-  }
-SWIGINTERN OGRErr OGRLayerShadow_Union(OGRLayerShadow *self,OGRLayerShadow *method_layer,OGRLayerShadow *result_layer,char **options=NULL,GDALProgressFunc callback=NULL,void *callback_data=NULL){
-    return OGR_L_Union( self, method_layer, result_layer, options, callback, callback_data );
-  }
-SWIGINTERN OGRErr OGRLayerShadow_SymDifference(OGRLayerShadow *self,OGRLayerShadow *method_layer,OGRLayerShadow *result_layer,char **options=NULL,GDALProgressFunc callback=NULL,void *callback_data=NULL){
-    return OGR_L_SymDifference( self, method_layer, result_layer, options, callback, callback_data );
-  }
-SWIGINTERN OGRErr OGRLayerShadow_Identity(OGRLayerShadow *self,OGRLayerShadow *method_layer,OGRLayerShadow *result_layer,char **options=NULL,GDALProgressFunc callback=NULL,void *callback_data=NULL){
-    return OGR_L_Identity( self, method_layer, result_layer, options, callback, callback_data );
-  }
-SWIGINTERN OGRErr OGRLayerShadow_Update(OGRLayerShadow *self,OGRLayerShadow *method_layer,OGRLayerShadow *result_layer,char **options=NULL,GDALProgressFunc callback=NULL,void *callback_data=NULL){
-    return OGR_L_Update( self, method_layer, result_layer, options, callback, callback_data );
-  }
-SWIGINTERN OGRErr OGRLayerShadow_Clip(OGRLayerShadow *self,OGRLayerShadow *method_layer,OGRLayerShadow *result_layer,char **options=NULL,GDALProgressFunc callback=NULL,void *callback_data=NULL){
-    return OGR_L_Clip( self, method_layer, result_layer, options, callback, callback_data );
-  }
-SWIGINTERN OGRErr OGRLayerShadow_Erase(OGRLayerShadow *self,OGRLayerShadow *method_layer,OGRLayerShadow *result_layer,char **options=NULL,GDALProgressFunc callback=NULL,void *callback_data=NULL){
-    return OGR_L_Erase( self, method_layer, result_layer, options, callback, callback_data );
   }
 SWIGINTERN void delete_OGRFeatureShadow(OGRFeatureShadow *self){
     OGR_F_Destroy(self);
@@ -1057,13 +1033,6 @@ OGRGeometryShadow* ForceToPolygon( OGRGeometryShadow *geom_in ) {
 }
 
 
-OGRGeometryShadow* ForceToLineString( OGRGeometryShadow *geom_in ) {
- if (geom_in == NULL)
-     return NULL;
- return (OGRGeometryShadow* )OGR_G_ForceToLineString( OGR_G_Clone(geom_in) );
-}
-
-
 OGRGeometryShadow* ForceToMultiPolygon( OGRGeometryShadow *geom_in ) {
  if (geom_in == NULL)
      return NULL;
@@ -1301,9 +1270,6 @@ SWIGINTERN OGRGeometryShadow *OGRGeometryShadow_Centroid(OGRGeometryShadow *self
     OGRGeometryShadow *pt = (OGRGeometryShadow*) OGR_G_CreateGeometry( wkbPoint );
     OGR_G_Centroid( self, pt );
     return pt;
-  }
-SWIGINTERN OGRGeometryShadow *OGRGeometryShadow_PointOnSurface(OGRGeometryShadow *self){
-    return (OGRGeometryShadow*) OGR_G_PointOnSurface( self );
   }
 SWIGINTERN int OGRGeometryShadow_WkbSize(OGRGeometryShadow *self){
     return OGR_G_WkbSize(self);
@@ -4201,398 +4167,6 @@ SWIGEXPORT int SWIGSTDCALL CSharp_Layer_SetIgnoredFields(void * jarg1, void * ja
   {
     CPLErrorReset();
     result = (OGRErr)OGRLayerShadow_SetIgnoredFields(arg1,(char const **)arg2);
-    CPLErr eclass = CPLGetLastErrorType();
-    if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-      SWIG_CSharpException(SWIG_RuntimeError, CPLGetLastErrorMsg());
-      
-      
-      
-    }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-  }
-  {
-    /* %typemap(out,fragment="OGRErrMessages",canthrow=1) OGRErr */
-    jresult = result;
-  }
-  {
-    /* %typemap(ret) OGRErr */
-    
-  }
-  return jresult;
-}
-
-
-SWIGEXPORT int SWIGSTDCALL CSharp_Layer_Intersection(void * jarg1, void * jarg2, void * jarg3, void * jarg4, void * jarg5, void * jarg6) {
-  int jresult ;
-  OGRLayerShadow *arg1 = (OGRLayerShadow *) 0 ;
-  OGRLayerShadow *arg2 = (OGRLayerShadow *) 0 ;
-  OGRLayerShadow *arg3 = (OGRLayerShadow *) 0 ;
-  char **arg4 = (char **) NULL ;
-  GDALProgressFunc arg5 = (GDALProgressFunc) NULL ;
-  void *arg6 = (void *) NULL ;
-  GDALProgressFunc *argp5 ;
-  OGRErr result;
-  
-  arg1 = (OGRLayerShadow *)jarg1; 
-  arg2 = (OGRLayerShadow *)jarg2; 
-  arg3 = (OGRLayerShadow *)jarg3; 
-  arg4 = (char **)jarg4; 
-  argp5 = (GDALProgressFunc *)jarg5; 
-  if (!argp5) {
-    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null GDALProgressFunc", 0);
-    return 0;
-  }
-  arg5 = *argp5; 
-  arg6 = (void *)jarg6; 
-  {
-    CPLErrorReset();
-    result = (OGRErr)OGRLayerShadow_Intersection(arg1,arg2,arg3,arg4,arg5,arg6);
-    CPLErr eclass = CPLGetLastErrorType();
-    if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-      SWIG_CSharpException(SWIG_RuntimeError, CPLGetLastErrorMsg());
-      
-      
-      
-    }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-  }
-  {
-    /* %typemap(out,fragment="OGRErrMessages",canthrow=1) OGRErr */
-    jresult = result;
-  }
-  {
-    /* %typemap(ret) OGRErr */
-    
-  }
-  return jresult;
-}
-
-
-SWIGEXPORT int SWIGSTDCALL CSharp_Layer_Union(void * jarg1, void * jarg2, void * jarg3, void * jarg4, void * jarg5, void * jarg6) {
-  int jresult ;
-  OGRLayerShadow *arg1 = (OGRLayerShadow *) 0 ;
-  OGRLayerShadow *arg2 = (OGRLayerShadow *) 0 ;
-  OGRLayerShadow *arg3 = (OGRLayerShadow *) 0 ;
-  char **arg4 = (char **) NULL ;
-  GDALProgressFunc arg5 = (GDALProgressFunc) NULL ;
-  void *arg6 = (void *) NULL ;
-  GDALProgressFunc *argp5 ;
-  OGRErr result;
-  
-  arg1 = (OGRLayerShadow *)jarg1; 
-  arg2 = (OGRLayerShadow *)jarg2; 
-  arg3 = (OGRLayerShadow *)jarg3; 
-  arg4 = (char **)jarg4; 
-  argp5 = (GDALProgressFunc *)jarg5; 
-  if (!argp5) {
-    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null GDALProgressFunc", 0);
-    return 0;
-  }
-  arg5 = *argp5; 
-  arg6 = (void *)jarg6; 
-  {
-    CPLErrorReset();
-    result = (OGRErr)OGRLayerShadow_Union(arg1,arg2,arg3,arg4,arg5,arg6);
-    CPLErr eclass = CPLGetLastErrorType();
-    if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-      SWIG_CSharpException(SWIG_RuntimeError, CPLGetLastErrorMsg());
-      
-      
-      
-    }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-  }
-  {
-    /* %typemap(out,fragment="OGRErrMessages",canthrow=1) OGRErr */
-    jresult = result;
-  }
-  {
-    /* %typemap(ret) OGRErr */
-    
-  }
-  return jresult;
-}
-
-
-SWIGEXPORT int SWIGSTDCALL CSharp_Layer_SymDifference(void * jarg1, void * jarg2, void * jarg3, void * jarg4, void * jarg5, void * jarg6) {
-  int jresult ;
-  OGRLayerShadow *arg1 = (OGRLayerShadow *) 0 ;
-  OGRLayerShadow *arg2 = (OGRLayerShadow *) 0 ;
-  OGRLayerShadow *arg3 = (OGRLayerShadow *) 0 ;
-  char **arg4 = (char **) NULL ;
-  GDALProgressFunc arg5 = (GDALProgressFunc) NULL ;
-  void *arg6 = (void *) NULL ;
-  GDALProgressFunc *argp5 ;
-  OGRErr result;
-  
-  arg1 = (OGRLayerShadow *)jarg1; 
-  arg2 = (OGRLayerShadow *)jarg2; 
-  arg3 = (OGRLayerShadow *)jarg3; 
-  arg4 = (char **)jarg4; 
-  argp5 = (GDALProgressFunc *)jarg5; 
-  if (!argp5) {
-    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null GDALProgressFunc", 0);
-    return 0;
-  }
-  arg5 = *argp5; 
-  arg6 = (void *)jarg6; 
-  {
-    CPLErrorReset();
-    result = (OGRErr)OGRLayerShadow_SymDifference(arg1,arg2,arg3,arg4,arg5,arg6);
-    CPLErr eclass = CPLGetLastErrorType();
-    if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-      SWIG_CSharpException(SWIG_RuntimeError, CPLGetLastErrorMsg());
-      
-      
-      
-    }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-  }
-  {
-    /* %typemap(out,fragment="OGRErrMessages",canthrow=1) OGRErr */
-    jresult = result;
-  }
-  {
-    /* %typemap(ret) OGRErr */
-    
-  }
-  return jresult;
-}
-
-
-SWIGEXPORT int SWIGSTDCALL CSharp_Layer_Identity(void * jarg1, void * jarg2, void * jarg3, void * jarg4, void * jarg5, void * jarg6) {
-  int jresult ;
-  OGRLayerShadow *arg1 = (OGRLayerShadow *) 0 ;
-  OGRLayerShadow *arg2 = (OGRLayerShadow *) 0 ;
-  OGRLayerShadow *arg3 = (OGRLayerShadow *) 0 ;
-  char **arg4 = (char **) NULL ;
-  GDALProgressFunc arg5 = (GDALProgressFunc) NULL ;
-  void *arg6 = (void *) NULL ;
-  GDALProgressFunc *argp5 ;
-  OGRErr result;
-  
-  arg1 = (OGRLayerShadow *)jarg1; 
-  arg2 = (OGRLayerShadow *)jarg2; 
-  arg3 = (OGRLayerShadow *)jarg3; 
-  arg4 = (char **)jarg4; 
-  argp5 = (GDALProgressFunc *)jarg5; 
-  if (!argp5) {
-    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null GDALProgressFunc", 0);
-    return 0;
-  }
-  arg5 = *argp5; 
-  arg6 = (void *)jarg6; 
-  {
-    CPLErrorReset();
-    result = (OGRErr)OGRLayerShadow_Identity(arg1,arg2,arg3,arg4,arg5,arg6);
-    CPLErr eclass = CPLGetLastErrorType();
-    if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-      SWIG_CSharpException(SWIG_RuntimeError, CPLGetLastErrorMsg());
-      
-      
-      
-    }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-  }
-  {
-    /* %typemap(out,fragment="OGRErrMessages",canthrow=1) OGRErr */
-    jresult = result;
-  }
-  {
-    /* %typemap(ret) OGRErr */
-    
-  }
-  return jresult;
-}
-
-
-SWIGEXPORT int SWIGSTDCALL CSharp_Layer_Update(void * jarg1, void * jarg2, void * jarg3, void * jarg4, void * jarg5, void * jarg6) {
-  int jresult ;
-  OGRLayerShadow *arg1 = (OGRLayerShadow *) 0 ;
-  OGRLayerShadow *arg2 = (OGRLayerShadow *) 0 ;
-  OGRLayerShadow *arg3 = (OGRLayerShadow *) 0 ;
-  char **arg4 = (char **) NULL ;
-  GDALProgressFunc arg5 = (GDALProgressFunc) NULL ;
-  void *arg6 = (void *) NULL ;
-  GDALProgressFunc *argp5 ;
-  OGRErr result;
-  
-  arg1 = (OGRLayerShadow *)jarg1; 
-  arg2 = (OGRLayerShadow *)jarg2; 
-  arg3 = (OGRLayerShadow *)jarg3; 
-  arg4 = (char **)jarg4; 
-  argp5 = (GDALProgressFunc *)jarg5; 
-  if (!argp5) {
-    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null GDALProgressFunc", 0);
-    return 0;
-  }
-  arg5 = *argp5; 
-  arg6 = (void *)jarg6; 
-  {
-    CPLErrorReset();
-    result = (OGRErr)OGRLayerShadow_Update(arg1,arg2,arg3,arg4,arg5,arg6);
-    CPLErr eclass = CPLGetLastErrorType();
-    if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-      SWIG_CSharpException(SWIG_RuntimeError, CPLGetLastErrorMsg());
-      
-      
-      
-    }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-  }
-  {
-    /* %typemap(out,fragment="OGRErrMessages",canthrow=1) OGRErr */
-    jresult = result;
-  }
-  {
-    /* %typemap(ret) OGRErr */
-    
-  }
-  return jresult;
-}
-
-
-SWIGEXPORT int SWIGSTDCALL CSharp_Layer_Clip(void * jarg1, void * jarg2, void * jarg3, void * jarg4, void * jarg5, void * jarg6) {
-  int jresult ;
-  OGRLayerShadow *arg1 = (OGRLayerShadow *) 0 ;
-  OGRLayerShadow *arg2 = (OGRLayerShadow *) 0 ;
-  OGRLayerShadow *arg3 = (OGRLayerShadow *) 0 ;
-  char **arg4 = (char **) NULL ;
-  GDALProgressFunc arg5 = (GDALProgressFunc) NULL ;
-  void *arg6 = (void *) NULL ;
-  GDALProgressFunc *argp5 ;
-  OGRErr result;
-  
-  arg1 = (OGRLayerShadow *)jarg1; 
-  arg2 = (OGRLayerShadow *)jarg2; 
-  arg3 = (OGRLayerShadow *)jarg3; 
-  arg4 = (char **)jarg4; 
-  argp5 = (GDALProgressFunc *)jarg5; 
-  if (!argp5) {
-    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null GDALProgressFunc", 0);
-    return 0;
-  }
-  arg5 = *argp5; 
-  arg6 = (void *)jarg6; 
-  {
-    CPLErrorReset();
-    result = (OGRErr)OGRLayerShadow_Clip(arg1,arg2,arg3,arg4,arg5,arg6);
-    CPLErr eclass = CPLGetLastErrorType();
-    if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-      SWIG_CSharpException(SWIG_RuntimeError, CPLGetLastErrorMsg());
-      
-      
-      
-    }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-  }
-  {
-    /* %typemap(out,fragment="OGRErrMessages",canthrow=1) OGRErr */
-    jresult = result;
-  }
-  {
-    /* %typemap(ret) OGRErr */
-    
-  }
-  return jresult;
-}
-
-
-SWIGEXPORT int SWIGSTDCALL CSharp_Layer_Erase(void * jarg1, void * jarg2, void * jarg3, void * jarg4, void * jarg5, void * jarg6) {
-  int jresult ;
-  OGRLayerShadow *arg1 = (OGRLayerShadow *) 0 ;
-  OGRLayerShadow *arg2 = (OGRLayerShadow *) 0 ;
-  OGRLayerShadow *arg3 = (OGRLayerShadow *) 0 ;
-  char **arg4 = (char **) NULL ;
-  GDALProgressFunc arg5 = (GDALProgressFunc) NULL ;
-  void *arg6 = (void *) NULL ;
-  GDALProgressFunc *argp5 ;
-  OGRErr result;
-  
-  arg1 = (OGRLayerShadow *)jarg1; 
-  arg2 = (OGRLayerShadow *)jarg2; 
-  arg3 = (OGRLayerShadow *)jarg3; 
-  arg4 = (char **)jarg4; 
-  argp5 = (GDALProgressFunc *)jarg5; 
-  if (!argp5) {
-    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null GDALProgressFunc", 0);
-    return 0;
-  }
-  arg5 = *argp5; 
-  arg6 = (void *)jarg6; 
-  {
-    CPLErrorReset();
-    result = (OGRErr)OGRLayerShadow_Erase(arg1,arg2,arg3,arg4,arg5,arg6);
     CPLErr eclass = CPLGetLastErrorType();
     if ( eclass == CE_Failure || eclass == CE_Fatal ) {
       SWIG_CSharpException(SWIG_RuntimeError, CPLGetLastErrorMsg());
@@ -7683,39 +7257,6 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_ForceToPolygon(void * jarg1) {
 }
 
 
-SWIGEXPORT void * SWIGSTDCALL CSharp_ForceToLineString(void * jarg1) {
-  void * jresult ;
-  OGRGeometryShadow *arg1 = (OGRGeometryShadow *) 0 ;
-  OGRGeometryShadow *result = 0 ;
-  
-  arg1 = (OGRGeometryShadow *)jarg1; 
-  {
-    CPLErrorReset();
-    result = (OGRGeometryShadow *)ForceToLineString(arg1);
-    CPLErr eclass = CPLGetLastErrorType();
-    if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-      SWIG_CSharpException(SWIG_RuntimeError, CPLGetLastErrorMsg());
-      
-      
-      
-    }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-  }
-  jresult = (void *)result; 
-  return jresult;
-}
-
-
 SWIGEXPORT void * SWIGSTDCALL CSharp_ForceToMultiPolygon(void * jarg1) {
   void * jresult ;
   OGRGeometryShadow *arg1 = (OGRGeometryShadow *) 0 ;
@@ -10228,39 +9769,6 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_Geometry_Centroid(void * jarg1) {
   {
     CPLErrorReset();
     result = (OGRGeometryShadow *)OGRGeometryShadow_Centroid(arg1);
-    CPLErr eclass = CPLGetLastErrorType();
-    if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-      SWIG_CSharpException(SWIG_RuntimeError, CPLGetLastErrorMsg());
-      
-      
-      
-    }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-  }
-  jresult = (void *)result; 
-  return jresult;
-}
-
-
-SWIGEXPORT void * SWIGSTDCALL CSharp_Geometry_PointOnSurface(void * jarg1) {
-  void * jresult ;
-  OGRGeometryShadow *arg1 = (OGRGeometryShadow *) 0 ;
-  OGRGeometryShadow *result = 0 ;
-  
-  arg1 = (OGRGeometryShadow *)jarg1; 
-  {
-    CPLErrorReset();
-    result = (OGRGeometryShadow *)OGRGeometryShadow_PointOnSurface(arg1);
     CPLErr eclass = CPLGetLastErrorType();
     if ( eclass == CE_Failure || eclass == CE_Fatal ) {
       SWIG_CSharpException(SWIG_RuntimeError, CPLGetLastErrorMsg());

@@ -5,7 +5,7 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) 1998 - 2012, Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) 1998 - 2009, Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
@@ -18,6 +18,7 @@
 # This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
 # KIND, either express or implied.
 #
+# $Id: Makefile.am,v 1.29 2009-11-05 15:04:04 yangtse Exp $
 ###########################################################################
 AUTOMAKE_OPTIONS = foreign nostdinc
 
@@ -27,38 +28,31 @@ AUTOMAKE_OPTIONS = foreign nostdinc
 # might possibly already be installed in the system.
 #
 # $(top_builddir)/include/curl for generated curlbuild.h included from curl.h
-# $(top_builddir)/include for generated curlbuild.h inc. from lib/curl_setup.h
+# $(top_builddir)/include for generated curlbuild.h included from lib/setup.h
 # $(top_srcdir)/include is for libcurl's external include files
 # $(top_builddir)/lib is for libcurl's generated lib/curl_config.h file
-# $(top_srcdir)/lib for libcurl's lib/curl_setup.h and other "borrowed" files
+# $(top_srcdir)/lib is for libcurl's lib/setup.h and other "borrowed" files
 # $(top_builddir)/ares is for in-tree c-ares's generated ares_build.h file
 # $(top_srcdir)/ares is for in-tree c-ares's external include files
 
 if USE_EMBEDDED_ARES
-AM_CPPFLAGS = -I$(top_builddir)/include/curl \
-              -I$(top_builddir)/include      \
-              -I$(top_srcdir)/include        \
-              -I$(top_builddir)/lib          \
-              -I$(top_srcdir)/lib            \
-              -I$(top_builddir)/ares         \
-              -I$(top_srcdir)/ares
+INCLUDES = -I$(top_builddir)/include/curl \
+           -I$(top_builddir)/include      \
+           -I$(top_srcdir)/include        \
+           -I$(top_builddir)/lib          \
+           -I$(top_srcdir)/lib            \
+           -I$(top_builddir)/ares         \
+           -I$(top_srcdir)/ares
 else
-AM_CPPFLAGS = -I$(top_builddir)/include/curl \
-              -I$(top_builddir)/include      \
-              -I$(top_srcdir)/include        \
-              -I$(top_builddir)/lib          \
-              -I$(top_srcdir)/lib
+INCLUDES = -I$(top_builddir)/include/curl \
+           -I$(top_builddir)/include      \
+           -I$(top_srcdir)/include        \
+           -I$(top_builddir)/lib          \
+           -I$(top_srcdir)/lib
 endif
 
-# Prevent LIBS from being used for all link targets
-LIBS = $(BLANK_AT_MAKETIME)
-
-if DOING_NATIVE_WINDOWS
-AM_CPPFLAGS += -DCURL_STATICLIB
-endif
-
-# Makefile.inc provides neat definitions
+# Makefile.inc provides the source defines (noinst_PROGRAMS, useful, *_SOURCES, and *_LDADD)
 include Makefile.inc
 
-EXTRA_DIST = base64.pl Makefile.inc
+extra_DIST = base64.pl Makefile.inc
 

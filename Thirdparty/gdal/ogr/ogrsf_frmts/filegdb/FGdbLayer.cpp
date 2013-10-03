@@ -1,5 +1,5 @@
 /******************************************************************************
-* $Id: FGdbLayer.cpp 25208 2012-11-05 18:34:41Z rouault $
+* $Id: FGdbLayer.cpp 23394 2011-11-19 19:20:12Z rouault $
 *
 * Project:  OpenGIS Simple Features Reference Implementation
 * Purpose:  Implements FileGDB OGR layer.
@@ -36,104 +36,21 @@
 #include "FGdbUtils.h"
 #include "cpl_minixml.h" // the only way right now to extract schema information
 
-CPL_CVSID("$Id: FGdbLayer.cpp 25208 2012-11-05 18:34:41Z rouault $");
+CPL_CVSID("$Id: FGdbLayer.cpp 23394 2011-11-19 19:20:12Z rouault $");
 
 using std::string;
 using std::wstring;
 
 /************************************************************************/
-/*                           FGdbBaseLayer()                            */
-/************************************************************************/
-FGdbBaseLayer::FGdbBaseLayer() :
-    m_pFeatureDefn(NULL), m_pSRS(NULL), m_pEnumRows(NULL),
-    m_supressColumnMappingError(false), m_forceMulti(false)
-{
-}
-
-/************************************************************************/
-/*                          ~FGdbBaseLayer()                            */
-/************************************************************************/
-FGdbBaseLayer::~FGdbBaseLayer()
-{
-    if (m_pFeatureDefn)
-    {
-        m_pFeatureDefn->Release();
-        m_pFeatureDefn = NULL;
-    }
-
-    if (m_pEnumRows)
-    {
-        delete m_pEnumRows;
-        m_pEnumRows = NULL;
-    }
-
-    if (m_pSRS)
-    {
-        m_pSRS->Release();
-        m_pSRS = NULL;
-    }
-}
-
-/************************************************************************/
-/*                           GetNextFeature()                           */
-/************************************************************************/
-
-OGRFeature* FGdbBaseLayer::GetNextFeature()
-{
-    while (1) //want to skip errors
-    {
-        if (m_pEnumRows == NULL)
-            return NULL;
-
-        long hr;
-
-        Row row;
-
-        if (FAILED(hr = m_pEnumRows->Next(row)))
-        {
-            GDBErr(hr, "Failed fetching features");
-            return NULL;
-        }
-
-        if (hr != S_OK)
-        {
-        // It's OK, we are done fetching - failure is catched by FAILED macro
-            return NULL;
-        }
-
-        OGRFeature* pOGRFeature = NULL;
-
-        if (!OGRFeatureFromGdbRow(&row,  &pOGRFeature))
-        {
-            int32 oid = -1;
-            row.GetOID(oid);
-
-            GDBErr(hr, CPLSPrintf("Failed translating FGDB row [%d] to OGR Feature", oid));
-
-            //return NULL;
-            continue; //skip feature
-        }
-
-        return pOGRFeature;
-    }
-}
-
-/************************************************************************/
-/*                              FGdbLayer()                             */
+/*                              FGdbLayer()                               */
 /************************************************************************/
 FGdbLayer::FGdbLayer():
-    m_pDS(NULL), m_pTable(NULL), m_wstrSubfields(L"*"), m_pOGRFilterGeometry(NULL), 
-    m_bFilterDirty(true), 
-    m_bLaunderReservedKeywords(true)
+    OGRLayer(), m_pDS(NULL), m_pTable(NULL), m_pFeatureDefn(NULL), 
+    m_pSRS(NULL), m_wstrSubfields(L"*"), m_pOGRFilterGeometry(NULL), 
+    m_pEnumRows(NULL), m_bFilterDirty(true), 
+    m_supressColumnMappingError(false), m_forceMulti(false)
 {
-    m_bBulkLoadAllowed = -1; /* uninitialized */
-    m_bBulkLoadInProgress = FALSE;
     m_pEnumRows = new EnumRows;
-
-#ifdef EXTENT_WORKAROUND
-    m_bLayerEnvelopeValid = false;
-    m_bLayerJustCreated = false;
-#endif
 }
 
 /************************************************************************/
@@ -142,11 +59,23 @@ FGdbLayer::FGdbLayer():
 
 FGdbLayer::~FGdbLayer()
 {
-    EndBulkLoad();
+    if (m_pFeatureDefn)
+    {
+        m_pFeatureDefn->Release();
+        m_pFeatureDefn = NULL;
+    }
 
-#ifdef EXTENT_WORKAROUND
-    WorkAroundExtentProblem();
-#endif
+    if (m_pSRS)
+    {
+        m_pSRS->Release();
+        m_pSRS = NULL;
+    }
+
+    if (m_pEnumRows)
+    {
+        delete m_pEnumRows;
+        m_pEnumRows = NULL;
+    }
 
     // NOTE: never delete m_pDS - the memory doesn't belong to us
     // TODO: check if we need to close the table or if the destructor 
@@ -165,175 +94,6 @@ FGdbLayer::~FGdbLayer()
     
 }
 
-#ifdef EXTENT_WORKAROUND
-
-/************************************************************************/
-/*                     UpdateRowWithGeometry()                          */
-/************************************************************************/
-
-bool FGdbLayer::UpdateRowWithGeometry(Row& row, OGRGeometry* poGeom)
-{
-    ShapeBuffer shape;
-    long hr;
-
-    /* Write geometry to a buffer */
-    GByte *pabyShape = NULL;
-    int nShapeSize = 0;
-    if ( OGRWriteToShapeBin( poGeom, &pabyShape, &nShapeSize ) != OGRERR_NONE )
-        return false;
-
-    /* Copy it into a ShapeBuffer */
-    if ( nShapeSize > 0 )
-    {
-        shape.Allocate(nShapeSize);
-        memcpy(shape.shapeBuffer, pabyShape, nShapeSize);
-        shape.inUseLength = nShapeSize;
-    }
-
-    /* Free the shape buffer */
-    CPLFree(pabyShape);
-
-    /* Write ShapeBuffer into the Row */
-    hr = row.SetGeometry(shape);
-    if (FAILED(hr))
-    {
-        return false;
-    }
-
-    /* Update row */
-    hr = m_pTable->Update(row);
-    if (FAILED(hr))
-    {
-        return false;
-    }
-
-    return true;
-}
-
-/************************************************************************/
-/*                    WorkAroundExtentProblem()                         */
-/*                                                                      */
-/* Work-around problem with FileGDB API 1.1 on Linux 64bit. See #4455   */
-/************************************************************************/
-
-void FGdbLayer::WorkAroundExtentProblem()
-{
-    if (!m_bLayerJustCreated || !m_bLayerEnvelopeValid)
-        return;
-
-    OGREnvelope sEnvelope;
-    if (GetExtent(&sEnvelope, TRUE) != OGRERR_NONE)
-        return;
-
-    /* The characteristic of the bug is that the reported extent */
-    /* is the real extent truncated incorrectly to integer values */
-    /* We work around that by temporary updating one feature with a geometry */
-    /* whose coordinates are integer values but ceil'ed and floor'ed */
-    /* such that they include the real layer extent. */
-    if (((double)(int)sEnvelope.MinX == sEnvelope.MinX &&
-         (double)(int)sEnvelope.MinY == sEnvelope.MinY &&
-         (double)(int)sEnvelope.MaxX == sEnvelope.MaxX &&
-         (double)(int)sEnvelope.MaxY == sEnvelope.MaxY) &&
-        (fabs(sEnvelope.MinX - sLayerEnvelope.MinX) > 1e-5 ||
-         fabs(sEnvelope.MinY - sLayerEnvelope.MinY) > 1e-5 ||
-         fabs(sEnvelope.MaxX - sLayerEnvelope.MaxX) > 1e-5 ||
-         fabs(sEnvelope.MaxY - sLayerEnvelope.MaxY) > 1e-5))
-    {
-        long           hr;
-        Row            row;
-        EnumRows       enumRows;
-
-        if (FAILED(hr = m_pTable->Search(StringToWString("*"), StringToWString(""), true, enumRows)))
-            return;
-
-        if (FAILED(hr = enumRows.Next(row)))
-            return;
-
-        if (hr != S_OK)
-            return;
-
-        /* Backup original shape buffer */
-        ShapeBuffer originalGdbGeometry;
-        if (FAILED(hr = row.GetGeometry(originalGdbGeometry)))
-            return;
-
-        OGRGeometry* pOGRGeo = NULL;
-        if ((!GDBGeometryToOGRGeometry(m_forceMulti, &originalGdbGeometry, m_pSRS, &pOGRGeo)) || pOGRGeo == NULL)
-        {
-            delete pOGRGeo;
-            return;
-        }
-
-        OGRwkbGeometryType eType = wkbFlatten(pOGRGeo->getGeometryType());
-
-        delete pOGRGeo;
-        pOGRGeo = NULL;
-
-        OGRPoint oP1(floor(sLayerEnvelope.MinX), floor(sLayerEnvelope.MinY));
-        OGRPoint oP2(ceil(sLayerEnvelope.MaxX), ceil(sLayerEnvelope.MaxY));
-
-        OGRLinearRing oLR;
-        oLR.addPoint(&oP1);
-        oLR.addPoint(&oP2);
-        oLR.addPoint(&oP1);
-
-        if ( eType == wkbPoint )
-        {
-            UpdateRowWithGeometry(row, &oP1);
-            UpdateRowWithGeometry(row, &oP2);
-        }
-        else if ( eType == wkbLineString )
-        {
-            UpdateRowWithGeometry(row, &oLR);
-        }
-        else if ( eType == wkbPolygon )
-        {
-            OGRPolygon oPoly;
-            oPoly.addRing(&oLR);
-
-            UpdateRowWithGeometry(row, &oPoly);
-        }
-        else if ( eType == wkbMultiPoint )
-        {
-            OGRMultiPoint oColl;
-            oColl.addGeometry(&oP1);
-            oColl.addGeometry(&oP2);
-
-            UpdateRowWithGeometry(row, &oColl);
-        }
-        else if ( eType == wkbMultiLineString )
-        {
-            OGRMultiLineString oColl;
-            oColl.addGeometry(&oLR);
-
-            UpdateRowWithGeometry(row, &oColl);
-        }
-        else if ( eType == wkbMultiPolygon )
-        {
-            OGRMultiPolygon oColl;
-            OGRPolygon oPoly;
-            oPoly.addRing(&oLR);
-            oColl.addGeometry(&oPoly);
-
-            UpdateRowWithGeometry(row, &oColl);
-        }
-        else
-            return;
-
-        /* Restore original ShapeBuffer */
-        hr = row.SetGeometry(originalGdbGeometry);
-        if (FAILED(hr))
-            return;
-
-        /* Update Row */
-        hr = m_pTable->Update(row);
-        if (FAILED(hr))
-            return;
-
-        CPLDebug("FGDB", "Workaround extent problem with Linux 64bit FGDB SDK 1.1");
-    }
-}
-#endif // EXTENT_WORKAROUND
 
 /************************************************************************/
 /*                            CreateFeature()                           */
@@ -346,75 +106,13 @@ OGRErr FGdbLayer::CreateFeature( OGRFeature *poFeature )
     Table *fgdb_table = m_pTable;
     Row fgdb_row;
     fgdbError hr;
-
-    if (m_bBulkLoadAllowed < 0)
-        m_bBulkLoadAllowed = CSLTestBoolean(CPLGetConfigOption("FGDB_BULK_LOAD", "NO"));
-
-    if (m_bBulkLoadAllowed && !m_bBulkLoadInProgress)
-        StartBulkLoad();
+    ShapeBuffer shape;
 
     hr = fgdb_table->CreateRowObject(fgdb_row);
 
     /* Check the status of the Row create */
     if (FAILED(hr))
-    {
-        GDBErr(hr, "Failed at creating Row in CreateFeature.");
-        return OGRERR_FAILURE;
-    }
-
-    /* Populate the row with the feature content */
-    if (PopulateRowWithFeature(fgdb_row, poFeature) != OGRERR_NONE)
-        return OGRERR_FAILURE;
-
-    /* Cannot write to FID field - it is managed by GDB*/
-    //std::wstring wfield_name = StringToWString(m_strOIDFieldName);
-    //hr = fgdb_row.SetInteger(wfield_name, poFeature->GetFID());
-
-    /* Write the row to the table */
-    hr = fgdb_table->Insert(fgdb_row);
-    if (FAILED(hr))
-    {
-        GDBErr(hr, "Failed at writing Row to Table in CreateFeature.");
-        return OGRERR_FAILURE;
-    }
-
-    int32 oid = -1;
-    if (!FAILED(hr = fgdb_row.GetOID(oid)))
-    {
-        poFeature->SetFID(oid);
-    }
-
-#ifdef EXTENT_WORKAROUND
-    /* For WorkAroundExtentProblem() needs */
-    OGRGeometry* poGeom = poFeature->GetGeometryRef();
-    if ( m_bLayerJustCreated && poGeom != NULL && !poGeom->IsEmpty() )
-    {
-        OGREnvelope sFeatureGeomEnvelope;
-        poGeom->getEnvelope(&sFeatureGeomEnvelope);
-        if (!m_bLayerEnvelopeValid)
-        {
-            memcpy(&sLayerEnvelope, &sFeatureGeomEnvelope, sizeof(sLayerEnvelope));
-            m_bLayerEnvelopeValid = true;
-        }
-        else
-        {
-            sLayerEnvelope.Merge(sFeatureGeomEnvelope);
-        }
-    }
-#endif
-
-    return OGRERR_NONE;
-}
-
-/************************************************************************/
-/*                    PopulateRowWithFeature()                          */
-/*                                                                      */
-/************************************************************************/
-
-OGRErr FGdbLayer::PopulateRowWithFeature( Row& fgdb_row, OGRFeature *poFeature )
-{
-    ShapeBuffer shape;
-    fgdbError hr;
+        return GDBErr(hr, "Failed at creating Row in CreateFeature.");
 
     OGRFeatureDefn* poFeatureDefn = m_pFeatureDefn;
     int nFieldCount = poFeatureDefn->GetFieldCount();
@@ -429,78 +127,31 @@ OGRErr FGdbLayer::PopulateRowWithFeature( Row& fgdb_row, OGRFeature *poFeature )
         if( !poFeature->IsFieldSet( i ) )
         {
             if (FAILED(hr = fgdb_row.SetNull(wfield_name)))
-            {
-                GDBErr(hr, "Failed setting field to NULL.");
-                return OGRERR_FAILURE;
-            }
+                return GDBErr(hr, "Failed setting field to NULL.");
             continue;
         }
 
         /* Set the information using the appropriate FGDB function */
         int nOGRFieldType = poFeatureDefn->GetFieldDefn(i)->GetType();
-        const std::string & strFieldType = m_vOGRFieldToESRIFieldType[i];
 
         if ( nOGRFieldType == OFTInteger )
         {
+            /* Integers (we don't do FGDB Shorts) */
             int fldvalue = poFeature->GetFieldAsInteger(i);
-            if( strFieldType == "esriFieldTypeInteger" )
-                hr = fgdb_row.SetInteger(wfield_name, fldvalue);
-            else
-            {
-                if( fldvalue < -32768 || fldvalue > 32767 )
-                {
-                    static int bHasWarned = FALSE;
-                    if( !bHasWarned )
-                    {
-                        bHasWarned = TRUE;
-                        CPLError(CE_Warning, CPLE_NotSupported,
-                                 "Value %d for field %s does not fit into a short and will be clamped. "
-                                 "This warning will not be emitted any more",
-                                 fldvalue, field_name.c_str());
-                    }
-                    if( fldvalue < -32768 )
-                        fldvalue = -32768;
-                    else
-                        fldvalue = 32767;
-                }
-                hr = fgdb_row.SetShort(wfield_name, (short) fldvalue);
-            }
+            hr = fgdb_row.SetInteger(wfield_name, fldvalue);
         }
         else if ( nOGRFieldType == OFTReal )
         {
             /* Doubles (we don't handle FGDB Floats) */
             double fldvalue = poFeature->GetFieldAsDouble(i);
-            if( strFieldType == "esriFieldTypeDouble" )
-                hr = fgdb_row.SetDouble(wfield_name, fldvalue);
-            else
-                hr = fgdb_row.SetFloat(wfield_name, (float) fldvalue);
+            hr = fgdb_row.SetDouble(wfield_name, fldvalue);
         }
         else if ( nOGRFieldType == OFTString )
         {
             /* Strings we convert to wstring */
             std::string fldvalue = poFeature->GetFieldAsString(i);
             std::wstring wfldvalue = StringToWString(fldvalue);
-            if( strFieldType == "esriFieldTypeString" )
-                hr = fgdb_row.SetString(wfield_name, wfldvalue);
-            // Apparently, esriFieldTypeGlobalID can not be set, but is
-            // initialized by the FileGDB SDK itself.
-            else if( strFieldType == "esriFieldTypeGUID" /*||
-                     strFieldType == "esriFieldTypeGlobalID" */ )
-            {
-                Guid guid;
-                if( FAILED(hr = guid.FromString(wfldvalue)) )
-                {
-                    CPLError( CE_Failure, CPLE_AppDefined,
-                        "Cannot parse GUID value %s for field %s.",
-                        fldvalue.c_str(), field_name.c_str() );
-                }
-                else
-                {
-                    hr = fgdb_row.SetGUID(wfield_name, guid);
-                }
-            }
-            else
-                hr = 0;
+            hr = fgdb_row.SetString(wfield_name, wfldvalue);
         }
         else if ( nOGRFieldType == OFTDateTime || nOGRFieldType == OFTDate )
         {
@@ -537,221 +188,77 @@ OGRErr FGdbLayer::PopulateRowWithFeature( Row& fgdb_row, OGRFeature *poFeature )
                 "FGDB driver does not support OGR type." );
             return OGRERR_FAILURE;
         }
-        
-        if (FAILED(hr))
-        {
-            CPLError(CE_Warning, CPLE_AppDefined, "Cannot set value for field %s",
-                     field_name.c_str());
-        }
     }
 
-    if ( m_pFeatureDefn->GetGeomType() != wkbNone )
+    /* Done with attribute fields, now do geometry */
+    OGRGeometry *poGeom = poFeature->GetGeometryRef();
+
+    /* Write geometry to a buffer */
+    GByte *pabyShape = NULL;
+    int nShapeSize = 0;
+    OGRErr err = OGRWriteToShapeBin( poGeom, &pabyShape, &nShapeSize );
+    if ( err != OGRERR_NONE )
+        return err;
+
+    /* Copy it into a ShapeBuffer */
+    if ( nShapeSize > 0 )
     {
-        /* Done with attribute fields, now do geometry */
-        OGRGeometry *poGeom = poFeature->GetGeometryRef();
-
-        if (poGeom == NULL || poGeom->IsEmpty())
-        {
-            /* EMPTY geometries should be treated as NULL, see #4832 */
-            hr = fgdb_row.SetNull(StringToWString(m_strShapeFieldName));
-            if (FAILED(hr))
-            {
-                GDBErr(hr, "Failed at writing EMPTY Geometry to Row in CreateFeature.");
-                return OGRERR_FAILURE;
-            }
-        }
-        else
-        {
-            /* Write geometry to a buffer */
-            GByte *pabyShape = NULL;
-            int nShapeSize = 0;
-            OGRErr err = OGRWriteToShapeBin( poGeom, &pabyShape, &nShapeSize );
-            if ( err != OGRERR_NONE )
-                return err;
-
-            /* Copy it into a ShapeBuffer */
-            if ( nShapeSize > 0 )
-            {
-                shape.Allocate(nShapeSize);
-                memcpy(shape.shapeBuffer, pabyShape, nShapeSize);
-                shape.inUseLength = nShapeSize;
-            }
-
-            /* Free the shape buffer */
-            CPLFree(pabyShape);
-
-            /* Write ShapeBuffer into the Row */
-            hr = fgdb_row.SetGeometry(shape);
-            if (FAILED(hr))
-            {
-                GDBErr(hr, "Failed at writing Geometry to Row in CreateFeature.");
-                return OGRERR_FAILURE;
-            }
-        }
+        shape.Allocate(nShapeSize);
+        memcpy(shape.shapeBuffer, pabyShape, nShapeSize);
+        shape.inUseLength = nShapeSize;
     }
+
+    /* Free the shape buffer */
+    CPLFree(pabyShape);
+
+    /* Write ShapeBuffer into the Row */
+    hr = fgdb_row.SetGeometry(shape);
+    if (FAILED(hr))
+        return GDBErr(hr, "Failed at writing Geometry to Row in CreateFeature.");
+
+    /* Cannot write to FID field - it is managed by GDB*/
+    //std::wstring wfield_name = StringToWString(m_strOIDFieldName);
+    //hr = fgdb_row.SetInteger(wfield_name, poFeature->GetFID());
+
+    /* Write the row to the table */
+    hr = fgdb_table->Insert(fgdb_row);
+    if (FAILED(hr))
+        return GDBErr(hr, "Failed at writing Row to Table in CreateFeature.");
 
     return OGRERR_NONE;
 
 }
 
 /************************************************************************/
-/*                             GetRow()                                 */
+/*                            CreateField()                             */
+/*  Build up an FGDB XML field definition and use it to create a Field  */
+/*  Update the OGRFeatureDefn to reflect the new field.                 */
+/*                                                                      */
 /************************************************************************/
 
-OGRErr FGdbLayer::GetRow( EnumRows& enumRows, Row& row, long nFID )
+OGRErr FGdbLayer::CreateField(OGRFieldDefn* poField, int bApproxOK)
 {
-    long           hr;
-    CPLString      osQuery;
-
-    osQuery.Printf("%s = %ld", m_strOIDFieldName.c_str(), nFID);
-
-    if (FAILED(hr = m_pTable->Search(m_wstrSubfields, StringToWString(osQuery.c_str()), true, enumRows)))
-    {
-        GDBErr(hr, "Failed fetching row ");
-        return OGRERR_FAILURE;
-    }
-
-    if (FAILED(hr = enumRows.Next(row)))
-    {
-        GDBErr(hr, "Failed fetching row ");
-        return OGRERR_FAILURE;
-    }
-
-    if (hr != S_OK)
-        return OGRERR_FAILURE; //none found - but no failure
-
-    return OGRERR_NONE;
-}
-
-/************************************************************************/
-/*                           DeleteFeature()                            */
-/************************************************************************/
-
-OGRErr FGdbLayer::DeleteFeature( long nFID )
-
-{
-    long           hr;
-    EnumRows       enumRows;
-    Row            row;
-
-    EndBulkLoad();
-
-    if (GetRow(enumRows, row, nFID) != OGRERR_NONE)
-        return OGRERR_FAILURE;
-
-    if (FAILED(hr = m_pTable->Delete(row)))
-    {
-        GDBErr(hr, "Failed deleting row ");
-        return OGRERR_FAILURE;
-    }
-
-    return OGRERR_NONE;
-}
-
-/************************************************************************/
-/*                            SetFeature()                              */
-/************************************************************************/
-
-OGRErr FGdbLayer::SetFeature( OGRFeature* poFeature )
-
-{
-    long           hr;
-    EnumRows       enumRows;
-    Row            row;
-
-    if( poFeature->GetFID() == OGRNullFID )
-    {
-        CPLError( CE_Failure, CPLE_AppDefined,
-                  "SetFeature() with unset FID fails." );
-        return OGRERR_FAILURE;
-    }
-
-    EndBulkLoad();
-
-    if (GetRow(enumRows, row, poFeature->GetFID()) != OGRERR_NONE)
-        return OGRERR_FAILURE;
-
-    /* Populate the row with the feature content */
-    if (PopulateRowWithFeature(row, poFeature) != OGRERR_NONE)
-        return OGRERR_FAILURE;
-
-    if (FAILED(hr = m_pTable->Update(row)))
-    {
-        GDBErr(hr, "Failed updating row ");
-        return OGRERR_FAILURE;
-    }
-
-    return OGRERR_NONE;
-}
-
-/************************************************************************/
-/*                          CreateFieldDefn()                           */
-/************************************************************************/
-
-char* FGdbLayer::CreateFieldDefn(OGRFieldDefn& oField,
-                                 int bApproxOK,
-                                 std::string& fieldname_clean,
-                                 std::string& gdbFieldType)
-{
+    OGRFieldDefn oField(poField);
     std::string fieldname = oField.GetNameRef();
+    std::wstring wfieldname = StringToWString(fieldname);
     std::string fidname = std::string(GetFIDColumn());
     std::string nullable = "true";
+    Table *fgdb_table = m_pTable;
 
     /* Try to map the OGR type to an ESRI type */
     OGRFieldType fldtype = oField.GetType();
+    std::string gdbFieldType;
     if ( ! OGRToGDBFieldType(fldtype, &gdbFieldType) )
     {
         GDBErr(-1, "Failed converting field type.");
-        return NULL;
+        return OGRERR_FAILURE;
     }
 
-    if (fieldname_clean.size() != 0)
+    /* If we don't have our FGDB Table pointer intialized, we can quit now. */
+    if ( ! m_pTable )
     {
-        oField.SetName(fieldname_clean.c_str());
-    }
-    else
-    {
-        /* Clean field names */
-        fieldname_clean = FGDBLaunderName(fieldname);
-
-        if (m_bLaunderReservedKeywords)
-            fieldname_clean = FGDBEscapeReservedKeywords(fieldname_clean);
-
-        /* Truncate to 64 characters */
-        if (fieldname_clean.size() > 64)
-            fieldname_clean.resize(64);
-
-        std::string temp_fieldname = fieldname_clean;
-
-        /* Ensures uniqueness of field name */
-        int numRenames = 1;
-        while ((m_pFeatureDefn->GetFieldIndex(temp_fieldname.c_str()) >= 0) && (numRenames < 10))
-        {
-            temp_fieldname = CPLSPrintf("%s_%d", fieldname_clean.substr(0, 62).c_str(), numRenames);
-            numRenames ++;
-        }
-        while ((m_pFeatureDefn->GetFieldIndex(temp_fieldname.c_str()) >= 0) && (numRenames < 100))
-        {
-            temp_fieldname = CPLSPrintf("%s_%d", fieldname_clean.substr(0, 61).c_str(), numRenames);
-            numRenames ++;
-        }
-
-        if (temp_fieldname != fieldname)
-        {
-            if( !bApproxOK || (m_pFeatureDefn->GetFieldIndex(temp_fieldname.c_str()) >= 0) )
-            {
-                CPLError( CE_Failure, CPLE_NotSupported,
-                    "Failed to add field named '%s'",
-                    fieldname.c_str() );
-                return NULL;
-            }
-            CPLError(CE_Warning, CPLE_NotSupported,
-                "Normalized/laundered field name: '%s' to '%s'",
-                fieldname.c_str(), temp_fieldname.c_str());
-
-            fieldname_clean = temp_fieldname;
-            oField.SetName(fieldname_clean.c_str());
-        }
+        GDBErr(-1, "FGDB Table has not been initialized.");
+        return OGRERR_FAILURE;
     }
 
     /* Then the Field definition */
@@ -764,7 +271,7 @@ char* FGdbLayer::CreateFieldDefn(OGRFieldDefn& oField,
     FGDB_CPLAddXMLAttribute(defn_xml, "xsi:type", "esri:Field");
 
     /* Basic field information */
-    CPLCreateXMLElementAndValue(defn_xml, "Name", fieldname_clean.c_str());
+    CPLCreateXMLElementAndValue(defn_xml, "Name", fieldname.c_str());
     CPLCreateXMLElementAndValue(defn_xml, "Type", gdbFieldType.c_str());
     CPLCreateXMLElementAndValue(defn_xml, "IsNullable", nullable.c_str());
 
@@ -784,12 +291,6 @@ char* FGdbLayer::CreateFieldDefn(OGRFieldDefn& oField,
     /* We know nothing about Scale, so zero it out */
     CPLCreateXMLElementAndValue(defn_xml,"Scale", "0");
 
-    /*  Attempt to preserve the original fieldname */
-    if (fieldname != fieldname_clean)
-    {
-        CPLCreateXMLElementAndValue(defn_xml, "AliasName", fieldname.c_str());
-    }
-
     /* Default values are discouraged in OGR API docs */
     /* <DefaultValue xsi:type="xs:string">afternoon</DefaultValue> */
 
@@ -797,151 +298,27 @@ char* FGdbLayer::CreateFieldDefn(OGRFieldDefn& oField,
     char *defn_str = CPLSerializeXMLTree(defn_xml);
     CPLDebug("FGDB", "CreateField() generated XML for FGDB\n%s", defn_str);
 
-    /* Free the XML */
-    CPLDestroyXMLNode(defn_xml);
-
-    return defn_str;
-}
-
-/************************************************************************/
-/*                            CreateField()                             */
-/*  Build up an FGDB XML field definition and use it to create a Field  */
-/*  Update the OGRFeatureDefn to reflect the new field.                 */
-/*                                                                      */
-/************************************************************************/
-
-OGRErr FGdbLayer::CreateField(OGRFieldDefn* poField, int bApproxOK)
-{
-    OGRFieldDefn oField(poField);
-    std::string fieldname_clean;
-    std::string gdbFieldType;
-
-    char* defn_str = CreateFieldDefn(oField, bApproxOK,
-                                     fieldname_clean, gdbFieldType);
-    if (defn_str == NULL)
-        return OGRERR_FAILURE;
-
     /* Add the FGDB Field to the FGDB Table. */
-    fgdbError hr = m_pTable->AddField(defn_str);
+    fgdbError hr = fgdb_table->AddField(defn_str);
 
+    /* Free the XML */
     CPLFree(defn_str);
+    CPLDestroyXMLNode(defn_xml);
 
     /* Check the status of the Field add */
     if (FAILED(hr))
-    {
-        GDBErr(hr, "Failed at creating Field for " + std::string(oField.GetNameRef()));
-        return OGRERR_FAILURE;
-    }
+        return GDBErr(hr, "Failed at creating Field for " + fieldname);
 
     /* Now add the OGRFieldDefn to the OGRFeatureDefn */
     m_pFeatureDefn->AddFieldDefn(&oField);
 
-    m_vOGRFieldToESRIField.push_back(StringToWString(fieldname_clean));
+    m_vOGRFieldToESRIField.push_back(StringToWString(fieldname));
     m_vOGRFieldToESRIFieldType.push_back( gdbFieldType );
 
     /* All done and happy */
     return OGRERR_NONE;
 
 }
-
-/************************************************************************/
-/*                             DeleteField()                            */
-/************************************************************************/
-
-OGRErr FGdbLayer::DeleteField( int iFieldToDelete )
-{
-    if (iFieldToDelete < 0 || iFieldToDelete >= m_pFeatureDefn->GetFieldCount())
-    {
-        CPLError( CE_Failure, CPLE_NotSupported,
-                  "Invalid field index");
-        return OGRERR_FAILURE;
-    }
-
-    ResetReading();
-
-    const char* pszFieldName = m_pFeatureDefn->GetFieldDefn(iFieldToDelete)->GetNameRef();
-
-    fgdbError hr;
-    if (FAILED(hr = m_pTable->DeleteField(StringToWString(pszFieldName))))
-    {
-        GDBErr(hr, "Failed deleting field " + std::string(pszFieldName));
-        return OGRERR_FAILURE;
-    }
-
-    m_vOGRFieldToESRIField.erase (m_vOGRFieldToESRIField.begin() + iFieldToDelete);
-    m_vOGRFieldToESRIFieldType.erase( m_vOGRFieldToESRIFieldType.begin() + iFieldToDelete );
-
-
-    return m_pFeatureDefn->DeleteFieldDefn( iFieldToDelete );
-}
-
-#ifdef AlterFieldDefn_implemented_but_not_working
-
-/************************************************************************/
-/*                           AlterFieldDefn()                           */
-/************************************************************************/
-
-OGRErr FGdbLayer::AlterFieldDefn( int iFieldToAlter, OGRFieldDefn* poNewFieldDefn, int nFlags )
-{
-    if (iFieldToAlter < 0 || iFieldToAlter >= m_pFeatureDefn->GetFieldCount())
-    {
-        CPLError( CE_Failure, CPLE_NotSupported,
-                  "Invalid field index");
-        return OGRERR_FAILURE;
-    }
-
-    OGRFieldDefn* poFieldDefn = m_pFeatureDefn->GetFieldDefn(iFieldToAlter);
-    OGRFieldDefn oField(poFieldDefn);
-
-    if (nFlags & ALTER_TYPE_FLAG)
-        oField.SetType(poNewFieldDefn->GetType());
-    if (nFlags & ALTER_NAME_FLAG)
-    {
-        if (strcmp(poNewFieldDefn->GetNameRef(), oField.GetNameRef()) != 0)
-        {
-            CPLError( CE_Failure, CPLE_NotSupported,
-                      "Altering field name is not supported" );
-            return OGRERR_FAILURE;
-        }
-        oField.SetName(poNewFieldDefn->GetNameRef());
-    }
-    if (nFlags & ALTER_WIDTH_PRECISION_FLAG)
-    {
-        oField.SetWidth(poNewFieldDefn->GetWidth());
-        oField.SetPrecision(poNewFieldDefn->GetPrecision());
-    }
-
-    std::string fieldname_clean = WStringToString(m_vOGRFieldToESRIField[iFieldToAlter]);
-    std::string gdbFieldType;
-
-    char* defn_str = CreateFieldDefn(oField, TRUE,
-                                     fieldname_clean, gdbFieldType);
-    if (defn_str == NULL)
-        return OGRERR_FAILURE;
-
-    ResetReading();
-
-    /* Add the FGDB Field to the FGDB Table. */
-    fgdbError hr = m_pTable->AlterField(defn_str);
-
-    CPLFree(defn_str);
-
-    /* Check the status of the AlterField */
-    if (FAILED(hr))
-    {
-        GDBErr(hr, "Failed at altering field " + std::string(oField.GetNameRef()));
-        return OGRERR_FAILURE;
-    }
-
-    m_vOGRFieldToESRIFieldType[iFieldToAlter] = gdbFieldType;
-
-    poFieldDefn->SetType(oField.GetType());
-    poFieldDefn->SetWidth(oField.GetWidth());
-    poFieldDefn->SetPrecision(oField.GetPrecision());
-
-    return OGRERR_NONE;
-}
-#endif // AlterFieldDefn_implemented_but_not_working
 
 /************************************************************************/
 /*                      XMLSpatialReference()                           */
@@ -956,10 +333,10 @@ CPLXMLNode* XMLSpatialReference(OGRSpatialReference* poSRS, char** papszOptions)
     CPLXMLNode *srs_xml = CPLCreateXMLNode(NULL, CXT_Element, "SpatialReference");
 
     /* Extract the WKID before morphing */
-    int nSRID = 0;
+    char *wkid = NULL;
     if ( poSRS && poSRS->GetAuthorityCode(NULL) )
     {
-        nSRID = atoi(poSRS->GetAuthorityCode(NULL));
+        wkid = CPLStrdup(poSRS->GetAuthorityCode(NULL));
     }
 
     /* NULL poSRS => UnknownCoordinateSystem */
@@ -969,130 +346,34 @@ CPLXMLNode* XMLSpatialReference(OGRSpatialReference* poSRS, char** papszOptions)
     }
     else
     {
+        /* Make a clone so we can morph it without morphing the original */
+        OGRSpatialReference* poSRSClone = poSRS->Clone();
+
+        /* Flip the WKT to ESRI form, return UnknownCoordinateSystem if we can't */
+        if ( poSRSClone->morphToESRI() != OGRERR_NONE )
+        {
+            delete poSRSClone;
+            FGDB_CPLAddXMLAttribute(srs_xml, "xsi:type", "esri:UnknownCoordinateSystem");
+            return srs_xml;
+        }
+
         /* Set the SpatialReference type attribute correctly for GEOGCS/PROJCS */
-        if ( poSRS->IsProjected() )
+        if ( poSRSClone->IsProjected() )
             FGDB_CPLAddXMLAttribute(srs_xml, "xsi:type", "esri:ProjectedCoordinateSystem");
         else
             FGDB_CPLAddXMLAttribute(srs_xml, "xsi:type", "esri:GeographicCoordinateSystem");
 
         /* Add the WKT to the XML */
-        SpatialReferenceInfo oESRI_SRS;
-
-        /* Do we have a known SRID ? If so, directly query the ESRI SRS DB */
-        if( nSRID && SpatialReferences::FindSpatialReferenceBySRID(nSRID, oESRI_SRS) )
+        char *wkt = NULL;
+        poSRSClone->exportToWkt(&wkt);
+        if (wkt)
         {
-            CPLDebug("FGDB",
-                     "Layer SRS has a SRID (%d). Using WKT from ESRI SRS DBFound perfect match. ",
-                     nSRID);
-            CPLCreateXMLElementAndValue(srs_xml,"WKT", WStringToString(oESRI_SRS.srtext).c_str());
+            CPLCreateXMLElementAndValue(srs_xml,"WKT", wkt);
+            OGRFree(wkt);
         }
-        else
-        {
-            /* Make a clone so we can morph it without morphing the original */
-            OGRSpatialReference* poSRSClone = poSRS->Clone();
 
-            /* Flip the WKT to ESRI form, return UnknownCoordinateSystem if we can't */
-            if ( poSRSClone->morphToESRI() != OGRERR_NONE )
-            {
-                delete poSRSClone;
-                FGDB_CPLAddXMLAttribute(srs_xml, "xsi:type", "esri:UnknownCoordinateSystem");
-                return srs_xml;
-            }
-
-            char *wkt = NULL;
-            poSRSClone->exportToWkt(&wkt);
-            if (wkt)
-            {
-                EnumSpatialReferenceInfo oEnumESRI_SRS;
-                std::vector<int> oaiCandidateSRS;
-                nSRID = 0;
-
-                /* Enumerate SRS from ESRI DB and find a match */
-                while(TRUE)
-                {
-                    if ( poSRS->IsProjected() )
-                    {
-                        if( !oEnumESRI_SRS.NextProjectedSpatialReference(oESRI_SRS) )
-                            break;
-                    }
-                    else
-                    {
-                        if( !oEnumESRI_SRS.NextGeographicSpatialReference(oESRI_SRS) )
-                            break;
-                    }
-
-                    std::string osESRI_WKT = WStringToString(oESRI_SRS.srtext);
-                    const char* pszESRI_WKT = osESRI_WKT.c_str();
-                    if( strcmp(pszESRI_WKT, wkt) == 0 )
-                    {
-                        /* Exact match found (not sure this case happens) */
-                        nSRID = oESRI_SRS.auth_srid;
-                        break;
-                    }
-                    OGRSpatialReference oSRS_FromESRI;
-                    if( oSRS_FromESRI.SetFromUserInput(pszESRI_WKT) == OGRERR_NONE &&
-                        poSRSClone->IsSame(&oSRS_FromESRI) )
-                    {
-                        /* Potential match found */
-                        oaiCandidateSRS.push_back(oESRI_SRS.auth_srid);
-                    }
-                }
-
-                if( nSRID != 0 )
-                {
-                    CPLDebug("FGDB",
-                             "Found perfect match in ESRI SRS DB "
-                             "for layer SRS. SRID is %d", nSRID);
-                }
-                else if( oaiCandidateSRS.size() == 0 )
-                {
-                     CPLDebug("FGDB",
-                              "Did not found a match in ESRI SRS DB for layer SRS. "
-                              "Using morphed SRS WKT. Failure is to be expected");
-                }
-                else if( oaiCandidateSRS.size() == 1 )
-                {
-                    nSRID = oaiCandidateSRS[0];
-                    if( SpatialReferences::FindSpatialReferenceBySRID(
-                                                            nSRID, oESRI_SRS) )
-                    {
-                        CPLDebug("FGDB",
-                                 "Found a single match in ESRI SRS DB "
-                                 "for layer SRS. SRID is %d",
-                                 nSRID);
-                        nSRID = oESRI_SRS.auth_srid;
-                        OGRFree(wkt);
-                        wkt = CPLStrdup(WStringToString(oESRI_SRS.srtext).c_str());
-                    }
-                }
-                else
-                {
-                    /* Not sure this case can happen */
-
-                    CPLString osCandidateSRS;
-                    for(int i=0; i<(int)oaiCandidateSRS.size() && i < 10; i++)
-                    {
-                        if( osCandidateSRS.size() )
-                            osCandidateSRS += ", ";
-                        osCandidateSRS += CPLSPrintf("%d", oaiCandidateSRS[i]);
-                    }
-                    if(oaiCandidateSRS.size() > 10)
-                        osCandidateSRS += "...";
-
-                    CPLDebug("FGDB",
-                             "As several candidates (%s) have been found in "
-                             "ESRI SRS DB for layer SRS, none has been selected. "
-                             "Using morphed SRS WKT. Failure is to be expected",
-                             osCandidateSRS.c_str());
-                }
-
-                CPLCreateXMLElementAndValue(srs_xml,"WKT", wkt);
-                OGRFree(wkt);
-            }
-
-            /* Dispose of our close */
-            delete poSRSClone;
-        }
+        /* Dispose of our close */
+        delete poSRSClone;
     }
     
     /* Handle Origin/Scale/Tolerance */
@@ -1100,50 +381,10 @@ CPLXMLNode* XMLSpatialReference(OGRSpatialReference* poSRS, char** papszOptions)
       "XOrigin", "YOrigin", "XYScale",
       "ZOrigin", "ZScale",
       "XYTolerance", "ZTolerance" };
-    const char* gridvalues[7];
-
-    /* 
-    Need different default paramters for geographic and projected coordinate systems.
-    Try and use ArcGIS 10 default values.
-    */
-    // default tolerance is 1mm in the units of the coordinate system
-    double ztol = 0.001 * (poSRS ? poSRS->GetTargetLinearUnits("VERT_CS") : 1.0);
-    // default scale is 10x the tolerance
-    long zscale = 1 / ztol * 10;
-
-    char s_xyscale[50], s_xytol[50], s_zscale[50], s_ztol[50];
-    snprintf(s_ztol, 50, "%f", ztol);
-    snprintf(s_zscale, 50, "%ld", zscale);
-    
-    if ( poSRS == NULL || poSRS->IsProjected() )
-    {
-        // default tolerance is 1mm in the units of the coordinate system
-        double xytol = 0.001 * (poSRS ? poSRS->GetTargetLinearUnits("PROJCS") : 1.0);
-        // default scale is 10x the tolerance
-        long xyscale = 1 / xytol * 10;
-
-        snprintf(s_xytol, 50, "%f", xytol);
-        snprintf(s_xyscale, 50, "%ld", xyscale);
-
-        // Ideally we would use the same X/Y origins as ArcGIS, but we need the algorithm they use.
-        gridvalues[0] = "-2147483647";
-        gridvalues[1] = "-2147483647";
-        gridvalues[2] = s_xyscale;
-        gridvalues[3] = "-100000";
-        gridvalues[4] = s_zscale;
-        gridvalues[5] = s_xytol;
-        gridvalues[6] = s_ztol;
-    }
-    else
-    {
-        gridvalues[0] = "-400";
-        gridvalues[1] = "-400";
-        gridvalues[2] = "1000000000";
-        gridvalues[3] = "-100000";
-        gridvalues[4] = s_zscale;
-        gridvalues[5] = "0.000000008983153";
-        gridvalues[6] = s_ztol;
-    }
+    const char* gridvalues[7] = {
+      "-2147483647", "-2147483647", "1000000000",
+      "-2147483647", "1000000000",
+      "0.0001", "0.0001" };
 
     /* Convert any layer creation options available, use defaults otherwise */
     for( int i = 0; i < 7; i++ )
@@ -1158,9 +399,10 @@ CPLXMLNode* XMLSpatialReference(OGRSpatialReference* poSRS, char** papszOptions)
     CPLCreateXMLElementAndValue(srs_xml, "HighPrecision", "true");     
 
     /* Add the WKID to the XML */
-    if ( nSRID ) 
+    if ( wkid ) 
     {
-        CPLCreateXMLElementAndValue(srs_xml, "WKID", CPLSPrintf("%d", nSRID));
+        CPLCreateXMLElementAndValue(srs_xml, "WKID", wkid);
+        CPLFree(wkid);
     }
 
     return srs_xml;
@@ -1253,53 +495,18 @@ bool FGdbLayer::CreateFeatureDataset(FGdbDataSource* pParentDataSource,
 /************************************************************************/
 
 bool FGdbLayer::Create(FGdbDataSource* pParentDataSource, 
-                       const char* pszLayerNameIn, 
+                       const char* pszLayerName, 
                        OGRSpatialReference* poSRS, 
                        OGRwkbGeometryType eType, 
                        char** papszOptions)
 {
+    std::string table_path = "\\" + std::string(pszLayerName);
     std::string parent_path = "";
     std::wstring wtable_path, wparent_path;
     std::string geometry_name = FGDB_GEOMETRY_NAME;
     std::string fid_name = FGDB_OID_NAME;
     std::string esri_type;
     bool has_z = false;
-
-#ifdef EXTENT_WORKAROUND
-    m_bLayerJustCreated = true;
-#endif
-
-    /* Launder the Layer name */
-    std::string layerName = pszLayerNameIn;
-
-    layerName = FGDBLaunderName(pszLayerNameIn);
-    layerName = FGDBEscapeReservedKeywords(layerName);
-    layerName = FGDBEscapeUnsupportedPrefixes(layerName);
-
-    if (layerName.size() > 160)
-        layerName.resize(160);
-
-    /* Ensures uniqueness of layer name */
-    int numRenames = 1;
-    while ((pParentDataSource->GetLayerByName(layerName.c_str()) != NULL) && (numRenames < 10))
-    {
-        layerName = CPLSPrintf("%s_%d", layerName.substr(0, 158).c_str(), numRenames);
-        numRenames ++;
-    }
-    while ((pParentDataSource->GetLayerByName(layerName.c_str()) != NULL) && (numRenames < 100))
-    {
-        layerName = CPLSPrintf("%s_%d", layerName.substr(0, 157).c_str(), numRenames);
-        numRenames ++;
-    }
-
-    if (layerName != pszLayerNameIn)
-    {
-        CPLError(CE_Warning, CPLE_NotSupported,
-                "Normalized/laundered layer name: '%s' to '%s'",
-                pszLayerNameIn, layerName.c_str());
-    }
-
-    std::string table_path = "\\" + std::string(layerName);
 
     /* Handle the FEATURE_DATASET case */
     if (  CSLFetchNameValue( papszOptions, "FEATURE_DATASET") != NULL )
@@ -1355,8 +562,6 @@ bool FGdbLayer::Create(FGdbDataSource* pParentDataSource,
             return GDBErr(-1, "Unable to map OGR type to ESRI type");
     }
 
-    m_bLaunderReservedKeywords = CSLFetchBoolean( papszOptions, "LAUNDER_RESERVED_KEYWORDS", TRUE) == TRUE;
-
     /* XML node */
     CPLXMLNode *xml_xml = CPLCreateXMLNode(NULL, CXT_Element, "?xml");
     FGDB_CPLAddXMLAttribute(xml_xml, "version", "1.0");
@@ -1376,7 +581,7 @@ bool FGdbLayer::Create(FGdbDataSource* pParentDataSource,
 
     /* Add in more children */
     CPLCreateXMLElementAndValue(defn_xml,"CatalogPath",table_path.c_str());
-    CPLCreateXMLElementAndValue(defn_xml,"Name", layerName.c_str());
+    CPLCreateXMLElementAndValue(defn_xml,"Name", pszLayerName);
     CPLCreateXMLElementAndValue(defn_xml,"ChildrenExpanded", "false");
 
     /* WKB type of none implies this is a 'Table' otherwise it's a 'Feature Class' */
@@ -1396,14 +601,13 @@ bool FGdbLayer::Create(FGdbDataSource* pParentDataSource,
     FGDB_CPLAddXMLAttribute(fieldarray_xml, "xsi:type", "esri:ArrayOfField");
 
     /* Feature Classes have an implicit geometry column, so we'll add it at creation time */
-    CPLXMLNode *srs_xml = NULL;
     if ( eType != wkbNone )
     {
         CPLXMLNode *shape_xml = CPLCreateXMLNode(fieldarray_xml, CXT_Element, "Field");
         FGDB_CPLAddXMLAttribute(shape_xml, "xsi:type", "esri:Field");
         CPLCreateXMLElementAndValue(shape_xml, "Name", geometry_name.c_str());
         CPLCreateXMLElementAndValue(shape_xml, "Type", "esriFieldTypeGeometry");
-        CPLCreateXMLElementAndValue(shape_xml, "IsNullable", "true");
+        CPLCreateXMLElementAndValue(shape_xml, "IsNullable", "false");
         CPLCreateXMLElementAndValue(shape_xml, "Length", "0");
         CPLCreateXMLElementAndValue(shape_xml, "Precision", "0");
         CPLCreateXMLElementAndValue(shape_xml, "Scale", "0");
@@ -1416,7 +620,7 @@ bool FGdbLayer::Create(FGdbDataSource* pParentDataSource,
         CPLCreateXMLElementAndValue(geom_xml,"HasZ", (has_z ? "true" : "false"));
 
         /* Add the SRS if we have one */
-        srs_xml = XMLSpatialReference(poSRS, papszOptions);
+        CPLXMLNode *srs_xml = XMLSpatialReference(poSRS, papszOptions);
         if ( srs_xml )
             CPLAddXMLChild(geom_xml, srs_xml);
     }
@@ -1438,24 +642,6 @@ bool FGdbLayer::Create(FGdbDataSource* pParentDataSource,
     CPLXMLNode *indexarray_xml = CPLCreateXMLNode(indexes_xml, CXT_Element, "IndexArray");
     FGDB_CPLAddXMLAttribute(indexarray_xml, "xsi:type", "esri:ArrayOfIndex");
 
-    /* CLSID http://forums.arcgis.com/threads/34536?p=118484#post118484 */
-    if ( eType == wkbNone )
-    {
-        CPLCreateXMLElementAndValue(defn_xml, "CLSID", "{7A566981-C114-11D2-8A28-006097AFF44E}");
-        CPLCreateXMLElementAndValue(defn_xml, "EXTCLSID", "");
-    }
-    else
-    {
-        CPLCreateXMLElementAndValue(defn_xml, "CLSID", "{52353152-891A-11D0-BEC6-00805F7C4268}");
-        CPLCreateXMLElementAndValue(defn_xml, "EXTCLSID", "");
-    }
-
-    /* Set the alias for the Feature Class */
-    if (pszLayerNameIn != layerName)
-    {
-        CPLCreateXMLElementAndValue(defn_xml, "AliasName", pszLayerNameIn);
-    }
-
     /* Map from OGR WKB type to ESRI type */
     if ( eType != wkbNone )
     {
@@ -1471,28 +657,21 @@ bool FGdbLayer::Create(FGdbDataSource* pParentDataSource,
         /* TODO: Handle spatial indexes (layer creation option?) */
         CPLCreateXMLElementAndValue(defn_xml,"HasSpatialIndex", "false");
 
-        /* These field are required for Arcmap to display aliases correctly */
-        CPLCreateXMLNode(defn_xml, CXT_Element, "AreaFieldName");
-        CPLCreateXMLNode(defn_xml, CXT_Element, "LengthFieldName");
-
         /* We can't know the extent at this point <Extent xsi:nil='true'/> */
         CPLXMLNode *extn_xml = CPLCreateXMLNode(defn_xml, CXT_Element, "Extent");
         FGDB_CPLAddXMLAttribute(extn_xml, "xsi:nil", "true");
     }
 
     /* Feature Class with known SRS gets an SRS entry */
-    if( eType != wkbNone && srs_xml != NULL)
+    if( eType != wkbNone )
     {
-        CPLAddXMLChild(defn_xml, CPLCloneXMLTree(srs_xml));
+        CPLXMLNode *srs_xml = XMLSpatialReference(poSRS, papszOptions);
+        if ( srs_xml )
+            CPLAddXMLChild(defn_xml, srs_xml);
     }
 
     /* Convert our XML tree into a string for FGDB */
-    char *defn_str;
-    
-    if( CSLFetchNameValue( papszOptions, "XML_DEFINITION") != NULL )
-        defn_str = CPLStrdup(CSLFetchNameValue( papszOptions, "XML_DEFINITION"));
-    else
-        defn_str = CPLSerializeXMLTree(xml_xml);
+    char *defn_str = CPLSerializeXMLTree(xml_xml);
     CPLDestroyXMLNode(xml_xml);
 
     /* TODO, tie this to debugging levels */
@@ -1503,7 +682,7 @@ bool FGdbLayer::Create(FGdbDataSource* pParentDataSource,
     Table *table = new Table;
     Geodatabase *gdb = pParentDataSource->GetGDB();
     fgdbError hr = gdb->CreateTable(defn_str, wparent_path, *table);
-    
+
     /* Free the XML */
     CPLFree(defn_str);
 
@@ -1896,8 +1075,6 @@ void FGdbLayer::ResetReading()
 {
     long hr;
 
-    EndBulkLoad();
-
     if (m_pOGRFilterGeometry && !m_pOGRFilterGeometry->IsEmpty())
     {
         // Search spatial
@@ -2000,7 +1177,7 @@ OGRErr FGdbLayer::SetAttributeFilter( const char* pszQuery )
 /*                           OGRFeatureFromGdbRow()                      */
 /************************************************************************/
 
-bool FGdbBaseLayer::OGRFeatureFromGdbRow(Row* pRow, OGRFeature** ppFeature)
+bool FGdbLayer::OGRFeatureFromGdbRow(Row* pRow, OGRFeature** ppFeature)
 {
     long hr;
 
@@ -2025,8 +1202,6 @@ bool FGdbBaseLayer::OGRFeatureFromGdbRow(Row* pRow, OGRFeature** ppFeature)
     //
 
     ShapeBuffer gdbGeometry;
-    // Row::GetGeometry() will fail with -2147467259 for NULL geometries
-    // Row::GetGeometry() will fail with -2147219885 for tables without a geometry field
     if (!FAILED(hr = pRow->GetGeometry(gdbGeometry)))
     {
         OGRGeometry* pOGRGeo = NULL;
@@ -2133,40 +1308,13 @@ bool FGdbBaseLayer::OGRFeatureFromGdbRow(Row* pRow, OGRFeature** ppFeature)
             case OFTString:
             {
                 wstring val;
-                
-                if( strFieldType == "esriFieldTypeGlobalID" )
+
+                if (FAILED(hr = pRow->GetString(wstrFieldName, val)))
                 {
-                    Guid guid;
-                    if( FAILED(hr = pRow->GetGlobalID(guid)) ||
-                        FAILED(hr = guid.ToString(val)) )
-                    {
-                        GDBErr(hr, "Failed to determine string value for column " +
-                            WStringToString(wstrFieldName));
-                        foundBadColumn = true;
-                        continue;
-                    }
-                }
-                else if( strFieldType == "esriFieldTypeGUID" )
-                {
-                    Guid guid;
-                    if( FAILED(hr = pRow->GetGUID(wstrFieldName, guid)) ||
-                        FAILED(hr = guid.ToString(val)) )
-                    {
-                        GDBErr(hr, "Failed to determine string value for column " +
-                            WStringToString(wstrFieldName));
-                        foundBadColumn = true;
-                        continue;
-                    }
-                }
-                else
-                {
-                    if (FAILED(hr = pRow->GetString(wstrFieldName, val)))
-                    {
-                        GDBErr(hr, "Failed to determine string value for column " +
-                            WStringToString(wstrFieldName));
-                        foundBadColumn = true;
-                        continue;
-                    }
+                    GDBErr(hr, "Failed to determine string value for column " +
+                        WStringToString(wstrFieldName));
+                    foundBadColumn = true;
+                    continue;
                 }
 
                 pOutFeature->SetField(i, WStringToString(val).c_str());
@@ -2240,9 +1388,43 @@ OGRFeature* FGdbLayer::GetNextFeature()
     if (m_bFilterDirty)
         ResetReading();
 
-    EndBulkLoad();
 
-    return FGdbBaseLayer::GetNextFeature();
+    while (1) //want to skip errors
+    {
+        if (m_pEnumRows == NULL)
+            return NULL;
+
+        long hr;
+
+        Row row;
+
+        if (FAILED(hr = m_pEnumRows->Next(row)))
+        {
+            GDBErr(hr, "Failed fetching features");
+            return NULL;
+        }
+
+        if (hr != S_OK)
+        {
+        // It's OK, we are done fetching - failure is catched by FAILED macro
+            return NULL;
+        }
+
+        OGRFeature* pOGRFeature = NULL;
+
+        if (!OGRFeatureFromGdbRow(&row,  &pOGRFeature))
+        {
+            int32 oid = -1;
+            row.GetOID(oid);
+
+            GDBErr(hr, CPLSPrintf("Failed translating FGDB row [%d] to OGR Feature", oid));
+
+            //return NULL;
+            continue; //skip feature
+        }
+
+        return pOGRFeature;
+    }
 }
 
 /************************************************************************/
@@ -2252,18 +1434,35 @@ OGRFeature* FGdbLayer::GetNextFeature()
 OGRFeature *FGdbLayer::GetFeature( long oid )
 {
     // do query to fetch individual row
-    EnumRows       enumRows;
+
+    long           hr;
     Row            row;
+    EnumRows       enumRows;
+    CPLString      osQuery;
 
-    EndBulkLoad();
+    osQuery.Printf("%s = %ld", m_strOIDFieldName.c_str(), oid);
 
-    if (GetRow(enumRows, row, oid) != OGRERR_NONE)
+    if (FAILED(hr = m_pTable->Search(m_wstrSubfields, StringToWString(osQuery.c_str()), true, enumRows)))
+    {
+        GDBErr(hr, "Failed fetching row ");
         return NULL;
+    }
+
+    if (FAILED(hr = enumRows.Next(row)))
+    {
+        GDBErr(hr, "Failed fetching row ");
+        return NULL;
+    }
+
+    if (hr != S_OK)
+        return NULL; //none found - but no failure
+
 
     OGRFeature* pOGRFeature = NULL;
 
     if (!OGRFeatureFromGdbRow(&row,  &pOGRFeature))
     {
+        GDBErr(hr, "Failed translating ArcObjects row to OGR Feature");
         return NULL;
     }
 
@@ -2279,8 +1478,6 @@ int FGdbLayer::GetFeatureCount( int bForce )
 {
     long           hr;
     int32          rowCount = 0;
-
-    EndBulkLoad();
 
     if (m_pOGRFilterGeometry != NULL || m_wstrWhereClause.size() != 0)
         return OGRLayer::GetFeatureCount(bForce);
@@ -2346,41 +1543,6 @@ OGRErr FGdbLayer::GetExtent (OGREnvelope* psExtent, int bForce)
         return OGRERR_FAILURE;
 
     return OGRERR_NONE;
-}
-
-/************************************************************************/
-/*                          StartBulkLoad()                             */
-/************************************************************************/
-
-void FGdbLayer::StartBulkLoad ()
-{
-    if ( ! m_pTable )
-        return;
-
-    if ( m_bBulkLoadInProgress )
-        return;
-
-    m_bBulkLoadInProgress = TRUE;
-    m_pTable->LoadOnlyMode(true);
-    m_pTable->SetWriteLock();
-}
-
-/************************************************************************/
-/*                           EndBulkLoad()                              */
-/************************************************************************/
-
-void FGdbLayer::EndBulkLoad ()
-{
-    if ( ! m_pTable )
-        return;
-
-    if ( ! m_bBulkLoadInProgress )
-        return;
-
-    m_bBulkLoadInProgress = FALSE;
-    m_bBulkLoadAllowed = -1; /* so that the configuration option is read the first time we CreateFeature() again */
-    m_pTable->LoadOnlyMode(false);
-    m_pTable->FreeWriteLock();
 }
 
 /* OGRErr FGdbLayer::StartTransaction ()
@@ -2493,20 +1655,15 @@ int FGdbLayer::TestCapability( const char* pszCap )
     else if (EQUAL(pszCap,OLCReorderFields)) /* TBD ReorderFields() */
         return FALSE;
 
-    else if (EQUAL(pszCap,OLCDeleteFeature)) /* DeleteFeature() */
-        return TRUE;
+    else if (EQUAL(pszCap,OLCDeleteFeature)) /* TBD DeleteFeature() */
+        return FALSE;
 
-    else if (EQUAL(pszCap,OLCRandomWrite)) /* SetFeature() */
-        return TRUE;
+    else if (EQUAL(pszCap,OLCRandomWrite)) /* TBD SetFeature() */
+        return FALSE;
 
-    else if (EQUAL(pszCap,OLCDeleteField)) /* DeleteField() */
-        return TRUE;
-
-#ifdef AlterFieldDefn_implemented_but_not_working
-    else if (EQUAL(pszCap,OLCAlterFieldDefn)) /* AlterFieldDefn() */
-        return TRUE;
-#endif
-
+    else if (EQUAL(pszCap,OLCDeleteField)) /* TBD DeleteField() */
+        return FALSE;
+        
     else if (EQUAL(pszCap,OLCFastSetNextByIndex)) /* TBD FastSetNextByIndex() */
         return FALSE;
 
@@ -2516,3 +1673,4 @@ int FGdbLayer::TestCapability( const char* pszCap )
     else 
         return FALSE;
 }
+

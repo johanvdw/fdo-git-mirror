@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_s57.h 25311 2012-12-15 12:48:14Z rouault $
+ * $Id: ogr_s57.h 10645 2007-01-18 02:22:39Z warmerdam $
  *
  * Project:  S-57 Translator
  * Purpose:  Declarations for classes binding S57 support onto OGRLayer,
@@ -95,6 +95,9 @@ class OGRS57DataSource : public OGRDataSource
     S57Reader           **papoModules;
 
     S57Writer           *poWriter;
+
+    int                 bClassCountSet;
+    int                 anClassCount[MAX_CLASSES];
 
     int                 bExtentsSet;
     OGREnvelope         oExtents;

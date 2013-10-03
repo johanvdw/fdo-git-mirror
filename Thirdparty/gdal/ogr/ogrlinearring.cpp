@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrlinearring.cpp 24520 2012-05-30 21:30:11Z rouault $
+ * $Id: ogrlinearring.cpp 22555 2011-06-22 12:16:54Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRLinearRing geometry class.
@@ -30,7 +30,7 @@
 #include "ogr_geometry.h"
 #include "ogr_p.h"
 
-CPL_CVSID("$Id: ogrlinearring.cpp 24520 2012-05-30 21:30:11Z rouault $");
+CPL_CVSID("$Id: ogrlinearring.cpp 22555 2011-06-22 12:16:54Z rouault $");
 
 /************************************************************************/
 /*                           OGRLinearRing()                            */
@@ -425,16 +425,15 @@ void OGRLinearRing::reverseWindingOrder()
 
 { 
     int pos = 0; 
-    OGRPoint pointA, pointB; 
+    OGRPoint tempPoint; 
 
     for( int i = 0; i < nPointCount / 2; i++ ) 
     { 
-        getPoint( i, &pointA ); 
-        pos = nPointCount - i - 1;
-        getPoint( pos, &pointB );
-        setPoint( i, &pointB );
-        setPoint( pos, &pointA );
-    }
+        getPoint( i, &tempPoint ); 
+        pos = nPointCount - i - 1; 
+        setPoint( i, getX(pos), getY(pos), getZ(pos) ); 
+        setPoint( pos, tempPoint.getX(), tempPoint.getY(), tempPoint.getZ() ); 
+    } 
 } 
 
 /************************************************************************/
@@ -451,9 +450,14 @@ void OGRLinearRing::closeRings()
         || getY(0) != getY(nPointCount-1)
         || getZ(0) != getZ(nPointCount-1) )
     {
-        OGRPoint oFirstPoint;
-        getPoint( 0, &oFirstPoint );
-        addPoint( &oFirstPoint );
+        /* Avoid implicit change of coordinate dimensionality
+         * if z=0.0 and dim=2
+         */
+        if( getCoordinateDimension() == 2 )
+            addPoint( getX(0), getY(0) );
+        else
+            addPoint( getX(0), getY(0), getZ(0) );
+            
     }
 }
 

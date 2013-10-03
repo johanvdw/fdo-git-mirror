@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_mysql.h 25311 2012-12-15 12:48:14Z rouault $
+ * $Id: ogr_mysql.h 16921 2009-05-03 11:41:56Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Declarations for MySQL OGR Driver Classes.
@@ -170,6 +170,8 @@ class OGRMySQLResultLayer : public OGRMySQLLayer
     // Layer srid.
     int                 nSRSId;
     
+    int                 nFeatureCount;
+
   public:
                         OGRMySQLResultLayer( OGRMySQLDataSource *,
                                              const char * pszRawStatement,
@@ -197,7 +199,7 @@ class OGRMySQLDataSource : public OGRDataSource
     char               *pszName;
 
     int                 bDSUpdate;
-
+    int                 bHavePostGIS;
     int                 nSoftTransactionLevel;
 
     MYSQL              *hConn;

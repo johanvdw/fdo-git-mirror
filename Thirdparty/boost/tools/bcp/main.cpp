@@ -13,9 +13,9 @@
 #include <cstring>
 #include <string>
 #include <list>
-#include "bcp.hpp"
 #include <boost/filesystem/path.hpp>
 #include <boost/version.hpp>
+#include "bcp.hpp"
 
 #ifdef BOOST_NO_STDC_NAMESPACE
 namespace std{
@@ -47,7 +47,7 @@ void show_usage()
       "output-path:         the path to which files will be copied\n";
 }
 
-bool filesystem_name_check( const std::string & )
+bool filesystem_name_check( const std::string & name )
 {
    return true;
 }
@@ -60,7 +60,7 @@ int cpp_main(int argc, char* argv[])
    // with files that already exist, if they're not portable
    // names it's too late for us to do anything about it).
    //
-   /*boost::filesystem::path::default_name_check(filesystem_name_check);*/
+   boost::filesystem::path::default_name_check(filesystem_name_check);
    //
    // without arguments just show help:
    //
@@ -68,7 +68,7 @@ int cpp_main(int argc, char* argv[])
    {
       std::cout << "Error: insufficient arguments, don't know what to do." << std::endl;
       show_usage();
-      return 1;
+      return 0;
    }
    //
    // create the application object:

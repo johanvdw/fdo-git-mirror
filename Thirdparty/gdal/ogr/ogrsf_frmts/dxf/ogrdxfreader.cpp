@@ -49,7 +49,6 @@ OGRDXFReader::OGRDXFReader()
     iSrcBufferFileOffset = 0;
 
     nLastValueSize = 0;
-    nLineNumber = 0;
 }
 
 /************************************************************************/
@@ -82,7 +81,6 @@ void OGRDXFReader::ResetReadPointer( int iNewOffset )
     iSrcBufferOffset = 0;
     iSrcBufferFileOffset = iNewOffset;
     nLastValueSize = 0;
-    nLineNumber = 0;
 
     VSIFSeekL( fp, iNewOffset, SEEK_SET );
 }
@@ -146,8 +144,6 @@ int OGRDXFReader::ReadValue( char *pszValueBuf, int nValueBufSize )
     int iStartSrcBufferOffset = iSrcBufferOffset;
     int nValueCode = atoi(achSrcBuffer + iSrcBufferOffset);
 
-    nLineNumber ++;
-
     // proceed to newline.
     while( achSrcBuffer[iSrcBufferOffset] != '\n' 
            && achSrcBuffer[iSrcBufferOffset] != '\r' 
@@ -173,8 +169,6 @@ int OGRDXFReader::ReadValue( char *pszValueBuf, int nValueBufSize )
 /*      Capture the value string.                                       */
 /* -------------------------------------------------------------------- */
     int iEOL = iSrcBufferOffset;
-
-    nLineNumber ++;
 
     // proceed to newline.
     while( achSrcBuffer[iEOL] != '\n' 

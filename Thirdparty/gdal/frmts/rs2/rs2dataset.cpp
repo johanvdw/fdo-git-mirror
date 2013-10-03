@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: rs2dataset.cpp 25658 2013-02-19 18:56:59Z warmerdam $
+ * $Id: rs2dataset.cpp 23570 2011-12-13 22:23:32Z rouault $
  *
  * Project:  Polarimetric Workstation
  * Purpose:  Radarsat 2 - XML Products (product.xml) driver
@@ -31,7 +31,7 @@
 #include "cpl_minixml.h"
 #include "ogr_spatialref.h"
 
-CPL_CVSID("$Id: rs2dataset.cpp 25658 2013-02-19 18:56:59Z warmerdam $");
+CPL_CVSID("$Id: rs2dataset.cpp 23570 2011-12-13 22:23:32Z rouault $");
 
 CPL_C_START
 void    GDALRegister_RS2(void);
@@ -1045,20 +1045,6 @@ GDALDataset *RS2Dataset::Open( GDALOpenInfo * poOpenInfo )
         poDS->SetMetadataItem( "BEAM_MODE", pszItem );
         pszItem = CPLGetXMLValue( psSourceAttrs, "rawDataStartTime", "UNK" );
         poDS->SetMetadataItem( "ACQUISITION_START_TIME", pszItem );
-
-        pszItem = CPLGetXMLValue( psSourceAttrs, "inputDatasetFacilityId", "UNK" );
-        poDS->SetMetadataItem( "FACILITY_IDENTIFIER", pszItem );
-
-        pszItem = CPLGetXMLValue( psSourceAttrs,
-            "orbitAndAttitude.orbitInformation.passDirection", "UNK" );
-        poDS->SetMetadataItem( "ORBIT_DIRECTION", pszItem );
-        pszItem = CPLGetXMLValue( psSourceAttrs,
-            "orbitAndAttitude.orbitInformation.orbitDataSource", "UNK" );
-        poDS->SetMetadataItem( "ORBIT_DATA_SOURCE", pszItem );
-        pszItem = CPLGetXMLValue( psSourceAttrs,
-            "orbitAndAttitude.orbitInformation.orbitDataFile", "UNK" );
-        poDS->SetMetadataItem( "ORBIT_DATA_FILE", pszItem );
-
     }
 
     CPLXMLNode *psSarProcessingInformation =
@@ -1077,30 +1063,7 @@ GDALDataset *RS2Dataset::Open( GDALOpenInfo * poOpenInfo )
         pszItem = CPLGetXMLValue( psSarProcessingInformation,
                                   "sarProcessingInformation.slantRangeNearEdge", "UNK" );
         poDS->SetMetadataItem( "SLANT_RANGE_NEAR_EDGE", pszItem );
-
-        pszItem = CPLGetXMLValue( psSarProcessingInformation,
-                                  "sarProcessingInformation.zeroDopplerTimeFirstLine", "UNK" );
-        poDS->SetMetadataItem( "FIRST_LINE_TIME", pszItem );
-
-        pszItem = CPLGetXMLValue( psSarProcessingInformation,
-                                  "sarProcessingInformation.zeroDopplerTimeLastLine", "UNK" );
-        poDS->SetMetadataItem( "LAST_LINE_TIME", pszItem );
-
-        pszItem = CPLGetXMLValue( psSarProcessingInformation,
-                                  "generalProcessingInformation.productType", "UNK" );
-        poDS->SetMetadataItem( "PRODUCT_TYPE", pszItem );
-
-        pszItem = CPLGetXMLValue( psSarProcessingInformation,
-                                  "generalProcessingInformation.processingFacility", "UNK" );
-        poDS->SetMetadataItem( "PROCESSING_FACILITY", pszItem );
-
-        pszItem = CPLGetXMLValue( psSarProcessingInformation,
-                                  "generalProcessingInformation.processingTime", "UNK" );
-        poDS->SetMetadataItem( "PROCESSING_TIME", pszItem );
-
     }
-
-
 
 /*--------------------------------------------------------------------- */
 /*      Collect Map projection/Geotransform information, if present     */
@@ -1509,7 +1472,6 @@ void GDALRegister_RS2()
         poDriver->SetMetadataItem( GDAL_DMD_LONGNAME, 
                                    "RadarSat 2 XML Product" );
         poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, "frmt_rs2.html" );
-        poDriver->SetMetadataItem( GDAL_DMD_SUBDATASETS, "YES" );
 
         poDriver->pfnOpen = RS2Dataset::Open;
         poDriver->pfnIdentify = RS2Dataset::Identify;

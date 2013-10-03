@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: sdts_al.h 25839 2013-04-02 18:54:20Z rouault $
+ * $Id: sdts_al.h 19952 2010-07-02 05:44:18Z warmerdam $
  *
  * Project:  SDTS Translator
  * Purpose:  Include file for entire SDTS Abstraction Layer functions.
@@ -165,8 +165,7 @@ class SDTSModId
   public:
                 SDTSModId() { szModule[0] = '\0';
                               nRecord = -1;
-                              szOBRP[0] = '\0';
-                              szName[0] = '\0'; }
+                              szOBRP[0] = '\0'; }
 
     int         Set( DDFField * );
 
@@ -182,11 +181,6 @@ class SDTSModId
     /** The "role" of this record within the module.  This is normally empty
         for references, but set in the oModId member of a feature.  */
     char        szOBRP[8]; 
-
-    /** String "szModule:nRecord" */
-    char        szName[20];
-
-
 };
 
 /************************************************************************/

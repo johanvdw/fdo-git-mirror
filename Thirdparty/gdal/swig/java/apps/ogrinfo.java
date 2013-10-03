@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrinfo.java 23704 2012-01-06 10:27:08Z rouault $
+ * $Id: ogrinfo.java 23139 2011-09-29 19:52:45Z rouault $
  *
  * Name:     ogrinfo.java
  * Project:  GDAL SWIG Interface
@@ -65,8 +65,7 @@ public class ogrinfo
 /* -------------------------------------------------------------------- */
 /*      Register format(s).                                             */
 /* -------------------------------------------------------------------- */
-        if( ogr.GetDriverCount() == 0 )
-            ogr.RegisterAll();
+        ogr.RegisterAll();
 
 /* -------------------------------------------------------------------- */
 /*      Processing command line arguments.                              */

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: jp2userbox.cpp 25784 2013-03-23 11:13:42Z rouault $
+ * $Id: jp2userbox.cpp 21514 2011-01-16 23:49:42Z warmerdam $
  *
  * Project:  GDAL ECW Driver
  * Purpose:  JP2UserBox implementation - arbitrary box read/write.
@@ -29,7 +29,7 @@
 
 #include "gdal_ecw.h"
 
-CPL_CVSID("$Id: jp2userbox.cpp 25784 2013-03-23 11:13:42Z rouault $");
+CPL_CVSID("$Id: jp2userbox.cpp 21514 2011-01-16 23:49:42Z warmerdam $");
 
 #if defined(HAVE_COMPRESS)
 
@@ -94,7 +94,7 @@ void JP2UserBox::UpdateXLBox()
 /************************************************************************/
 
 #if ECWSDK_VERSION >= 40
-CNCSError JP2UserBox::Parse( NCS::SDK::CFileBase &JP2File, 
+CNCSError JP2UserBox::Parse( NCS::JP2::CFile &JP2File, 
                              NCS::CIOStream &Stream )
 #else
 CNCSError JP2UserBox::Parse( class CNCSJP2File &JP2File, 
@@ -113,7 +113,7 @@ CNCSError JP2UserBox::Parse( class CNCSJP2File &JP2File,
 /************************************************************************/
 
 #if ECWSDK_VERSION >= 40
-CNCSError JP2UserBox::UnParse( NCS::SDK::CFileBase &JP2File, 
+CNCSError JP2UserBox::UnParse( NCS::JP2::CFile &JP2File, 
                                NCS::CIOStream &Stream )
 #else
 CNCSError JP2UserBox::UnParse( class CNCSJP2File &JP2File, 
@@ -129,11 +129,9 @@ CNCSError JP2UserBox::UnParse( class CNCSJP2File &JP2File,
                   "No box type set in JP2UserBox::UnParse()" );
         return Error;
     }
-#if ECWSDK_VERSION<50
+
     Error = CNCSJP2Box::UnParse(JP2File, Stream);
-#else 
-    Error = CNCSSDKBox::UnParse(JP2File, Stream);
-#endif
+
 //    NCSJP2_CHECKIO_BEGIN(Error, Stream);
     Stream.Write(pabyData, nDataLength);
 //    NCSJP2_CHECKIO_END();

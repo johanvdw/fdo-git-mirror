@@ -7,10 +7,6 @@ used to provide a subset of SQL SELECT capability to applications.  This
 page discusses the generic SQL implementation implemented within OGR, and 
 issue with driver specific SQL support.<p>
 
-Since GDAL/OGR 1.10, an alternate "dialect", the SQLite dialect, can be used
-instead of the OGRSQL dialect. Refer to the
-<b><a href="ogr_sql_sqlite.html">SQLite SQL dialect</a></b> page for more details.<p>
-
 The OGRLayer class also supports applying an attribute query filter to 
 features returned using the OGRLayer::SetAttributeFilter() method.  The
 syntax for the attribute filter is the same as the WHERE clause in the 
@@ -24,10 +20,10 @@ details of the new features in GDAL/OGR 1.8.0.
 
 \section ogr_sql_select SELECT
 
-The SELECT statement is used to fetch layer features (analogous to table
+The SELECT statement is used to fetch layer features (analygous to table
 rows in an RDBMS) with the result of the query represented as a temporary layer
-of features.   The layers of the datasource are analogous to tables in an 
-RDBMS and feature attributes are analogous to column values.  The simplest
+of features.   The layers of the datasource are analygous to tables in an 
+RDBMS and feature attributes are analygous to column values.  The simpliest
 form of OGR SQL SELECT statement looks like this:
 
 \code
@@ -36,7 +32,7 @@ SELECT * FROM polylayer
 
 In this case all features are fetched from the layer named "polylayer", and
 all attributes of those features are returned.  This is essentially 
-equivalent to accessing the layer directly.  In this example the "*" 
+equivelent to accessing the layer directly.  In this example the "*" 
 is the list of fields to fetch from the layer, with "*" meaning that all 
 fields should be fetched.
 
@@ -87,7 +83,7 @@ SELECT DISTINCT areacode FROM polylayer
 There are also several summarization operators that may be applied to columns.
 When a summarization operator is applied to any field, then all fields must
 have summarization operators applied.   The summarization operators are
-COUNT (a count of instances), AVG (numerical average), SUM (numerical sum), 
+COUNT (a count of instances), AVG (numerical average), SUM (numericla sum), 
 MIN (lexical or numerical minimum), and MAX (lexical or numerical maximum). 
 This example produces a variety of sumarization information on parcel
 property values:
@@ -273,7 +269,7 @@ and <b>IS NOT NULL</b> operators.
 
 Basic field tests can be combined in more complicated predicates using logical
 operators include <b>AND</b>, <b>OR</b>, and the unary logical <b>NOT</b>.  
-Subexpressions should be bracketed to make precedence
+Subexpressions should be bracketed to make precidence
 clear.  Some more complicated predicates are:
 
 \code
@@ -372,7 +368,7 @@ includes the ability to join against a table in a different data source,
 potentially of a different format.  This is indicated by qualifying the 
 secondary table name with a datasource name.  In this case the secondary
 datasource is opened using normal OGR semantics and utilized to access the
-secondary table until the query result is no longer needed.
+secondary table untill the query result is no longer needed.
 
 \code
 SELECT * FROM city 
@@ -381,7 +377,7 @@ SELECT * FROM city
 
 While not necessarily very useful, it is also possible to introduce table
 aliases to simplify some SELECT statements.  This can also be useful to 
-disambiguate situations where tables of the same name are being used from 
+disambiguate situations where ables of the same name are being used from 
 different data sources.  For instance, if the actual
 tables names were messy we might want to do something like:
 
@@ -420,29 +416,6 @@ record cannot be found, the secondary derived fields will be NULL.  If more
 than one matching secondary field is found only the first will be used. 
 </ol>
 
-\section ogr_sql_union_all UNION ALL
-
-(OGR >= 1.10.0)
-
-The SQL engine can deal with several SELECT combined with
-UNION ALL. The effect of UNION ALL is to concatenate the rows returned by the right SELECT
-statement to the rows returned by the left SELECT statement.
-
-\code
-[(] SELECT field_list FROM first_layer [WHERE where_expr] [)]
-UNION ALL [(] SELECT field_list FROM second_layer [WHERE where_expr] [)]
-[UNION ALL [(] SELECT field_list FROM third_layer [WHERE where_expr] [)]]*
-\endcode
-
-\subsection ogr_sql_union_all_restrictions UNION ALL restrictions
-
-The processing of UNION ALL in OGR differs from the SQL standard, in which it accepts
-that the columns from the various SELECT are not identical. In that case, it will return
-a super-set of all the fields from each SELECT statement.
-
-There is also a restriction : ORDER BY can only be specified for each SELECT, and
-not at the level of the result of the union.
-
 \section ogr_sql_special_fields SPECIAL FIELDS
 
 The OGR SQL query processor treats some of the attributes of the features as
@@ -451,7 +424,7 @@ other fields. These fields can be placed in the select list, the WHERE clause
 and the ORDER BY clause respectively. The special field will not be included
 in the result by default but it may be explicitly included by adding it to
 the select list.
-When accessing the field values the special fields will take precedence over
+When accessing the field values the special fields will take pecedence over
 the other fields with the same names in the data source. 
 
 \subsection ogr_sql_fid FID
@@ -570,7 +543,7 @@ The following OGR SQL ALTER TABLE commands can be used.
 <li>"ALTER TABLE tablename DROP [COLUMN] columnname" to delete an existing field. Supported if the layer declares the OLCDeleteField capability.
 </ol>
 
-The columntype value follows the syntax of the types supported by the CAST operator described above.
+The columntype value follows the syntax of the types supported by the CAST operator descrived above.
 
 \code
 ALTER TABLE nation ADD COLUMN myfield integer

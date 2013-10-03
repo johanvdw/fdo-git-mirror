@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ilihelper.cpp 24609 2012-06-25 15:21:10Z pka $
+ * $Id: ilihelper.cpp 17904 2009-10-26 19:22:46Z chaitanya $
  *
  * Project:  Interlis 1/2 Translator
  * Purpose:  Helper functions for Interlis reader
@@ -31,7 +31,7 @@
 #include "ilihelper.h"
 
 
-CPL_CVSID("$Id: ilihelper.cpp 24609 2012-06-25 15:21:10Z pka $");
+CPL_CVSID("$Id: ilihelper.cpp 17904 2009-10-26 19:22:46Z chaitanya $");
 
 
 OGRPoint *getARCCenter(OGRPoint *ptStart, OGRPoint *ptArc, OGRPoint *ptEnd) {
@@ -68,8 +68,8 @@ void interpolateArc(OGRLineString* line, OGRPoint *ptStart, OGRPoint *ptOnArc, O
   double px = ptOnArc->getX(); double py = ptOnArc->getY();
   double r = sqrt((cx-px)*(cx-px)+(cy-py)*(cy-py));
 
-  //assure minimal chord length (0.002m???)
-  double myAlpha = 2.0*acos(1.0-0.002/r);      
+  double myAlpha = 2.0*acos(1.0-0.002/r);
+      
   if (myAlpha < arcIncr)  {
       arcIncr = myAlpha;
   }

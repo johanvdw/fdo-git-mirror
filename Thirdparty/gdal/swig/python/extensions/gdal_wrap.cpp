@@ -2853,7 +2853,6 @@ using namespace std;
 #include "cpl_port.h"
 #include "cpl_string.h"
 #include "cpl_multiproc.h"
-#include "cpl_http.h"
 
 #include "gdal.h"
 #include "gdal_priv.h"
@@ -3257,8 +3256,7 @@ typedef char retStringAndCPLFree;
     CPLDebug( msg_class, "%s", message );
   }
 
-  CPLErr SetErrorHandler( char const * pszCallbackName = NULL )
-  {
+  CPLErr PushErrorHandler( char const * pszCallbackName = NULL ) {
     CPLErrorHandler pfnHandler = NULL;
     if( pszCallbackName == NULL || EQUAL(pszCallbackName,"CPLQuietErrorHandler") )
       pfnHandler = CPLQuietErrorHandler;
@@ -3270,10 +3268,11 @@ typedef char retStringAndCPLFree;
     if ( pfnHandler == NULL )
       return CE_Fatal;
 
-    CPLSetErrorHandler( pfnHandler );
+    CPLPushErrorHandler( pfnHandler );
 
     return CE_None;
   }
+
 
 
 SWIGINTERN swig_type_info*
@@ -3366,27 +3365,6 @@ SWIG_AsCharPtrAndSize(PyObject *obj, char** cptr, size_t* psize, int *alloc)
 
 
 
-
-
-void CPL_STDCALL PyCPLErrorHandler(CPLErr eErrClass, int err_no, const char* pszErrorMsg)
-{
-    void* user_data = CPLGetErrorHandlerUserData();
-    PyObject *psArgs;
-
-    psArgs = Py_BuildValue("(iis)", eErrClass, err_no, pszErrorMsg );
-    PyEval_CallObject( (PyObject*)user_data, psArgs);
-    Py_XDECREF(psArgs);
-}
-
-
-  CPLErr PushErrorHandler( CPLErrorHandler pfnErrorHandler = NULL, void* user_data = NULL )
-  {
-    if( pfnErrorHandler == NULL )
-        CPLPushErrorHandler(CPLQuietErrorHandler);
-    else
-        CPLPushErrorHandlerEx(pfnErrorHandler, user_data);
-    return CE_None;
-  }
 
 
   void Error( CPLErr msg_class = CE_Failure, int err_code = 0, const char* msg = "error" ) {
@@ -4101,7 +4079,6 @@ SWIGINTERN GDALAsyncReaderShadow *GDALDatasetShadow_BeginAsyncReader(GDALDataset
 
   }
 SWIGINTERN void GDALDatasetShadow_EndAsyncReader(GDALDatasetShadow *self,GDALAsyncReaderShadow *ario){
-    if( ario == NULL ) return;
     GDALAsyncReaderH hReader = AsyncReaderWrapperGetReader(ario);
     if (hReader == NULL)
     {
@@ -4473,39 +4450,6 @@ SWIGINTERN CPLErr GDALRasterBandShadow_ReadRaster1(GDALRasterBandShadow *self,in
     CPLErr eErr = GDALRasterIO( self, GF_Read, xoff, yoff, xsize, ysize, 
                          (void *) data, nxsize, nysize, ntype, 
                          pixel_space, line_space ); 
-    if (eErr == CE_Failure)
-    {
-        Py_DECREF((PyObject*)*buf);
-        *buf = NULL;
-    }
-    return eErr;
-  }
-SWIGINTERN CPLErr GDALRasterBandShadow_ReadBlock(GDALRasterBandShadow *self,int xoff,int yoff,void **buf){
-
-    int nBlockXSize, nBlockYSize;
-    GDALGetBlockSize(self, &nBlockXSize, &nBlockYSize);
-    int nDataTypeSize = (GDALGetDataTypeSize(GDALGetRasterDataType(self)) / 8);
-    GIntBig buf_size = (GIntBig)nBlockXSize * nBlockYSize * nDataTypeSize;
-
-#if PY_VERSION_HEX >= 0x03000000 
-    *buf = (void *)PyBytes_FromStringAndSize( NULL, buf_size ); 
-    if (*buf == NULL)
-    {
-        *buf = Py_None;
-        CPLError(CE_Failure, CPLE_OutOfMemory, "Cannot allocate result buffer");
-        return CE_Failure;
-    }
-    char *data = PyBytes_AsString( (PyObject *)*buf ); 
-#else 
-    *buf = (void *)PyString_FromStringAndSize( NULL, buf_size ); 
-    if (*buf == NULL)
-    {
-        CPLError(CE_Failure, CPLE_OutOfMemory, "Cannot allocate result buffer");
-        return CE_Failure;
-    }
-    char *data = PyString_AsString( (PyObject *)*buf ); 
-#endif
-    CPLErr eErr = GDALReadBlock( self, xoff, yoff, (void *) data); 
     if (eErr == CE_Failure)
     {
         Py_DECREF((PyObject*)*buf);
@@ -4992,14 +4936,6 @@ SWIGINTERN int GDALTransformerInfoShadow_TransformPoints(GDALTransformerInfoShad
 
     return nRet;
   }
-SWIGINTERN int GDALTransformerInfoShadow_TransformGeolocations(GDALTransformerInfoShadow *self,GDALRasterBandShadow *xBand,GDALRasterBandShadow *yBand,GDALRasterBandShadow *zBand,GDALProgressFunc callback=NULL,void *callback_data=NULL,char **options=NULL){
-
-    CPLErrorReset();
-
-    return GDALTransformGeolocations( xBand, yBand, zBand, 
-                                      GDALUseTransformer, self,
-                            	      callback, callback_data, options );
-  }
 
 GIntBig wrapper_GDALGetCacheMax()
 {
@@ -5318,7 +5254,7 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_SetErrorHandler(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+SWIGINTERN PyObject *_wrap_PushErrorHandler__SWIG_0(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   char *arg1 = (char *) NULL ;
   int res1 ;
@@ -5327,11 +5263,11 @@ SWIGINTERN PyObject *_wrap_SetErrorHandler(PyObject *SWIGUNUSEDPARM(self), PyObj
   PyObject * obj0 = 0 ;
   CPLErr result;
   
-  if (!PyArg_ParseTuple(args,(char *)"|O:SetErrorHandler",&obj0)) SWIG_fail;
+  if (!PyArg_ParseTuple(args,(char *)"|O:PushErrorHandler",&obj0)) SWIG_fail;
   if (obj0) {
     res1 = SWIG_AsCharPtrAndSize(obj0, &buf1, NULL, &alloc1);
     if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "SetErrorHandler" "', argument " "1"" of type '" "char const *""'");
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "PushErrorHandler" "', argument " "1"" of type '" "char const *""'");
     }
     arg1 = reinterpret_cast< char * >(buf1);
   }
@@ -5339,7 +5275,7 @@ SWIGINTERN PyObject *_wrap_SetErrorHandler(PyObject *SWIGUNUSEDPARM(self), PyObj
     if ( bUseExceptions ) {
       CPLErrorReset();
     }
-    result = (CPLErr)SetErrorHandler((char const *)arg1);
+    result = (CPLErr)PushErrorHandler((char const *)arg1);
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
@@ -5362,79 +5298,6 @@ SWIGINTERN PyObject *_wrap_SetErrorHandler(PyObject *SWIGUNUSEDPARM(self), PyObj
   return resultobj;
 fail:
   if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_PushErrorHandler(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  CPLErrorHandler arg1 = (CPLErrorHandler) NULL ;
-  void *arg2 = (void *) NULL ;
-  PyObject * obj0 = 0 ;
-  CPLErr result;
-  
-  if (!PyArg_ParseTuple(args,(char *)"|O:PushErrorHandler",&obj0)) SWIG_fail;
-  if (obj0) {
-    {
-      /* %typemap(in) (CPLErrorHandler pfnErrorHandler = NULL, void* user_data = NULL) */
-      int alloc = 0;
-      char* pszCallbackName = NULL;
-      arg2 = NULL;
-      if( SWIG_IsOK(SWIG_AsCharPtrAndSize(obj0, &pszCallbackName, NULL, &alloc)) )
-      {
-        if( pszCallbackName == NULL || EQUAL(pszCallbackName,"CPLQuietErrorHandler") )
-        arg1 = CPLQuietErrorHandler;
-        else if( EQUAL(pszCallbackName,"CPLDefaultErrorHandler") )
-        arg1 = CPLDefaultErrorHandler;
-        else if( EQUAL(pszCallbackName,"CPLLoggingErrorHandler") )
-        arg1 = CPLLoggingErrorHandler;
-        else
-        {
-          if (alloc == SWIG_NEWOBJ) delete[] pszCallbackName;
-          PyErr_SetString( PyExc_RuntimeError, "Unhandled value for passed string" );
-          SWIG_fail;
-        }
-        
-        if (alloc == SWIG_NEWOBJ) delete[] pszCallbackName;
-      }
-      else if (!PyCallable_Check(obj0))
-      {
-        PyErr_SetString( PyExc_RuntimeError, 
-          "Object given is not a String or a Python function" );
-        SWIG_fail;
-      }
-      else
-      {
-        arg1 = PyCPLErrorHandler;
-        arg2 = obj0;
-      }
-    }
-  }
-  {
-    if ( bUseExceptions ) {
-      CPLErrorReset();
-    }
-    result = (CPLErr)PushErrorHandler(arg1,arg2);
-    if ( bUseExceptions ) {
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-      }
-    }
-  }
-  resultobj = SWIG_From_int(static_cast< int >(result));
-  {
-    /* %typemap(ret) CPLErr */
-    if ( bUseExceptions == 0 ) {
-      /* We're not using exceptions.  And no error has occurred */
-      if ( resultobj == 0 ) {
-        /* No other return values set so return ErrorCode */
-        resultobj = PyInt_FromLong(result);
-      }
-    }
-  }
-  return resultobj;
-fail:
   return NULL;
 }
 
@@ -5498,26 +5361,32 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_GOA2GetAuthorizationURL(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+SWIGINTERN PyObject *_wrap_PushErrorHandler__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
-  char *arg1 = (char *) 0 ;
-  int res1 ;
-  char *buf1 = 0 ;
-  int alloc1 = 0 ;
+  CPLErrorHandler arg1 ;
+  void *argp1 ;
+  int res1 = 0 ;
   PyObject * obj0 = 0 ;
-  retStringAndCPLFree *result = 0 ;
   
-  if (!PyArg_ParseTuple(args,(char *)"O:GOA2GetAuthorizationURL",&obj0)) SWIG_fail;
-  res1 = SWIG_AsCharPtrAndSize(obj0, &buf1, NULL, &alloc1);
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GOA2GetAuthorizationURL" "', argument " "1"" of type '" "char const *""'");
+  if (!PyArg_ParseTuple(args,(char *)"O:PushErrorHandler",&obj0)) SWIG_fail;
+  {
+    res1 = SWIG_ConvertPtr(obj0, &argp1, SWIGTYPE_p_CPLErrorHandler,  0  | 0);
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "PushErrorHandler" "', argument " "1"" of type '" "CPLErrorHandler""'"); 
+    }  
+    if (!argp1) {
+      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "PushErrorHandler" "', argument " "1"" of type '" "CPLErrorHandler""'");
+    } else {
+      CPLErrorHandler * temp = reinterpret_cast< CPLErrorHandler * >(argp1);
+      arg1 = *temp;
+      if (SWIG_IsNewObj(res1)) delete temp;
+    }
   }
-  arg1 = reinterpret_cast< char * >(buf1);
   {
     if ( bUseExceptions ) {
       CPLErrorReset();
     }
-    result = (retStringAndCPLFree *)GOA2GetAuthorizationURL((char const *)arg1);
+    CPLPushErrorHandler(arg1);
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
@@ -5525,128 +5394,48 @@ SWIGINTERN PyObject *_wrap_GOA2GetAuthorizationURL(PyObject *SWIGUNUSEDPARM(self
       }
     }
   }
-  {
-    /* %typemap(out) (retStringAndCPLFree*) */
-    if(result)
-    {
-      resultobj = GDALPythonObjectFromCStr( (const char *)result);
-      CPLFree(result);
-    }
-  }
-  if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+  resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
-  if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
   return NULL;
 }
 
 
-SWIGINTERN PyObject *_wrap_GOA2GetRefreshToken(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  char *arg1 = (char *) 0 ;
-  char *arg2 = (char *) 0 ;
-  int res1 ;
-  char *buf1 = 0 ;
-  int alloc1 = 0 ;
-  int res2 ;
-  char *buf2 = 0 ;
-  int alloc2 = 0 ;
-  PyObject * obj0 = 0 ;
-  PyObject * obj1 = 0 ;
-  retStringAndCPLFree *result = 0 ;
+SWIGINTERN PyObject *_wrap_PushErrorHandler(PyObject *self, PyObject *args) {
+  int argc;
+  PyObject *argv[2];
+  int ii;
   
-  if (!PyArg_ParseTuple(args,(char *)"OO:GOA2GetRefreshToken",&obj0,&obj1)) SWIG_fail;
-  res1 = SWIG_AsCharPtrAndSize(obj0, &buf1, NULL, &alloc1);
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GOA2GetRefreshToken" "', argument " "1"" of type '" "char const *""'");
+  if (!PyTuple_Check(args)) SWIG_fail;
+  argc = (int)PyObject_Length(args);
+  for (ii = 0; (ii < argc) && (ii < 1); ii++) {
+    argv[ii] = PyTuple_GET_ITEM(args,ii);
   }
-  arg1 = reinterpret_cast< char * >(buf1);
-  res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "GOA2GetRefreshToken" "', argument " "2"" of type '" "char const *""'");
-  }
-  arg2 = reinterpret_cast< char * >(buf2);
-  {
-    if ( bUseExceptions ) {
-      CPLErrorReset();
+  if ((argc >= 0) && (argc <= 1)) {
+    int _v;
+    if (argc <= 0) {
+      return _wrap_PushErrorHandler__SWIG_0(self, args);
     }
-    result = (retStringAndCPLFree *)GOA2GetRefreshToken((char const *)arg1,(char const *)arg2);
-    if ( bUseExceptions ) {
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-      }
+    int res = SWIG_AsCharPtrAndSize(argv[0], 0, NULL, 0);
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      return _wrap_PushErrorHandler__SWIG_0(self, args);
     }
   }
-  {
-    /* %typemap(out) (retStringAndCPLFree*) */
-    if(result)
-    {
-      resultobj = GDALPythonObjectFromCStr( (const char *)result);
-      CPLFree(result);
+  if (argc == 1) {
+    int _v;
+    int res = SWIG_ConvertPtr(argv[0], 0, SWIGTYPE_p_CPLErrorHandler, 0);
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      return _wrap_PushErrorHandler__SWIG_1(self, args);
     }
   }
-  if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
-  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
-  return resultobj;
-fail:
-  if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
-  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_GOA2GetAccessToken(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  char *arg1 = (char *) 0 ;
-  char *arg2 = (char *) 0 ;
-  int res1 ;
-  char *buf1 = 0 ;
-  int alloc1 = 0 ;
-  int res2 ;
-  char *buf2 = 0 ;
-  int alloc2 = 0 ;
-  PyObject * obj0 = 0 ;
-  PyObject * obj1 = 0 ;
-  retStringAndCPLFree *result = 0 ;
   
-  if (!PyArg_ParseTuple(args,(char *)"OO:GOA2GetAccessToken",&obj0,&obj1)) SWIG_fail;
-  res1 = SWIG_AsCharPtrAndSize(obj0, &buf1, NULL, &alloc1);
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GOA2GetAccessToken" "', argument " "1"" of type '" "char const *""'");
-  }
-  arg1 = reinterpret_cast< char * >(buf1);
-  res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "GOA2GetAccessToken" "', argument " "2"" of type '" "char const *""'");
-  }
-  arg2 = reinterpret_cast< char * >(buf2);
-  {
-    if ( bUseExceptions ) {
-      CPLErrorReset();
-    }
-    result = (retStringAndCPLFree *)GOA2GetAccessToken((char const *)arg1,(char const *)arg2);
-    if ( bUseExceptions ) {
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-      }
-    }
-  }
-  {
-    /* %typemap(out) (retStringAndCPLFree*) */
-    if(result)
-    {
-      resultobj = GDALPythonObjectFromCStr( (const char *)result);
-      CPLFree(result);
-    }
-  }
-  if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
-  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
-  return resultobj;
 fail:
-  if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
-  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'PushErrorHandler'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    PushErrorHandler(char const *)\n"
+    "    CPLPushErrorHandler(CPLErrorHandler)\n");
   return NULL;
 }
 
@@ -6009,66 +5798,6 @@ SWIGINTERN PyObject *_wrap_ReadDir(PyObject *SWIGUNUSEDPARM(self), PyObject *arg
       CPLErrorReset();
     }
     result = (char **)VSIReadDir((char const *)arg1);
-    if ( bUseExceptions ) {
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-      }
-    }
-  }
-  {
-    /* %typemap(out) char **CSL -> ( string ) */
-    char **stringarray = result;
-    if ( stringarray == NULL ) {
-      resultobj = Py_None;
-      Py_INCREF( resultobj );
-    }
-    else {
-      int len = CSLCount( stringarray );
-      resultobj = PyList_New( len );
-      for ( int i = 0; i < len; ++i ) {
-        PyObject *o = GDALPythonObjectFromCStr( stringarray[i] );
-        PyList_SetItem(resultobj, i, o );
-      }
-    }
-    CSLDestroy(result);
-  }
-  {
-    /* %typemap(freearg) (const char *utf8_path) */
-    GDALPythonFreeCStr(arg1, bToFree1);
-  }
-  return resultobj;
-fail:
-  {
-    /* %typemap(freearg) (const char *utf8_path) */
-    GDALPythonFreeCStr(arg1, bToFree1);
-  }
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_ReadDirRecursive(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  char *arg1 = (char *) 0 ;
-  int bToFree1 = 0 ;
-  PyObject * obj0 = 0 ;
-  char **result = 0 ;
-  
-  if (!PyArg_ParseTuple(args,(char *)"O:ReadDirRecursive",&obj0)) SWIG_fail;
-  {
-    /* %typemap(in) (const char *utf8_path) */
-    arg1 = GDALPythonObjectToCStr( obj0, &bToFree1 );
-    if (arg1 == NULL)
-    {
-      PyErr_SetString( PyExc_RuntimeError, "not a string" );
-      SWIG_fail;
-    }
-  }
-  {
-    if ( bUseExceptions ) {
-      CPLErrorReset();
-    }
-    result = (char **)VSIReadDirRecursive((char const *)arg1);
     if ( bUseExceptions ) {
       CPLErr eclass = CPLGetLastErrorType();
       if ( eclass == CE_Failure || eclass == CE_Fatal ) {
@@ -7642,10 +7371,7 @@ SWIGINTERN PyObject *_wrap_MajorObject_SetMetadata(PyObject *self, PyObject *arg
     if (_v) {
       {
         /* %typecheck(SWIG_TYPECHECK_POINTER) (char **dict) */
-        /* Note: we exclude explicitely strings, because they can be considered as a sequence of characters, */
-        /* which is not desirable since it makes it impossible to define bindings such as SetMetadata(string) and SetMetadata(array_of_string) */
-        /* (see #4816) */
-        _v = ((PyMapping_Check(argv[1]) || PySequence_Check(argv[1]) ) && !SWIG_CheckState(SWIG_AsCharPtrAndSize(argv[1], 0, NULL, 0)) ) ? 1 : 0;
+        _v = (PyMapping_Check(argv[1]) || PySequence_Check(argv[1]) ) ? 1 : 0;
       }
       if (_v) {
         if (argc <= 2) {
@@ -8019,12 +7745,8 @@ SWIGINTERN PyObject *_wrap_Driver_Create(PyObject *SWIGUNUSEDPARM(self), PyObjec
   if (obj6) {
     {
       /* %typemap(in) char **options */
-      /* Check if is a list (and reject strings, that are seen as sequence of characters)  */
-      if ( ! PySequence_Check(obj6) || PyUnicode_Check(obj6)
-  #if PY_VERSION_HEX < 0x03000000
-        || PyString_Check(obj6)
-  #endif
-        ) {
+      /* Check if is a list */
+      if ( ! PySequence_Check(obj6)) {
         PyErr_SetString(PyExc_TypeError,"not a sequence");
         SWIG_fail;
       }
@@ -8162,12 +7884,8 @@ SWIGINTERN PyObject *_wrap_Driver_CreateCopy(PyObject *SWIGUNUSEDPARM(self), PyO
   if (obj4) {
     {
       /* %typemap(in) char **options */
-      /* Check if is a list (and reject strings, that are seen as sequence of characters)  */
-      if ( ! PySequence_Check(obj4) || PyUnicode_Check(obj4)
-  #if PY_VERSION_HEX < 0x03000000
-        || PyString_Check(obj4)
-  #endif
-        ) {
+      /* Check if is a list */
+      if ( ! PySequence_Check(obj4)) {
         PyErr_SetString(PyExc_TypeError,"not a sequence");
         SWIG_fail;
       }
@@ -8212,8 +7930,8 @@ SWIGINTERN PyObject *_wrap_Driver_CreateCopy(PyObject *SWIGUNUSEDPARM(self), PyO
       if (obj5 && obj5 != Py_None ) {
         void* cbfunction = NULL;
         SWIG_ConvertPtr( obj5, 
-          (void**)&cbfunction,
-          SWIGTYPE_p_f_double_p_q_const__char_p_void__int,
+          (void**)&cbfunction, 
+          SWIGTYPE_p_f_double_p_q_const__char_p_void__int, 
           SWIG_POINTER_EXCEPTION | 0 );
         
         if ( cbfunction == GDALTermProgress ) {
@@ -11724,8 +11442,8 @@ SWIGINTERN PyObject *_wrap_Dataset_BuildOverviews(PyObject *SWIGUNUSEDPARM(self)
       if (obj3 && obj3 != Py_None ) {
         void* cbfunction = NULL;
         SWIG_ConvertPtr( obj3, 
-          (void**)&cbfunction,
-          SWIGTYPE_p_f_double_p_q_const__char_p_void__int,
+          (void**)&cbfunction, 
+          SWIGTYPE_p_f_double_p_q_const__char_p_void__int, 
           SWIG_POINTER_EXCEPTION | 0 );
         
         if ( cbfunction == GDALTermProgress ) {
@@ -12079,12 +11797,8 @@ SWIGINTERN PyObject *_wrap_Dataset_AddBand(PyObject *SWIGUNUSEDPARM(self), PyObj
   if (obj2) {
     {
       /* %typemap(in) char **options */
-      /* Check if is a list (and reject strings, that are seen as sequence of characters)  */
-      if ( ! PySequence_Check(obj2) || PyUnicode_Check(obj2)
-  #if PY_VERSION_HEX < 0x03000000
-        || PyString_Check(obj2)
-  #endif
-        ) {
+      /* Check if is a list */
+      if ( ! PySequence_Check(obj2)) {
         PyErr_SetString(PyExc_TypeError,"not a sequence");
         SWIG_fail;
       }
@@ -12719,12 +12433,8 @@ SWIGINTERN PyObject *_wrap_Dataset_BeginAsyncReader(PyObject *SWIGUNUSEDPARM(sel
   if (obj13) {
     {
       /* %typemap(in) char **options */
-      /* Check if is a list (and reject strings, that are seen as sequence of characters)  */
-      if ( ! PySequence_Check(obj13) || PyUnicode_Check(obj13)
-  #if PY_VERSION_HEX < 0x03000000
-        || PyString_Check(obj13)
-  #endif
-        ) {
+      /* Check if is a list */
+      if ( ! PySequence_Check(obj13)) {
         PyErr_SetString(PyExc_TypeError,"not a sequence");
         SWIG_fail;
       }
@@ -13708,12 +13418,8 @@ SWIGINTERN PyObject *_wrap_Band_SetRasterCategoryNames(PyObject *SWIGUNUSEDPARM(
   arg1 = reinterpret_cast< GDALRasterBandShadow * >(argp1);
   {
     /* %typemap(in) char **options */
-    /* Check if is a list (and reject strings, that are seen as sequence of characters)  */
-    if ( ! PySequence_Check(obj1) || PyUnicode_Check(obj1)
-  #if PY_VERSION_HEX < 0x03000000
-      || PyString_Check(obj1)
-  #endif
-      ) {
+    /* Check if is a list */
+    if ( ! PySequence_Check(obj1)) {
       PyErr_SetString(PyExc_TypeError,"not a sequence");
       SWIG_fail;
     }
@@ -14267,8 +13973,8 @@ SWIGINTERN PyObject *_wrap_Band_ComputeStatistics(PyObject *SWIGUNUSEDPARM(self)
       if (obj2 && obj2 != Py_None ) {
         void* cbfunction = NULL;
         SWIG_ConvertPtr( obj2, 
-          (void**)&cbfunction,
-          SWIGTYPE_p_f_double_p_q_const__char_p_void__int,
+          (void**)&cbfunction, 
+          SWIGTYPE_p_f_double_p_q_const__char_p_void__int, 
           SWIG_POINTER_EXCEPTION | 0 );
         
         if ( cbfunction == GDALTermProgress ) {
@@ -15439,8 +15145,8 @@ SWIGINTERN PyObject *_wrap_Band_GetHistogram(PyObject *SWIGUNUSEDPARM(self), PyO
       if (obj6 && obj6 != Py_None ) {
         void* cbfunction = NULL;
         SWIG_ConvertPtr( obj6, 
-          (void**)&cbfunction,
-          SWIGTYPE_p_f_double_p_q_const__char_p_void__int,
+          (void**)&cbfunction, 
+          SWIGTYPE_p_f_double_p_q_const__char_p_void__int, 
           SWIG_POINTER_EXCEPTION | 0 );
         
         if ( cbfunction == GDALTermProgress ) {
@@ -15621,8 +15327,8 @@ SWIGINTERN PyObject *_wrap_Band_GetDefaultHistogram(PyObject *SWIGUNUSEDPARM(sel
       if (obj6 && obj6 != Py_None ) {
         void* cbfunction = NULL;
         SWIG_ConvertPtr( obj6, 
-          (void**)&cbfunction,
-          SWIGTYPE_p_f_double_p_q_const__char_p_void__int,
+          (void**)&cbfunction, 
+          SWIGTYPE_p_f_double_p_q_const__char_p_void__int, 
           SWIG_POINTER_EXCEPTION | 0 );
         
         if ( cbfunction == GDALTermProgress ) {
@@ -15885,12 +15591,8 @@ SWIGINTERN PyObject *_wrap_Band_SetCategoryNames(PyObject *SWIGUNUSEDPARM(self),
   arg1 = reinterpret_cast< GDALRasterBandShadow * >(argp1);
   {
     /* %typemap(in) char **options */
-    /* Check if is a list (and reject strings, that are seen as sequence of characters)  */
-    if ( ! PySequence_Check(obj1) || PyUnicode_Check(obj1)
-  #if PY_VERSION_HEX < 0x03000000
-      || PyString_Check(obj1)
-  #endif
-      ) {
+    /* Check if is a list */
+    if ( ! PySequence_Check(obj1)) {
       PyErr_SetString(PyExc_TypeError,"not a sequence");
       SWIG_fail;
     }
@@ -16122,79 +15824,6 @@ SWIGINTERN PyObject *_wrap_Band_ReadRaster1(PyObject *SWIGUNUSEDPARM(self), PyOb
     if (*arg6)
     {
       resultobj = (PyObject*)*arg6;
-    }
-    else
-    {
-      resultobj = Py_None;
-      Py_INCREF(resultobj);
-    }
-  }
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_Band_ReadBlock(PyObject *SWIGUNUSEDPARM(self), PyObject *args, PyObject *kwargs) {
-  PyObject *resultobj = 0;
-  GDALRasterBandShadow *arg1 = (GDALRasterBandShadow *) 0 ;
-  int arg2 ;
-  int arg3 ;
-  void **arg4 = (void **) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  int val2 ;
-  int ecode2 = 0 ;
-  int val3 ;
-  int ecode3 = 0 ;
-  void *pyObject4 = NULL ;
-  PyObject * obj0 = 0 ;
-  PyObject * obj1 = 0 ;
-  PyObject * obj2 = 0 ;
-  char *  kwnames[] = {
-    (char *) "self",(char *) "xoff",(char *) "yoff", NULL 
-  };
-  CPLErr result;
-  
-  {
-    /* %typemap(in,numinputs=0) ( void **outPythonObject ) ( void *pyObject4 = NULL ) */
-    arg4 = &pyObject4;
-  }
-  if (!PyArg_ParseTupleAndKeywords(args,kwargs,(char *)"OOO:Band_ReadBlock",kwnames,&obj0,&obj1,&obj2)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_GDALRasterBandShadow, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Band_ReadBlock" "', argument " "1"" of type '" "GDALRasterBandShadow *""'"); 
-  }
-  arg1 = reinterpret_cast< GDALRasterBandShadow * >(argp1);
-  ecode2 = SWIG_AsVal_int(obj1, &val2);
-  if (!SWIG_IsOK(ecode2)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "Band_ReadBlock" "', argument " "2"" of type '" "int""'");
-  } 
-  arg2 = static_cast< int >(val2);
-  ecode3 = SWIG_AsVal_int(obj2, &val3);
-  if (!SWIG_IsOK(ecode3)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "Band_ReadBlock" "', argument " "3"" of type '" "int""'");
-  } 
-  arg3 = static_cast< int >(val3);
-  {
-    if ( bUseExceptions ) {
-      CPLErrorReset();
-    }
-    result = (CPLErr)GDALRasterBandShadow_ReadBlock(arg1,arg2,arg3,arg4);
-    if ( bUseExceptions ) {
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-      }
-    }
-  }
-  resultobj = SWIG_From_int(static_cast< int >(result));
-  {
-    /* %typemap(argout) ( void **outPythonObject ) */
-    Py_XDECREF(resultobj);
-    if (*arg4)
-    {
-      resultobj = (PyObject*)*arg4;
     }
     else
     {
@@ -17733,8 +17362,8 @@ SWIGINTERN PyObject *_wrap_ComputeMedianCutPCT(PyObject *SWIGUNUSEDPARM(self), P
       if (obj5 && obj5 != Py_None ) {
         void* cbfunction = NULL;
         SWIG_ConvertPtr( obj5, 
-          (void**)&cbfunction,
-          SWIGTYPE_p_f_double_p_q_const__char_p_void__int,
+          (void**)&cbfunction, 
+          SWIGTYPE_p_f_double_p_q_const__char_p_void__int, 
           SWIG_POINTER_EXCEPTION | 0 );
         
         if ( cbfunction == GDALTermProgress ) {
@@ -17881,8 +17510,8 @@ SWIGINTERN PyObject *_wrap_DitherRGB2PCT(PyObject *SWIGUNUSEDPARM(self), PyObjec
       if (obj5 && obj5 != Py_None ) {
         void* cbfunction = NULL;
         SWIG_ConvertPtr( obj5, 
-          (void**)&cbfunction,
-          SWIGTYPE_p_f_double_p_q_const__char_p_void__int,
+          (void**)&cbfunction, 
+          SWIGTYPE_p_f_double_p_q_const__char_p_void__int, 
           SWIG_POINTER_EXCEPTION | 0 );
         
         if ( cbfunction == GDALTermProgress ) {
@@ -18061,8 +17690,8 @@ SWIGINTERN PyObject *_wrap_ReprojectImage(PyObject *SWIGUNUSEDPARM(self), PyObje
       if (obj7 && obj7 != Py_None ) {
         void* cbfunction = NULL;
         SWIG_ConvertPtr( obj7, 
-          (void**)&cbfunction,
-          SWIGTYPE_p_f_double_p_q_const__char_p_void__int,
+          (void**)&cbfunction, 
+          SWIGTYPE_p_f_double_p_q_const__char_p_void__int, 
           SWIG_POINTER_EXCEPTION | 0 );
         
         if ( cbfunction == GDALTermProgress ) {
@@ -18174,12 +17803,8 @@ SWIGINTERN PyObject *_wrap_ComputeProximity(PyObject *SWIGUNUSEDPARM(self), PyOb
   if (obj2) {
     {
       /* %typemap(in) char **options */
-      /* Check if is a list (and reject strings, that are seen as sequence of characters)  */
-      if ( ! PySequence_Check(obj2) || PyUnicode_Check(obj2)
-  #if PY_VERSION_HEX < 0x03000000
-        || PyString_Check(obj2)
-  #endif
-        ) {
+      /* Check if is a list */
+      if ( ! PySequence_Check(obj2)) {
         PyErr_SetString(PyExc_TypeError,"not a sequence");
         SWIG_fail;
       }
@@ -18224,8 +17849,8 @@ SWIGINTERN PyObject *_wrap_ComputeProximity(PyObject *SWIGUNUSEDPARM(self), PyOb
       if (obj3 && obj3 != Py_None ) {
         void* cbfunction = NULL;
         SWIG_ConvertPtr( obj3, 
-          (void**)&cbfunction,
-          SWIGTYPE_p_f_double_p_q_const__char_p_void__int,
+          (void**)&cbfunction, 
+          SWIGTYPE_p_f_double_p_q_const__char_p_void__int, 
           SWIG_POINTER_EXCEPTION | 0 );
         
         if ( cbfunction == GDALTermProgress ) {
@@ -18405,12 +18030,8 @@ SWIGINTERN PyObject *_wrap_RasterizeLayer(PyObject *SWIGUNUSEDPARM(self), PyObje
   if (obj6) {
     {
       /* %typemap(in) char **options */
-      /* Check if is a list (and reject strings, that are seen as sequence of characters)  */
-      if ( ! PySequence_Check(obj6) || PyUnicode_Check(obj6)
-  #if PY_VERSION_HEX < 0x03000000
-        || PyString_Check(obj6)
-  #endif
-        ) {
+      /* Check if is a list */
+      if ( ! PySequence_Check(obj6)) {
         PyErr_SetString(PyExc_TypeError,"not a sequence");
         SWIG_fail;
       }
@@ -18455,8 +18076,8 @@ SWIGINTERN PyObject *_wrap_RasterizeLayer(PyObject *SWIGUNUSEDPARM(self), PyObje
       if (obj7 && obj7 != Py_None ) {
         void* cbfunction = NULL;
         SWIG_ConvertPtr( obj7, 
-          (void**)&cbfunction,
-          SWIGTYPE_p_f_double_p_q_const__char_p_void__int,
+          (void**)&cbfunction, 
+          SWIGTYPE_p_f_double_p_q_const__char_p_void__int, 
           SWIG_POINTER_EXCEPTION | 0 );
         
         if ( cbfunction == GDALTermProgress ) {
@@ -18614,12 +18235,8 @@ SWIGINTERN PyObject *_wrap_Polygonize(PyObject *SWIGUNUSEDPARM(self), PyObject *
   if (obj4) {
     {
       /* %typemap(in) char **options */
-      /* Check if is a list (and reject strings, that are seen as sequence of characters)  */
-      if ( ! PySequence_Check(obj4) || PyUnicode_Check(obj4)
-  #if PY_VERSION_HEX < 0x03000000
-        || PyString_Check(obj4)
-  #endif
-        ) {
+      /* Check if is a list */
+      if ( ! PySequence_Check(obj4)) {
         PyErr_SetString(PyExc_TypeError,"not a sequence");
         SWIG_fail;
       }
@@ -18664,8 +18281,8 @@ SWIGINTERN PyObject *_wrap_Polygonize(PyObject *SWIGUNUSEDPARM(self), PyObject *
       if (obj5 && obj5 != Py_None ) {
         void* cbfunction = NULL;
         SWIG_ConvertPtr( obj5, 
-          (void**)&cbfunction,
-          SWIGTYPE_p_f_double_p_q_const__char_p_void__int,
+          (void**)&cbfunction, 
+          SWIGTYPE_p_f_double_p_q_const__char_p_void__int, 
           SWIG_POINTER_EXCEPTION | 0 );
         
         if ( cbfunction == GDALTermProgress ) {
@@ -18799,12 +18416,8 @@ SWIGINTERN PyObject *_wrap_FillNodata(PyObject *SWIGUNUSEDPARM(self), PyObject *
   if (obj4) {
     {
       /* %typemap(in) char **options */
-      /* Check if is a list (and reject strings, that are seen as sequence of characters)  */
-      if ( ! PySequence_Check(obj4) || PyUnicode_Check(obj4)
-  #if PY_VERSION_HEX < 0x03000000
-        || PyString_Check(obj4)
-  #endif
-        ) {
+      /* Check if is a list */
+      if ( ! PySequence_Check(obj4)) {
         PyErr_SetString(PyExc_TypeError,"not a sequence");
         SWIG_fail;
       }
@@ -18849,8 +18462,8 @@ SWIGINTERN PyObject *_wrap_FillNodata(PyObject *SWIGUNUSEDPARM(self), PyObject *
       if (obj5 && obj5 != Py_None ) {
         void* cbfunction = NULL;
         SWIG_ConvertPtr( obj5, 
-          (void**)&cbfunction,
-          SWIGTYPE_p_f_double_p_q_const__char_p_void__int,
+          (void**)&cbfunction, 
+          SWIGTYPE_p_f_double_p_q_const__char_p_void__int, 
           SWIG_POINTER_EXCEPTION | 0 );
         
         if ( cbfunction == GDALTermProgress ) {
@@ -18990,12 +18603,8 @@ SWIGINTERN PyObject *_wrap_SieveFilter(PyObject *SWIGUNUSEDPARM(self), PyObject 
   if (obj5) {
     {
       /* %typemap(in) char **options */
-      /* Check if is a list (and reject strings, that are seen as sequence of characters)  */
-      if ( ! PySequence_Check(obj5) || PyUnicode_Check(obj5)
-  #if PY_VERSION_HEX < 0x03000000
-        || PyString_Check(obj5)
-  #endif
-        ) {
+      /* Check if is a list */
+      if ( ! PySequence_Check(obj5)) {
         PyErr_SetString(PyExc_TypeError,"not a sequence");
         SWIG_fail;
       }
@@ -19040,8 +18649,8 @@ SWIGINTERN PyObject *_wrap_SieveFilter(PyObject *SWIGUNUSEDPARM(self), PyObject 
       if (obj6 && obj6 != Py_None ) {
         void* cbfunction = NULL;
         SWIG_ConvertPtr( obj6, 
-          (void**)&cbfunction,
-          SWIGTYPE_p_f_double_p_q_const__char_p_void__int,
+          (void**)&cbfunction, 
+          SWIGTYPE_p_f_double_p_q_const__char_p_void__int, 
           SWIG_POINTER_EXCEPTION | 0 );
         
         if ( cbfunction == GDALTermProgress ) {
@@ -19192,8 +18801,8 @@ SWIGINTERN PyObject *_wrap_RegenerateOverviews(PyObject *SWIGUNUSEDPARM(self), P
       if (obj3 && obj3 != Py_None ) {
         void* cbfunction = NULL;
         SWIG_ConvertPtr( obj3, 
-          (void**)&cbfunction,
-          SWIGTYPE_p_f_double_p_q_const__char_p_void__int,
+          (void**)&cbfunction, 
+          SWIGTYPE_p_f_double_p_q_const__char_p_void__int, 
           SWIG_POINTER_EXCEPTION | 0 );
         
         if ( cbfunction == GDALTermProgress ) {
@@ -19320,8 +18929,8 @@ SWIGINTERN PyObject *_wrap_RegenerateOverview(PyObject *SWIGUNUSEDPARM(self), Py
       if (obj3 && obj3 != Py_None ) {
         void* cbfunction = NULL;
         SWIG_ConvertPtr( obj3, 
-          (void**)&cbfunction,
-          SWIGTYPE_p_f_double_p_q_const__char_p_void__int,
+          (void**)&cbfunction, 
+          SWIGTYPE_p_f_double_p_q_const__char_p_void__int, 
           SWIG_POINTER_EXCEPTION | 0 );
         
         if ( cbfunction == GDALTermProgress ) {
@@ -19509,8 +19118,8 @@ SWIGINTERN PyObject *_wrap_ContourGenerate(PyObject *SWIGUNUSEDPARM(self), PyObj
       if (obj9 && obj9 != Py_None ) {
         void* cbfunction = NULL;
         SWIG_ConvertPtr( obj9, 
-          (void**)&cbfunction,
-          SWIGTYPE_p_f_double_p_q_const__char_p_void__int,
+          (void**)&cbfunction, 
+          SWIGTYPE_p_f_double_p_q_const__char_p_void__int, 
           SWIG_POINTER_EXCEPTION | 0 );
         
         if ( cbfunction == GDALTermProgress ) {
@@ -19703,12 +19312,8 @@ SWIGINTERN PyObject *_wrap_new_Transformer(PyObject *SWIGUNUSEDPARM(self), PyObj
   arg2 = reinterpret_cast< GDALDatasetShadow * >(argp2);
   {
     /* %typemap(in) char **options */
-    /* Check if is a list (and reject strings, that are seen as sequence of characters)  */
-    if ( ! PySequence_Check(obj2) || PyUnicode_Check(obj2)
-  #if PY_VERSION_HEX < 0x03000000
-      || PyString_Check(obj2)
-  #endif
-      ) {
+    /* Check if is a list */
+    if ( ! PySequence_Check(obj2)) {
       PyErr_SetString(PyExc_TypeError,"not a sequence");
       SWIG_fail;
     }
@@ -20133,196 +19738,6 @@ fail:
     VSIFree(arg5);
     VSIFree(arg6);
     VSIFree(arg7);
-  }
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_Transformer_TransformGeolocations(PyObject *SWIGUNUSEDPARM(self), PyObject *args, PyObject *kwargs) {
-  PyObject *resultobj = 0;
-  GDALTransformerInfoShadow *arg1 = (GDALTransformerInfoShadow *) 0 ;
-  GDALRasterBandShadow *arg2 = (GDALRasterBandShadow *) 0 ;
-  GDALRasterBandShadow *arg3 = (GDALRasterBandShadow *) 0 ;
-  GDALRasterBandShadow *arg4 = (GDALRasterBandShadow *) 0 ;
-  GDALProgressFunc arg5 = (GDALProgressFunc) NULL ;
-  void *arg6 = (void *) NULL ;
-  char **arg7 = (char **) NULL ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  void *argp2 = 0 ;
-  int res2 = 0 ;
-  void *argp3 = 0 ;
-  int res3 = 0 ;
-  void *argp4 = 0 ;
-  int res4 = 0 ;
-  PyObject * obj0 = 0 ;
-  PyObject * obj1 = 0 ;
-  PyObject * obj2 = 0 ;
-  PyObject * obj3 = 0 ;
-  PyObject * obj4 = 0 ;
-  PyObject * obj5 = 0 ;
-  PyObject * obj6 = 0 ;
-  char *  kwnames[] = {
-    (char *) "self",(char *) "xBand",(char *) "yBand",(char *) "zBand",(char *) "callback",(char *) "callback_data",(char *) "options", NULL 
-  };
-  int result;
-  
-  /* %typemap(arginit) ( const char* callback_data=NULL)  */
-  PyProgressData *psProgressInfo;
-  psProgressInfo = (PyProgressData *) CPLCalloc(1,sizeof(PyProgressData));
-  psProgressInfo->nLastReported = -1;
-  psProgressInfo->psPyCallback = NULL;
-  psProgressInfo->psPyCallbackData = NULL;
-  arg6 = psProgressInfo;
-  if (!PyArg_ParseTupleAndKeywords(args,kwargs,(char *)"OOOO|OOO:Transformer_TransformGeolocations",kwnames,&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_GDALTransformerInfoShadow, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Transformer_TransformGeolocations" "', argument " "1"" of type '" "GDALTransformerInfoShadow *""'"); 
-  }
-  arg1 = reinterpret_cast< GDALTransformerInfoShadow * >(argp1);
-  res2 = SWIG_ConvertPtr(obj1, &argp2,SWIGTYPE_p_GDALRasterBandShadow, 0 |  0 );
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "Transformer_TransformGeolocations" "', argument " "2"" of type '" "GDALRasterBandShadow *""'"); 
-  }
-  arg2 = reinterpret_cast< GDALRasterBandShadow * >(argp2);
-  res3 = SWIG_ConvertPtr(obj2, &argp3,SWIGTYPE_p_GDALRasterBandShadow, 0 |  0 );
-  if (!SWIG_IsOK(res3)) {
-    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "Transformer_TransformGeolocations" "', argument " "3"" of type '" "GDALRasterBandShadow *""'"); 
-  }
-  arg3 = reinterpret_cast< GDALRasterBandShadow * >(argp3);
-  res4 = SWIG_ConvertPtr(obj3, &argp4,SWIGTYPE_p_GDALRasterBandShadow, 0 |  0 );
-  if (!SWIG_IsOK(res4)) {
-    SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "Transformer_TransformGeolocations" "', argument " "4"" of type '" "GDALRasterBandShadow *""'"); 
-  }
-  arg4 = reinterpret_cast< GDALRasterBandShadow * >(argp4);
-  if (obj4) {
-    {
-      /* %typemap(in) (GDALProgressFunc callback = NULL) */
-      /* callback_func typemap */
-      if (obj4 && obj4 != Py_None ) {
-        void* cbfunction = NULL;
-        SWIG_ConvertPtr( obj4, 
-          (void**)&cbfunction,
-          SWIGTYPE_p_f_double_p_q_const__char_p_void__int,
-          SWIG_POINTER_EXCEPTION | 0 );
-        
-        if ( cbfunction == GDALTermProgress ) {
-          arg5 = GDALTermProgress;
-        } else {
-          if (!PyCallable_Check(obj4)) {
-            PyErr_SetString( PyExc_RuntimeError, 
-              "Object given is not a Python function" );
-            SWIG_fail;
-          }
-          psProgressInfo->psPyCallback = obj4;
-          arg5 = PyProgressProxy;
-        }
-        
-      }
-      
-    }
-  }
-  if (obj5) {
-    {
-      /* %typemap(in) ( void* callback_data=NULL)  */
-      psProgressInfo->psPyCallbackData = obj5 ;
-    }
-  }
-  if (obj6) {
-    {
-      /* %typemap(in) char **options */
-      /* Check if is a list (and reject strings, that are seen as sequence of characters)  */
-      if ( ! PySequence_Check(obj6) || PyUnicode_Check(obj6)
-  #if PY_VERSION_HEX < 0x03000000
-        || PyString_Check(obj6)
-  #endif
-        ) {
-        PyErr_SetString(PyExc_TypeError,"not a sequence");
-        SWIG_fail;
-      }
-      
-      int size = PySequence_Size(obj6);
-      for (int i = 0; i < size; i++) {
-        PyObject* pyObj = PySequence_GetItem(obj6,i);
-        if (PyUnicode_Check(pyObj))
-        {
-          char *pszStr;
-          Py_ssize_t nLen;
-          PyObject* pyUTF8Str = PyUnicode_AsUTF8String(pyObj);
-#if PY_VERSION_HEX >= 0x03000000
-          PyBytes_AsStringAndSize(pyUTF8Str, &pszStr, &nLen);
-#else
-          PyString_AsStringAndSize(pyUTF8Str, &pszStr, &nLen);
-#endif
-          arg7 = CSLAddString( arg7, pszStr );
-          Py_XDECREF(pyUTF8Str);
-        }
-#if PY_VERSION_HEX >= 0x03000000
-        else if (PyBytes_Check(pyObj))
-        arg7 = CSLAddString( arg7, PyBytes_AsString(pyObj) );
-#else
-        else if (PyString_Check(pyObj))
-        arg7 = CSLAddString( arg7, PyString_AsString(pyObj) );
-#endif
-        else
-        {
-          Py_DECREF(pyObj);
-          PyErr_SetString(PyExc_TypeError,"sequence must contain strings");
-          SWIG_fail;
-        }
-        Py_DECREF(pyObj);
-      }
-    }
-  }
-  {
-    if (!arg2) {
-      SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-    }
-  }
-  {
-    if (!arg3) {
-      SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-    }
-  }
-  {
-    if (!arg4) {
-      SWIG_exception(SWIG_ValueError,"Received a NULL pointer.");
-    }
-  }
-  {
-    if ( bUseExceptions ) {
-      CPLErrorReset();
-    }
-    result = (int)GDALTransformerInfoShadow_TransformGeolocations(arg1,arg2,arg3,arg4,arg5,arg6,arg7);
-    if ( bUseExceptions ) {
-      CPLErr eclass = CPLGetLastErrorType();
-      if ( eclass == CE_Failure || eclass == CE_Fatal ) {
-        SWIG_exception( SWIG_RuntimeError, CPLGetLastErrorMsg() );
-      }
-    }
-  }
-  resultobj = SWIG_From_int(static_cast< int >(result));
-  {
-    /* %typemap(freearg) ( void* callback_data=NULL)  */
-    
-    CPLFree(psProgressInfo);
-    
-  }
-  {
-    /* %typemap(freearg) char **options */
-    CSLDestroy( arg7 );
-  }
-  return resultobj;
-fail:
-  {
-    /* %typemap(freearg) ( void* callback_data=NULL)  */
-    
-    CPLFree(psProgressInfo);
-    
-  }
-  {
-    /* %typemap(freearg) char **options */
-    CSLDestroy( arg7 );
   }
   return NULL;
 }
@@ -21328,12 +20743,8 @@ SWIGINTERN PyObject *_wrap_IdentifyDriver(PyObject *SWIGUNUSEDPARM(self), PyObje
   if (obj1) {
     {
       /* %typemap(in) char **options */
-      /* Check if is a list (and reject strings, that are seen as sequence of characters)  */
-      if ( ! PySequence_Check(obj1) || PyUnicode_Check(obj1)
-  #if PY_VERSION_HEX < 0x03000000
-        || PyString_Check(obj1)
-  #endif
-        ) {
+      /* Check if is a list */
+      if ( ! PySequence_Check(obj1)) {
         PyErr_SetString(PyExc_TypeError,"not a sequence");
         SWIG_fail;
       }
@@ -21419,12 +20830,8 @@ SWIGINTERN PyObject *_wrap_GeneralCmdLineProcessor(PyObject *SWIGUNUSEDPARM(self
   if (!PyArg_ParseTuple(args,(char *)"O|O:GeneralCmdLineProcessor",&obj0,&obj1)) SWIG_fail;
   {
     /* %typemap(in) char **options */
-    /* Check if is a list (and reject strings, that are seen as sequence of characters)  */
-    if ( ! PySequence_Check(obj0) || PyUnicode_Check(obj0)
-  #if PY_VERSION_HEX < 0x03000000
-      || PyString_Check(obj0)
-  #endif
-      ) {
+    /* Check if is a list */
+    if ( ! PySequence_Check(obj0)) {
       PyErr_SetString(PyExc_TypeError,"not a sequence");
       SWIG_fail;
     }
@@ -21518,12 +20925,11 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"DontUseExceptions", _wrap_DontUseExceptions, METH_VARARGS, (char *)"DontUseExceptions()"},
 	 { (char *)"VSIFReadL", _wrap_VSIFReadL, METH_VARARGS, (char *)"VSIFReadL(int nMembSize, int nMembCount, VSILFILE fp) -> int"},
 	 { (char *)"Debug", _wrap_Debug, METH_VARARGS, (char *)"Debug(char msg_class, char message)"},
-	 { (char *)"SetErrorHandler", _wrap_SetErrorHandler, METH_VARARGS, (char *)"SetErrorHandler(char pszCallbackName = None) -> CPLErr"},
-	 { (char *)"PushErrorHandler", _wrap_PushErrorHandler, METH_VARARGS, (char *)"PushErrorHandler(CPLErrorHandler pfnErrorHandler = None) -> CPLErr"},
 	 { (char *)"Error", _wrap_Error, METH_VARARGS, (char *)"Error(CPLErr msg_class = CE_Failure, int err_code = 0, char msg = \"error\")"},
-	 { (char *)"GOA2GetAuthorizationURL", _wrap_GOA2GetAuthorizationURL, METH_VARARGS, (char *)"GOA2GetAuthorizationURL(char pszScope) -> retStringAndCPLFree"},
-	 { (char *)"GOA2GetRefreshToken", _wrap_GOA2GetRefreshToken, METH_VARARGS, (char *)"GOA2GetRefreshToken(char pszAuthToken, char pszScope) -> retStringAndCPLFree"},
-	 { (char *)"GOA2GetAccessToken", _wrap_GOA2GetAccessToken, METH_VARARGS, (char *)"GOA2GetAccessToken(char pszRefreshToken, char pszScope) -> retStringAndCPLFree"},
+	 { (char *)"PushErrorHandler", _wrap_PushErrorHandler, METH_VARARGS, (char *)"\n"
+		"PushErrorHandler(char pszCallbackName = None) -> CPLErr\n"
+		"PushErrorHandler(CPLErrorHandler arg0)\n"
+		""},
 	 { (char *)"PopErrorHandler", _wrap_PopErrorHandler, METH_VARARGS, (char *)"PopErrorHandler()"},
 	 { (char *)"ErrorReset", _wrap_ErrorReset, METH_VARARGS, (char *)"ErrorReset()"},
 	 { (char *)"EscapeString", (PyCFunction) _wrap_EscapeString, METH_VARARGS | METH_KEYWORDS, (char *)"EscapeString(int len, int scheme = CPLES_SQL) -> retStringAndCPLFree"},
@@ -21535,7 +20941,6 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"FinderClean", _wrap_FinderClean, METH_VARARGS, (char *)"FinderClean()"},
 	 { (char *)"FindFile", _wrap_FindFile, METH_VARARGS, (char *)"FindFile(char pszClass, char utf8_path) -> char"},
 	 { (char *)"ReadDir", _wrap_ReadDir, METH_VARARGS, (char *)"ReadDir(char utf8_path) -> char"},
-	 { (char *)"ReadDirRecursive", _wrap_ReadDirRecursive, METH_VARARGS, (char *)"ReadDirRecursive(char utf8_path) -> char"},
 	 { (char *)"SetConfigOption", _wrap_SetConfigOption, METH_VARARGS, (char *)"SetConfigOption(char pszKey, char pszValue)"},
 	 { (char *)"GetConfigOption", _wrap_GetConfigOption, METH_VARARGS, (char *)"GetConfigOption(char pszKey, char pszDefault = None) -> char"},
 	 { (char *)"CPLBinaryToHex", _wrap_CPLBinaryToHex, METH_VARARGS, (char *)"CPLBinaryToHex(int nBytes) -> retStringAndCPLFree"},
@@ -21778,7 +21183,6 @@ static PyMethodDef SwigMethods[] = {
 		"    int buf_type = None, int buf_pixel_space = None, \n"
 		"    int buf_line_space = None) -> CPLErr\n"
 		""},
-	 { (char *)"Band_ReadBlock", (PyCFunction) _wrap_Band_ReadBlock, METH_VARARGS | METH_KEYWORDS, (char *)"Band_ReadBlock(Band self, int xoff, int yoff) -> CPLErr"},
 	 { (char *)"Band_swigregister", Band_swigregister, METH_VARARGS, NULL},
 	 { (char *)"new_ColorTable", (PyCFunction) _wrap_new_ColorTable, METH_VARARGS | METH_KEYWORDS, (char *)"new_ColorTable(GDALPaletteInterp palette = GPI_RGB) -> ColorTable"},
 	 { (char *)"delete_ColorTable", _wrap_delete_ColorTable, METH_VARARGS, (char *)"delete_ColorTable(ColorTable self)"},
@@ -21890,11 +21294,6 @@ static PyMethodDef SwigMethods[] = {
 		"    double z = 0.0) -> int\n"
 		""},
 	 { (char *)"Transformer_TransformPoints", _wrap_Transformer_TransformPoints, METH_VARARGS, (char *)"Transformer_TransformPoints(Transformer self, int bDstToSrc, int nCount) -> int"},
-	 { (char *)"Transformer_TransformGeolocations", (PyCFunction) _wrap_Transformer_TransformGeolocations, METH_VARARGS | METH_KEYWORDS, (char *)"\n"
-		"Transformer_TransformGeolocations(Transformer self, Band xBand, Band yBand, Band zBand, \n"
-		"    GDALProgressFunc callback = None, void callback_data = None, \n"
-		"    char options = None) -> int\n"
-		""},
 	 { (char *)"Transformer_swigregister", Transformer_swigregister, METH_VARARGS, NULL},
 	 { (char *)"ApplyGeoTransform", _wrap_ApplyGeoTransform, METH_VARARGS, (char *)"ApplyGeoTransform(double padfGeoTransform, double dfPixel, double dfLine)"},
 	 { (char *)"InvGeoTransform", _wrap_InvGeoTransform, METH_VARARGS, (char *)"InvGeoTransform(double gt_in) -> int"},

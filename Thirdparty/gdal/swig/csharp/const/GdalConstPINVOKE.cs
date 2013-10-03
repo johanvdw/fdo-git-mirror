@@ -302,12 +302,6 @@ class GdalConstPINVOKE {
   [DllImport("gdalconst_wrap", EntryPoint="CSharp_GRA_Lanczos_get")]
   public static extern int GRA_Lanczos_get();
 
-  [DllImport("gdalconst_wrap", EntryPoint="CSharp_GRA_Average_get")]
-  public static extern int GRA_Average_get();
-
-  [DllImport("gdalconst_wrap", EntryPoint="CSharp_GRA_Mode_get")]
-  public static extern int GRA_Mode_get();
-
   [DllImport("gdalconst_wrap", EntryPoint="CSharp_GPI_Gray_get")]
   public static extern int GPI_Gray_get();
 
@@ -397,9 +391,6 @@ class GdalConstPINVOKE {
 
   [DllImport("gdalconst_wrap", EntryPoint="CSharp_GDAL_DMD_CREATIONDATATYPES_get")]
   public static extern string GDAL_DMD_CREATIONDATATYPES_get();
-
-  [DllImport("gdalconst_wrap", EntryPoint="CSharp_GDAL_DMD_SUBDATASETS_get")]
-  public static extern string GDAL_DMD_SUBDATASETS_get();
 
   [DllImport("gdalconst_wrap", EntryPoint="CSharp_GDAL_DCAP_CREATE_get")]
   public static extern string GDAL_DCAP_CREATE_get();

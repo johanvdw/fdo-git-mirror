@@ -135,7 +135,7 @@ if "%TYPEACTION%"=="install" goto install_files_sqlspatial
 echo %MSACTION% %TYPEBUILD% SQLServer Spatial Provider DLLs
 SET FDOACTIVEBUILD=%cd%\SQLServerSpatial%VCBEXTENSION%
 cscript //Nologo //job:prepare ../../preparebuilds.wsf
-msbuild SQLServerSpatial%VCBEXTENSION%_temp.sln /t:%MSACTION% /p:Configuration=%TYPEBUILD% /p:Platform=%TYPEPLATFORM% %EXTRA_MSBUILD_PROPERTIES% /nologo /consoleloggerparameters:NoSummary /maxcpucount:4
+msbuild SQLServerSpatial%VCBEXTENSION%_temp.sln /t:%MSACTION% /p:Configuration=%TYPEBUILD% /p:Platform=%TYPEPLATFORM% %EXTRA_MSBUILD_PROPERTIES% /nologo /consoleloggerparameters:NoSummary
 SET FDOERROR=%errorlevel%
 if exist SQLServerSpatial%VCBEXTENSION%_temp.sln del /Q /F SQLServerSpatial%VCBEXTENSION%_temp.sln
 if "%FDOERROR%"=="1" goto error
@@ -183,19 +183,13 @@ pushd ..\..\
 echo Creating SQLServer Spatial provider html and chm documentation
 if exist "Docs\HTML\SQLServerSpatial" rmdir /S /Q "Docs\HTML\SQLServerSpatial"
 if not exist "Docs\HTML\SQLServerSpatial" mkdir "Docs\HTML\SQLServerSpatial"
-copy ..\..\DocResources\geospatial.css Docs\HTML\SQLServerSpatial
 copy ..\..\DocResources\geospatial.js Docs\HTML\SQLServerSpatial
 copy ..\..\DocResources\osgeo.css Docs\HTML\SQLServerSpatial
-if exist ..\..\DocResources\comment.htm copy ..\..\DocResources\comment.htm Docs\HTML\SQLServerSpatial
-if exist ..\..\DocResources\comment.js copy ..\..\DocResources\comment.js Docs\HTML\SQLServerSpatial
 if exist Docs\SQLServerSpatial_Provider_API.chm attrib -r Docs\SQLServerSpatial_Provider_API.chm
 if exist "Docs\HTML\SQLServerSpatial_managed" rmdir /S /Q "Docs\HTML\SQLServerSpatial_managed"
 if not exist "Docs\HTML\SQLServerSpatial_managed" mkdir "Docs\HTML\SQLServerSpatial_managed"
-copy ..\..\DocResources\geospatial.css Docs\HTML\SQLServerSpatial_managed
 copy ..\..\DocResources\geospatial.js Docs\HTML\SQLServerSpatial_managed
 copy ..\..\DocResources\osgeo.css Docs\HTML\SQLServerSpatial_managed
-if exist ..\..\DocResources\comment.htm copy ..\..\DocResources\comment.htm Docs\HTML\SQLServer
-if exist ..\..\DocResources\comment.js copy ..\..\DocResources\comment.js Docs\HTML\SQLServer
 if exist Docs\SQLServerSpatial_Provider_API_managed.chm attrib -r Docs\SQLServerSpatial_Provider_API_managed.chm
 pushd Docs\doc_src
 doxygen Doxyfile_SQLServerSpatial

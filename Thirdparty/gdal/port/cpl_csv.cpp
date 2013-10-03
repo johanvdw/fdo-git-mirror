@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cpl_csv.cpp 25340 2012-12-21 20:30:21Z rouault $
+ * $Id: cpl_csv.cpp 21102 2010-11-08 20:47:38Z rouault $
  *
  * Project:  CPL - Common Portability Library
  * Purpose:  CSV (comma separated value) file access.
@@ -32,7 +32,7 @@
 #include "cpl_multiproc.h"
 #include "gdal_csv.h"
 
-CPL_CVSID("$Id: cpl_csv.cpp 25340 2012-12-21 20:30:21Z rouault $");
+CPL_CVSID("$Id: cpl_csv.cpp 21102 2010-11-08 20:47:38Z rouault $");
 
 /* ==================================================================== */
 /*      The CSVTable is a persistant set of info about an open CSV      */
@@ -120,7 +120,7 @@ static CSVTable *CSVAccess( const char * pszFilename )
              * Eventually we should consider promoting to the front of
              * the list to accelerate frequently accessed tables.
              */
-
+            
             return( psTable );
         }
     }
@@ -1149,7 +1149,7 @@ const char * CSVFilename( const char *pszBasename )
 /**
  * Override CSV file search method.
  *
- * @param pfnNewHook The pointer to a function which will return the
+ * @param CSVFileOverride The pointer to a function which will return the
  * full path for a given filename.
   *
 
@@ -1197,3 +1197,4 @@ void SetCSVFilenameHook( const char *(*pfnNewHook)( const char * ) )
     pfnCSVFilenameHook = pfnNewHook;
 }
 CPL_C_END
+

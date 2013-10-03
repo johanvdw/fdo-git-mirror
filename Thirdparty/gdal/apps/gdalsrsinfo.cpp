@@ -34,11 +34,10 @@
 #include "ogr_spatialref.h"
 #include "ogr_api.h"
 #include "ogrsf_frmts.h"
-#include "commonutils.h"
 
 CPL_CVSID("$Id$");
 
-int FindSRS( const char *pszInput, OGRSpatialReference &oSRS );
+int FindSRS( const char *pszInput, OGRSpatialReference &oSRS, int bDebug );
 CPLErr PrintSRS( const OGRSpatialReference &oSRS, 
                  const char * pszOutputType, 
                  int bPretty, int bPrintSep );
@@ -51,7 +50,7 @@ int SearchCSVForWKT( const char *pszFileCSV, const char *pszTarget );
 /*                               Usage()                                */
 /************************************************************************/
 
-void Usage(const char* pszErrorMsg = NULL)
+void Usage()
 
 {
     printf( "\nUsage: gdalsrsinfo [options] srs_def\n"
@@ -70,10 +69,6 @@ void Usage(const char* pszErrorMsg = NULL)
             "                                        proj4, epsg,\n"
             "                                        wkt, wkt_simple, wkt_noct, wkt_esri,\n"
             "                                        mapinfo, xml }\n\n" ); 
-
-    if( pszErrorMsg != NULL )
-        fprintf(stderr, "\nFAILURE: %s\n", pszErrorMsg);
-
     exit( 1 );
 }
 
@@ -82,10 +77,6 @@ void Usage(const char* pszErrorMsg = NULL)
 /*                                main()                                */
 /************************************************************************/
 
-#define CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(nExtraArg) \
-    do { if (i + nExtraArg >= argc) \
-        Usage(CPLSPrintf("%s option requires %d argument(s)", argv[i], nExtraArg)); } while(0)
-
 int main( int argc, char ** argv ) 
 
 {
@@ -93,6 +84,7 @@ int main( int argc, char ** argv )
     int            bGotSRS = FALSE;
     int            bPretty = FALSE;
     int            bValidate = FALSE;
+    int            bDebug = FALSE;
     int            bFindEPSG = FALSE;
     int            nEPSGCode = -1;
     const char     *pszInput = NULL;
@@ -103,82 +95,19 @@ int main( int argc, char ** argv )
     if (! GDAL_CHECK_VERSION(argv[0]))
         exit(1);
 
-    EarlySetConfigOptions(argc, argv);
-
-/* -------------------------------------------------------------------- */
-/*      Register standard GDAL and OGR drivers.                         */
-/* -------------------------------------------------------------------- */
-    GDALAllRegister();
-#ifdef OGR_ENABLED
-    OGRRegisterAll();
-#endif
-
-/* -------------------------------------------------------------------- */
-/*      Process --formats option.                                       */
-/*      Code copied from gcore/gdal_misc.cpp and ogr/ogrutils.cpp.      */
-/*      This is not ideal, but is best for more descriptive output and  */
-/*      we don't want to call OGRGeneralCmdLineProcessor().             */
-/* -------------------------------------------------------------------- */ 
-   for( i = 1; i < argc; i++ )
-    {        
-        if( EQUAL(argv[i], "--formats") )
+    /* Must process GDAL_SKIP before GDALAllRegister(), but we can't call */
+    /* GDALGeneralCmdLineProcessor before it needs the drivers to be registered */
+    /* for the --format or --formats options */
+    for( i = 1; i < argc; i++ )
+    {
+        if( EQUAL(argv[i],"--config") && i + 2 < argc && EQUAL(argv[i + 1], "GDAL_SKIP") )
         {
-            int iDr;
-            
-            /* GDAL formats */
-            printf( "Supported Raster Formats:\n" );
-            for( iDr = 0; iDr < GDALGetDriverCount(); iDr++ )
-            {
-                GDALDriverH hDriver = GDALGetDriver(iDr);
-                const char *pszRWFlag, *pszVirtualIO;
-                
-                if( GDALGetMetadataItem( hDriver, GDAL_DCAP_CREATE, NULL ) )
-                    pszRWFlag = "rw+";
-                else if( GDALGetMetadataItem( hDriver, GDAL_DCAP_CREATECOPY, 
-                                              NULL ) )
-                    pszRWFlag = "rw";
-                else
-                    pszRWFlag = "ro";
-                
-                if( GDALGetMetadataItem( hDriver, GDAL_DCAP_VIRTUALIO, NULL) )
-                    pszVirtualIO = "v";
-                else
-                    pszVirtualIO = "";
-                
-                printf( "  %s (%s%s): %s\n",
-                        GDALGetDriverShortName( hDriver ),
-                        pszRWFlag, pszVirtualIO,
-                        GDALGetDriverLongName( hDriver ) );
-            }
+            CPLSetConfigOption( argv[i+1], argv[i+2] );
 
-            /* OGR formats */
-#ifdef OGR_ENABLED
-            printf( "\nSupported Vector Formats:\n" );
-            
-            OGRSFDriverRegistrar *poR = OGRSFDriverRegistrar::GetRegistrar();
-            
-            for( iDr = 0; iDr < poR->GetDriverCount(); iDr++ )
-            {
-                OGRSFDriver *poDriver = poR->GetDriver(iDr);
-                
-                if( poDriver->TestCapability( ODrCCreateDataSource ) )
-                    printf( "  -> \"%s\" (read/write)\n", 
-                            poDriver->GetName() );
-                else
-                    printf( "  -> \"%s\" (readonly)\n", 
-                            poDriver->GetName() );
-            }
-            
-#endif
-            exit(1);
-            
+            i += 2;
         }
     }
 
-/* -------------------------------------------------------------------- */
-/*      Register standard GDAL drivers, and process generic GDAL        */
-/*      command options.                                                */
-/* -------------------------------------------------------------------- */
     argc = GDALGeneralCmdLineProcessor( argc, &argv, 0 );
     if( argc < 1 )
         exit( -argc );
@@ -196,15 +125,12 @@ int main( int argc, char ** argv )
                    argv[0], GDAL_RELEASE_NAME, GDALVersionInfo("RELEASE_NAME"));
             return 0;
         }
-        else if( EQUAL(argv[i], "-h") || EQUAL(argv[i], "--help") )
+        else if( EQUAL(argv[i], "-h") )
             Usage();
         else if( EQUAL(argv[i], "-e") )
             bFindEPSG = TRUE;
-        else if( EQUAL(argv[i], "-o") )
-        {
-            CHECK_HAS_ENOUGH_ADDITIONAL_ARGS(1);
+        else if( EQUAL(argv[i], "-o") && i < argc - 1)
             pszOutputType = argv[++i];
-        }
         else if( EQUAL(argv[i], "-p") )
             bPretty = TRUE;
         else if( EQUAL(argv[i], "-V") )
@@ -212,7 +138,7 @@ int main( int argc, char ** argv )
         else if( argv[i][0] == '-' )
         {
             CSLDestroy( argv );
-            Usage(CPLSPrintf("Unkown option name '%s'", argv[i]));
+            Usage();
         }
         else  
             pszInput = argv[i];
@@ -220,11 +146,15 @@ int main( int argc, char ** argv )
 
     if ( pszInput == NULL ) {
         CSLDestroy( argv );
-        Usage("No input specified.");
+        Usage();
     }
 
+    /* Register drivers */
+    GDALAllRegister();
+    OGRRegisterAll();
+
     /* Search for SRS */
-    bGotSRS = FindSRS( pszInput, oSRS );
+    bGotSRS = FindSRS( pszInput, oSRS, bDebug );
 
     CPLDebug( "gdalsrsinfo", 
               "bGotSRS: %d bValidate: %d pszOutputType: %s bPretty: %d",
@@ -307,9 +237,7 @@ int main( int argc, char ** argv )
 
     /* cleanup anything left */
     GDALDestroyDriverManager();
-#ifdef OGR_ENABLED
     OGRCleanupAll();
-#endif
     CSLDestroy( argv );
 
     return 0;
@@ -320,7 +248,7 @@ int main( int argc, char ** argv )
 /*                                                                      */
 /*      Search for SRS from pszInput, update oSRS.                      */
 /************************************************************************/
-int FindSRS( const char *pszInput, OGRSpatialReference &oSRS )
+int FindSRS( const char *pszInput, OGRSpatialReference &oSRS, int bDebug )
 
 {
     int            bGotSRS = FALSE;
@@ -332,62 +260,59 @@ int FindSRS( const char *pszInput, OGRSpatialReference &oSRS )
     CPLErrorHandler oErrorHandler = NULL;
     int bIsFile = FALSE;
     OGRErr eErr = CE_None;
-    int bDebug  = FALSE;
-
+      
     /* temporarily supress error messages we may get from xOpen() */
-    bDebug = CSLTestBoolean(CPLGetConfigOption("CPL_DEBUG", "OFF"));
     if ( ! bDebug )
         oErrorHandler = CPLSetErrorHandler ( CPLQuietErrorHandler );
 
-    /* Test if argument is a file */
+    /* If argument is a file, try to open it with GDAL and OGROpen() */
     fp = VSIFOpenL( pszInput, "r" );
     if ( fp )  {
+        
         bIsFile = TRUE;
         VSIFCloseL( fp );
-        CPLDebug( "gdalsrsinfo", "argument is a file" );
-    } 
-       
-    /* try to open with GDAL */
-    CPLDebug( "gdalsrsinfo", "trying to open with GDAL" );
-    poGDALDS = (GDALDataset *) GDALOpen( pszInput, GA_ReadOnly );
-    if ( poGDALDS != NULL && poGDALDS->GetProjectionRef( ) != NULL ) {
-        pszProjection = (char *) poGDALDS->GetProjectionRef( );
-        if( oSRS.importFromWkt( &pszProjection ) == CE_None ) {
-            CPLDebug( "gdalsrsinfo", "got SRS from GDAL" );
-            bGotSRS = TRUE;
+        
+        /* try to open with GDAL */
+        CPLDebug( "gdalsrsinfo", "trying to open with GDAL" );
+        poGDALDS = (GDALDataset *) GDALOpen( pszInput, GA_ReadOnly );
+        if ( poGDALDS != NULL && poGDALDS->GetProjectionRef( ) != NULL ) {
+            pszProjection = (char *) poGDALDS->GetProjectionRef( );
+            if( oSRS.importFromWkt( &pszProjection ) == CE_None ) {
+                CPLDebug( "gdalsrsinfo", "got SRS from GDAL" );
+                bGotSRS = TRUE;
+            }
+            GDALClose( (GDALDatasetH) poGDALDS );
         }
-        GDALClose( (GDALDatasetH) poGDALDS );
         if ( ! bGotSRS ) 
             CPLDebug( "gdalsrsinfo", "did not open with GDAL" );
-    }    
-    
-#ifdef OGR_ENABLED
-    /* if unsuccessful, try to open with OGR */
-    if ( ! bGotSRS ) {
-        CPLDebug( "gdalsrsinfo", "trying to open with OGR" );
-        poOGRDS = OGRSFDriverRegistrar::Open( pszInput, FALSE, NULL );
-        if( poOGRDS != NULL ) {
-            poLayer = poOGRDS->GetLayer( 0 );
-            if ( poLayer != NULL ) {
-                OGRSpatialReference *poSRS = poLayer->GetSpatialRef( );
-                if ( poSRS != NULL ) {
-                    CPLDebug( "gdalsrsinfo", "got SRS from OGR" );
-                    bGotSRS = TRUE;
-                    OGRSpatialReference* poSRSClone = poSRS->Clone();
-                    oSRS = *poSRSClone;
-                    OGRSpatialReference::DestroySpatialReference( poSRSClone );
+        
+        /* if unsuccessful, try to open with OGR */
+        if ( ! bGotSRS ) {
+            CPLDebug( "gdalsrsinfo", "trying to open with OGR" );
+            poOGRDS = OGRSFDriverRegistrar::Open( pszInput, FALSE, NULL );
+            if( poOGRDS != NULL ) {
+                poLayer = poOGRDS->GetLayer( 0 );
+                if ( poLayer != NULL ) {
+                    OGRSpatialReference *poSRS = poLayer->GetSpatialRef( );
+                    if ( poSRS != NULL ) {
+                        CPLDebug( "gdalsrsinfo", "got SRS from OGR" );
+                        bGotSRS = TRUE;
+                        OGRSpatialReference* poSRSClone = poSRS->Clone();
+                        oSRS = *poSRSClone;
+                        OGRSpatialReference::DestroySpatialReference( poSRSClone );
+                    }
                 }
-            }
-            OGRDataSource::DestroyDataSource( poOGRDS );
-            poOGRDS = NULL;
-        } 
-        if ( ! bGotSRS ) 
-            CPLDebug( "gdalsrsinfo", "did not open with OGR" );
+                OGRDataSource::DestroyDataSource( poOGRDS );
+                poOGRDS = NULL;
+            } 
+            if ( ! bGotSRS ) 
+                CPLDebug( "gdalsrsinfo", "did not open with OGR" );
+         }
+        
     }
-#endif // OGR_ENABLED
-    
+ 
     /* Try ESRI file */
-    if ( ! bGotSRS && bIsFile && (strstr(pszInput,".prj") != NULL) ) {
+    if ( ! bGotSRS && (strstr(pszInput,".prj") != NULL) ) {
         CPLDebug( "gdalsrsinfo", 
                   "trying to get SRS from ESRI .prj file [%s]", pszInput );
 
@@ -429,7 +354,7 @@ int FindSRS( const char *pszInput, OGRSpatialReference &oSRS )
         }
     }
     
-    /* restore error messages */
+  /* restore error messages */
     if ( ! bDebug )
         CPLSetErrorHandler ( oErrorHandler );	
 

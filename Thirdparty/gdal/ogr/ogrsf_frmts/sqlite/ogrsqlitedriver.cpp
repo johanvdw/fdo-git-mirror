@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrsqlitedriver.cpp 25409 2012-12-31 11:51:10Z rouault $
+ * $Id: ogrsqlitedriver.cpp 23410 2011-11-21 22:00:11Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRSQLiteDriver class.
@@ -37,7 +37,7 @@
 #include "ogr_sqlite.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrsqlitedriver.cpp 25409 2012-12-31 11:51:10Z rouault $");
+CPL_CVSID("$Id: ogrsqlitedriver.cpp 23410 2011-11-21 22:00:11Z rouault $");
 
 /************************************************************************/
 /*                            ~OGRSQLiteDriver()                        */
@@ -116,35 +116,32 @@ OGRDataSource *OGRSQLiteDriver::Open( const char * pszFilename,
 /*      Verify that the target is a real file, and has an               */
 /*      appropriate magic string at the beginning.                      */
 /* -------------------------------------------------------------------- */
-    if( !EQUAL(pszFilename, ":memory:") )
-    {
-        char szHeader[16];
+    char szHeader[16];
 
 #ifdef HAVE_SQLITE_VFS
-        VSILFILE *fpDB;
-        fpDB = VSIFOpenL( pszFilename, "rb" );
-        if( fpDB == NULL )
-            return NULL;
-        
-        if( VSIFReadL( szHeader, 1, 16, fpDB ) != 16 )
-            memset( szHeader, 0, 16 );
-        
-        VSIFCloseL( fpDB );
+    VSILFILE *fpDB;
+    fpDB = VSIFOpenL( pszFilename, "rb" );
+    if( fpDB == NULL )
+        return NULL;
+    
+    if( VSIFReadL( szHeader, 1, 16, fpDB ) != 16 )
+        memset( szHeader, 0, 16 );
+    
+    VSIFCloseL( fpDB );
 #else
-        FILE *fpDB;
-        fpDB = VSIFOpen( pszFilename, "rb" );
-        if( fpDB == NULL )
-            return NULL;
+    FILE *fpDB;
+    fpDB = VSIFOpen( pszFilename, "rb" );
+    if( fpDB == NULL )
+        return NULL;
 
-        if( VSIFRead( szHeader, 1, 16, fpDB ) != 16 )
-            memset( szHeader, 0, 16 );
+    if( VSIFRead( szHeader, 1, 16, fpDB ) != 16 )
+        memset( szHeader, 0, 16 );
 
-        VSIFClose( fpDB );
+    VSIFClose( fpDB );
 #endif
     
-        if( strncmp( szHeader, "SQLite format 3", 15 ) != 0 )
-            return NULL;
-    }
+    if( strncmp( szHeader, "SQLite format 3", 15 ) != 0 )
+        return NULL;
 
 /* -------------------------------------------------------------------- */
 /*      We think this is really an SQLite database, go ahead and try    */

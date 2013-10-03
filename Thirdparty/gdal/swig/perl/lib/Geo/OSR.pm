@@ -56,7 +56,6 @@ package Geo::OSR;
 *GetProjectionMethods = *Geo::OSRc::GetProjectionMethods;
 *GetProjectionMethodParameterList = *Geo::OSRc::GetProjectionMethodParameterList;
 *GetProjectionMethodParamInfo = *Geo::OSRc::GetProjectionMethodParamInfo;
-*CreateCoordinateTransformation = *Geo::OSRc::CreateCoordinateTransformation;
 
 ############# Class : Geo::OSR::SpatialReference ##############
 
@@ -183,7 +182,6 @@ sub DESTROY {
 *ImportFromXML = *Geo::OSRc::SpatialReference_ImportFromXML;
 *ImportFromERM = *Geo::OSRc::SpatialReference_ImportFromERM;
 *ImportFromMICoordSys = *Geo::OSRc::SpatialReference_ImportFromMICoordSys;
-*ImportFromOzi = *Geo::OSRc::SpatialReference_ImportFromOzi;
 *ExportToWkt = *Geo::OSRc::SpatialReference_ExportToWkt;
 *ExportToPrettyWkt = *Geo::OSRc::SpatialReference_ExportToPrettyWkt;
 *ExportToProj4 = *Geo::OSRc::SpatialReference_ExportToProj4;
@@ -275,7 +273,6 @@ package Geo::OSR;
 *SRS_PT_GOODE_HOMOLOSINE = *Geo::OSRc::SRS_PT_GOODE_HOMOLOSINE;
 *SRS_PT_IGH = *Geo::OSRc::SRS_PT_IGH;
 *SRS_PT_GNOMONIC = *Geo::OSRc::SRS_PT_GNOMONIC;
-*SRS_PT_HOTINE_OBLIQUE_MERCATOR_AZIMUTH_CENTER = *Geo::OSRc::SRS_PT_HOTINE_OBLIQUE_MERCATOR_AZIMUTH_CENTER;
 *SRS_PT_HOTINE_OBLIQUE_MERCATOR = *Geo::OSRc::SRS_PT_HOTINE_OBLIQUE_MERCATOR;
 *SRS_PT_HOTINE_OBLIQUE_MERCATOR_TWO_POINT_NATURAL_ORIGIN = *Geo::OSRc::SRS_PT_HOTINE_OBLIQUE_MERCATOR_TWO_POINT_NATURAL_ORIGIN;
 *SRS_PT_LABORDE_OBLIQUE_MERCATOR = *Geo::OSRc::SRS_PT_LABORDE_OBLIQUE_MERCATOR;
@@ -510,14 +507,13 @@ LONGITUDE_OF_2ND_POINT
 	} elsif ($param{MapInfoCS}) {
 	    ImportFromMICoordSys($self, $param{MapInfoCS} );
 	} else {
-	    croak "unrecognized import format '@_' for Geo::OSR::SpatialReference";
+	    croak "Unrecognized import format for Geo::OSR::SpatialReference.";
 	}
 	bless $self, $pkg if defined $self;
     }
     sub Export {
 	my $self = shift;
-	my $format;
-	$format = pop if @_ == 1;
+	my $format = pop if @_ == 1;
 	my %params = @_;
 	$format = $params{to} unless $format;
 	$format = $params{format} unless $format;
@@ -539,7 +535,7 @@ LONGITUDE_OF_2ND_POINT
 	} elsif ($format eq 'MICoordSys' or $format eq 'MapInfoCS') {
 	    return ExportToMICoordSys();
 	} else {
-	    croak "unrecognized export format '$format/@_' for Geo::OSR::SpatialReference.";
+	    croak "Unrecognized export format for Geo::OSR::SpatialReference.";
 	}
     }
     *AsText = *ExportToWkt;
@@ -565,12 +561,12 @@ LONGITUDE_OF_2ND_POINT
 	    my $c = exists $params{UnitConversionFactor} ? $params{UnitConversionFactor} : 0.0;
 	    SetStatePlane($self, $params{Zone}, $NAD83, $name, $c);
 	} elsif ($params{Parameter} and exists $params{Value}) {
-	    croak "unknown parameter '$params{Parameter}' in Geo::OSR::SpatialReference->Set" unless exists $PARAMETERS{$params{Parameter}};
+	    croak "unknown parameter: $params{Parameter}" unless exists $PARAMETERS{$params{Parameter}};
 	    $params{Normalized} ?
 		SetNormProjParm($self, $params{Parameter}, $params{Value}) :
 		SetProjParm($self, $params{Parameter}, $params{Value});
 	} elsif ($params{Projection}) {
-	    croak "unknown projection '$params{Projection}' in Geo::OSR::SpatialReference->Set" unless exists $PROJECTIONS{$params{Projection}};
+	    croak "unknown projection: $params{Projection}" unless exists $PROJECTIONS{$params{Projection}};
 	    if (not $params{Parameters}) {
 		SetProjection($self, $PROJECTIONS{$params{Projection}});
 	    } elsif ($params{Projection} eq 'ALBERS_CONIC_EQUAL_AREA' and $params{Parameters}) {
@@ -675,7 +671,7 @@ LONGITUDE_OF_2ND_POINT
 	    } elsif ($params{CoordinateSystem} and $params{HorizontalCS} and $params{VerticalCS}) {
 		SetCompoundCS($self, $params{CoordinateSystem}, $params{HorizontalCS}, $params{VerticalCS});
 	    } else {
-		croak "not enough information to set anything in a spatial reference object in Geo::OSR::SpatialReference->Set";
+		croak "Not enough information to set anything in a spatial reference object.";
 	    }
 	}
     }

@@ -53,8 +53,6 @@ swq_select::swq_select()
 
     order_specs = 0;
     order_defs = NULL;
-
-    poOtherSelect = NULL;
 }
 
 /************************************************************************/
@@ -116,9 +114,8 @@ swq_select::~swq_select()
         CPLFree( join_defs[i].secondary_field_name );
     }
     CPLFree( join_defs );
-
-    delete poOtherSelect;
 }
+
 
 /************************************************************************/
 /*                              preparse()                              */
@@ -131,6 +128,15 @@ CPLErr swq_select::preparse( const char *select_statement )
 
 {
 /* -------------------------------------------------------------------- */
+/*      Allocate a big field list.  It would be nice to make this       */
+/*      dynamic!                                                        */
+/* -------------------------------------------------------------------- */
+#define MAX_COLUMNS 250
+
+    column_defs = (swq_col_def *) CPLMalloc(sizeof(swq_col_def) * MAX_COLUMNS);
+    memset( column_defs, 0, sizeof(swq_col_def) * MAX_COLUMNS );
+
+/* -------------------------------------------------------------------- */
 /*      Prepare a parser context.                                       */
 /* -------------------------------------------------------------------- */
     swq_parse_context context;
@@ -138,8 +144,8 @@ CPLErr swq_select::preparse( const char *select_statement )
     context.pszInput = select_statement;
     context.pszNext = select_statement;
     context.nStartToken = SWQT_SELECT_START;
-    context.poCurSelect = this;
-
+    context.poSelect = this;
+    
 /* -------------------------------------------------------------------- */
 /*      Do the parse.                                                   */
 /* -------------------------------------------------------------------- */
@@ -149,37 +155,13 @@ CPLErr swq_select::preparse( const char *select_statement )
         return CE_Failure;
     }
 
-    postpreparse();
+/* -------------------------------------------------------------------- */
+/*      resize the columns list properly.                               */
+/* -------------------------------------------------------------------- */
+    column_defs = (swq_col_def *) 
+        CPLRealloc( column_defs, sizeof(swq_col_def) * result_columns );
 
     return CE_None;
-}
-
-/************************************************************************/
-/*                          postpreparse()                              */
-/************************************************************************/
-
-void swq_select::postpreparse()
-{
-/* -------------------------------------------------------------------- */
-/*      Reorder the joins in the order they appear in the SQL string.   */
-/* -------------------------------------------------------------------- */
-    int i;
-    for(i = 0; i < join_count / 2; i++)
-    {
-        swq_join_def sTmp;
-        memcpy(&sTmp, &join_defs[i], sizeof(swq_join_def));
-        memcpy(&join_defs[i], &join_defs[join_count - 1 - i], sizeof(swq_join_def));
-        memcpy(&join_defs[join_count - 1 - i], &sTmp, sizeof(swq_join_def));
-    }
-
-    /* We make that strong assumption in ogr_gensql */
-    for(i = 0; i < join_count; i++)
-    {
-        CPLAssert(join_defs[i].secondary_table == i + 1);
-    }
-
-    if( poOtherSelect != NULL)
-        poOtherSelect->postpreparse();
 }
 
 /************************************************************************/
@@ -536,15 +518,6 @@ void swq_select::PushJoin( int iSecondaryTable,
     join_defs[join_count-1].secondary_field = -1;
 }
 
-/************************************************************************/
-/*                             PushUnionAll()                           */
-/************************************************************************/
-
-void swq_select::PushUnionAll( swq_select* poOtherSelectIn )
-{
-    CPLAssert(poOtherSelect == NULL);
-    poOtherSelect = poOtherSelectIn;
-}
 
 /************************************************************************/
 /*                          expand_wildcard()                           */
@@ -917,7 +890,7 @@ CPLErr swq_select::parse( swq_field_list *field_list,
         {
             CPLError( CE_Failure, CPLE_AppDefined, 
                      "Unrecognised secondary field %s in JOIN clause..", 
-                     def->secondary_field_name );
+                     def->primary_field_name );
             return CE_Failure;
         }
         
@@ -926,7 +899,7 @@ CPLErr swq_select::parse( swq_field_list *field_list,
             CPLError( CE_Failure, CPLE_AppDefined, 
                      "Currently the secondary key must come from the secondary table\n"
                      "listed in the JOIN.  %s is not from table %s..",
-                     def->secondary_field_name,
+                     def->primary_field_name,
                      table_defs[def->secondary_table].table_name);
             return CE_Failure;
         }
@@ -963,3 +936,4 @@ CPLErr swq_select::parse( swq_field_list *field_list,
     
     return CE_None;
 }
+

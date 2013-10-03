@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gxf_ogcwkt.c 25164 2012-10-20 13:42:32Z rouault $
+ * $Id: gxf_ogcwkt.c 16107 2009-01-18 09:43:05Z rouault $
  *
  * Project:  GXF Reader
  * Purpose:  Handle GXF to OGC WKT projection transformation.
@@ -29,7 +29,7 @@
 
 #include "gxfopen.h"
 
-CPL_CVSID("$Id: gxf_ogcwkt.c 25164 2012-10-20 13:42:32Z rouault $");
+CPL_CVSID("$Id: gxf_ogcwkt.c 16107 2009-01-18 09:43:05Z rouault $");
 
 /* -------------------------------------------------------------------- */
 /* the following #defines come from ogr_spatialref.h in the GDAL/OGR	*/
@@ -137,19 +137,14 @@ static void WKTMassageDatum( char ** ppszDatum )
 
 {
     int		i, j;
-    char	*pszDatum;
-
-    pszDatum = *ppszDatum;
-    if (pszDatum[0] == '\0')
-        return;
+    char	*pszDatum = *ppszDatum;
 
 /* -------------------------------------------------------------------- */
 /*      Translate non-alphanumeric values to underscores.               */
 /* -------------------------------------------------------------------- */
     for( i = 0; pszDatum[i] != '\0'; i++ )
     {
-        if( pszDatum[i] != '+'
-            && !(pszDatum[i] >= 'A' && pszDatum[i] <= 'Z')
+        if( !(pszDatum[i] >= 'A' && pszDatum[i] <= 'Z')
             && !(pszDatum[i] >= 'a' && pszDatum[i] <= 'z')
             && !(pszDatum[i] >= '0' && pszDatum[i] <= '9') )
         {
@@ -182,7 +177,7 @@ static void WKTMassageDatum( char ** ppszDatum )
         {
             CPLFree( *ppszDatum );
             *ppszDatum = CPLStrdup( papszDatumEquiv[i+1] );
-            return;
+            break;
         }
     }
 }
@@ -303,14 +298,8 @@ char *GXFGetMapProjectionAsOGCWKT( GXFHandle hGXF )
 /*      Parse the third line, looking for known projection methods.     */
 /* -------------------------------------------------------------------- */
     if( psGXF->papszMapProjection[2] != NULL )
-    {
-        /* We allow more than 80 characters if the projection parameters */
-        /* are on 2 lines as allowed by GXF 3 */
-        if( strlen(psGXF->papszMapProjection[2]) > 120 )
-            return( CPLStrdup( "" ) );
         papszMethods = CSLTokenizeStringComplex(psGXF->papszMapProjection[2],
                                                 ",", TRUE, TRUE );
-    }
 
 #ifdef DBMALLOC
     malloc_chain_check(1);
@@ -545,9 +534,6 @@ char *GXFGetMapProjectionAsOGCWKT( GXFHandle hGXF )
 /* -------------------------------------------------------------------- */
     if( psGXF->pszUnitName != NULL && strlen(szProjection) > 0 )
     {
-        if( strlen(psGXF->pszUnitName) > 80 )
-            return CPLStrdup("");
-
         sprintf( szProjection+strlen(szProjection),
                  ",UNIT[\"%s\",%.15g]",
                  psGXF->pszUnitName, psGXF->dfUnitToMeter );
@@ -561,9 +547,6 @@ char *GXFGetMapProjectionAsOGCWKT( GXFHandle hGXF )
     if( CSLCount(psGXF->papszMapProjection) > 1 )
     {
         char	**papszTokens;
-        
-        if( strlen(psGXF->papszMapProjection[1]) > 80 )
-            return CPLStrdup("");
         
         papszTokens = CSLTokenizeStringComplex(psGXF->papszMapProjection[1],
                                                ",", TRUE, TRUE );
@@ -609,18 +592,12 @@ char *GXFGetMapProjectionAsOGCWKT( GXFHandle hGXF )
         
         CSLDestroy( papszTokens );
     }
-    
-    CPLAssert(strlen(szProjection) < sizeof(szProjection));
-    CPLAssert(strlen(szGCS) < sizeof(szGCS));
 
 /* -------------------------------------------------------------------- */
 /*      Put this all together into a full projection.                   */
 /* -------------------------------------------------------------------- */
     if( strlen(szProjection) > 0 )
     {
-        if( strlen(psGXF->papszMapProjection[0]) > 80 )
-            return CPLStrdup("");
-
         if( psGXF->papszMapProjection[0][0] == '"' )
             sprintf( szWKT,
                      "PROJCS[%s,%s,%s]",

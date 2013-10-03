@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrpgdumpdriver.cpp 24950 2012-09-22 13:54:36Z rouault $
+ * $Id: ogrpgdumpdriver.cpp 23022 2011-09-01 19:10:17Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Implements OGRPGDumpDriver class.
@@ -30,7 +30,7 @@
 #include "ogr_pgdump.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: ogrpgdumpdriver.cpp 24950 2012-09-22 13:54:36Z rouault $");
+CPL_CVSID("$Id: ogrpgdumpdriver.cpp 23022 2011-09-01 19:10:17Z rouault $");
 
 /************************************************************************/
 /*                         ~OGRPGDumpDriver()                           */

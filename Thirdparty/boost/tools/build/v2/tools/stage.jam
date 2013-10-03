@@ -2,21 +2,21 @@
 # Copyright 2005, 2006 Rene Rivera
 # Copyright 2002, 2003, 2004, 2005, 2006 Vladimir Prus
 # Distributed under the Boost Software License, Version 1.0.
-# (See accompanying file LICENSE_1_0.txt or copy at
-# http://www.boost.org/LICENSE_1_0.txt)
+# (See accompanying file LICENSE_1_0.txt or http://www.boost.org/LICENSE_1_0.txt)
 
 # This module defines the 'install' rule, used to copy a set of targets to a
 # single location.
 
-import "class" : new ;
-import feature ;
-import generators ;
-import path ;
-import project ;
 import targets ;
+import "class" : new ;
+import errors ;
 import type ;
-import types/register ;
+import generators ;
+import feature ;
+import project ;
 import virtual-target ;
+import path ;
+import types/register ;
 
 
 feature.feature <install-dependencies> : off on : incidental      ;
@@ -31,23 +31,19 @@ feature.feature <install-no-version-symlinks> : on : optional incidental ;
 
 class install-target-class : basic-target
 {
-    import "class" : new ;
     import feature ;
+    import project ;
+    import type ;
+    import errors ;
     import generators ;
     import path ;
-    import project ;
+    import stage ;
+    import "class" : new ;
     import property ;
     import property-set ;
-    import stage ;
-    import type ;
 
-    rule __init__ ( name-and-dir : project : sources * : requirements * :
-        default-build * : usage-requirements * )
+    rule __init__ ( name-and-dir : project : sources * : requirements * : default-build * )
     {
-        # The usage-requirements specified here are ignored but are taken as a
-        # parameter to have this metatarget class have the same standard
-        # instantiation interface as all the other Boost Build metatarget
-        # classes.
         basic-target.__init__ $(name-and-dir) : $(project) : $(sources) :
             $(requirements) : $(default-build) ;
     }
@@ -144,9 +140,8 @@ class install-target-class : basic-target
 
         if $(ename) && $(source-targets[2])
         {
-            import errors : error : $(__name__) : errors.error ;
-            errors.error When <name> property is used "in" 'install', only one
-                source is allowed. ;
+            errors.error "When <name> property is used in 'install', only one"
+                "source is allowed" ;
         }
 
         local result ;
@@ -164,9 +159,7 @@ class install-target-class : basic-target
             {
                 if $(ename)
                 {
-                    import errors : error : $(__name__) : errors.error ;
-                    errors.error In 'install': <name> property specified with
-                        target that requires relinking. ;
+                    errors.error "In 'install': <name> property specified with target that requires relinking." ;
                 }
                 else
                 {
@@ -183,9 +176,7 @@ class install-target-class : basic-target
 
             if ! $(staged-targets)
             {
-                import errors : error : $(__name__) : errors.error ;
-                errors.error Unable to generate staged version of
-                    [ $(source).str ] ;
+                errors.error "Unable to generate staged version of " [ $(source).str ] ;
             }
 
             for t in $(staged-targets)
@@ -235,8 +226,8 @@ class install-target-class : basic-target
             }
             else if ! $(included-types)
             {
-                # Do not install typeless targets if there is an explicit list
-                # of allowed types.
+                # Don't install typeless target if there is an explicit list of
+                # allowed types.
                 result += $(r) ;
             }
         }
@@ -256,23 +247,20 @@ class install-target-class : basic-target
         }
         s = [ sequence.unique $(s) ] ;
 
-        local result = [ new set ] ;
-        $(result).add $(targets) ;
-
+        local result = $(targets) ;
         for local i in $(s)
         {
-            $(i).all-referenced-targets $(result) ;
+            result += [ $(i).all-referenced-targets ] ;
         }
         local result2 ;
-        for local r in [ $(result).list ]
+        for local r in $(result)
         {
             if $(r:G) != <use>
             {
                 result2 += $(r:G=) ;
             }
         }
-        DELETE_MODULE $(result) ;
-        return [ sequence.unique $(result2) ] ;
+        result = [ sequence.unique $(result2) ] ;
     }
 
     # Returns true iff 'type' is subtype of some element of 'types-to-include'.
@@ -333,9 +321,8 @@ rule copy-file ( project name ? : source : properties )
 rule symlink ( name : project : source : properties )
 {
     local a = [ new action $(source) : symlink.ln : $(properties) ] ;
-    local t = [ new file-target $(name) exact : [ $(source).type ] : $(project)
-        : $(a) ] ;
-    return [ virtual-target.register $(t) ] ;
+    return [ new file-target $(name) exact : [ $(source).type ] : $(project) :
+        $(a) ] ;
 }
 
 
@@ -367,25 +354,18 @@ class installed-exe-generator : generator
 
     rule run ( project name ? : property-set : source : multiple ? )
     {
-        local stage-rule = stage.copy-file ;
-
-        if ! [ $(property-set).get <os> ] in NT CYGWIN &&
-            ! [ $(property-set).get <target-os> ] in windows cygwin
+        if [ $(property-set).get <os> ] in NT CYGWIN ||
+            [ $(property-set).get <target-os> ] in windows cygwin
         {
-            # If dll-path properties have been changed for the stage target,
-            # relink instead of copying.
-            local a = [ $(source).action ] ;
-            local p = [ $(a).properties ] ;
-            local original = [ $(p).get <dll-path> ] ;
-            local current = [ $(property-set).get <dll-path> ] ;
-
-            if $(current) != $(original)
-            {
-                stage-rule = stage.relink-file ;
-            }
+            # Relinking is never needed on NT.
+            return [ stage.copy-file $(project)
+              : $(source) : $(property-set) ] ;
         }
-
-        return [ $(stage-rule) $(project) : $(source) : $(property-set) ] ;
+        else
+        {
+            return [ stage.relink-file $(project)
+              : $(source) : $(property-set) ] ;
+        }
     }
 }
 
@@ -407,8 +387,8 @@ class installed-shared-lib-generator : generator
 
     rule __init__ ( )
     {
-        generator.__init__ install-shared-lib : SHARED_LIB :
-            INSTALLED_SHARED_LIB ;
+        generator.__init__ install-shared-lib : SHARED_LIB
+          : INSTALLED_SHARED_LIB ;
     }
 
     rule run ( project name ? : property-set : source : multiple ? )
@@ -455,9 +435,8 @@ class installed-shared-lib-generator : generator
             # If the name is in the form NNN.XXX.YYY.ZZZ, where all 'X', 'Y' and
             # 'Z' are numbers, we need to create NNN.XXX and NNN.XXX.YYY
             # symbolic links.
-            local m = [ MATCH
-                (.*)\\.([0123456789]+)\\.([0123456789]+)\\.([0123456789]+)$ :
-                [ $(copied).name ] ] ;
+            local m = [ MATCH (.*)\\.([0123456789]+)\\.([0123456789]+)\\.([0123456789]+)$
+                : [ $(copied).name ] ] ;
             if $(m)
             {
                 # Symlink without version at all is used to make
@@ -470,15 +449,15 @@ class installed-shared-lib-generator : generator
                 # libfoo.N. That happens when the library makes some binary
                 # compatibility guarantees. If not, it is possible to skip those
                 # symlinks.
-                local suppress = [ $(property-set).get
-                    <install-no-version-symlinks> ] ;
+                local suppress =
+                    [ $(property-set).get <install-no-version-symlinks> ] ;
 
                 if $(suppress) != "on"
                 {
-                    result += [ stage.symlink $(m[1]).$(m[2]) : $(project) :
-                        $(copied) : $(property-set) ] ;
-                    result += [ stage.symlink $(m[1]).$(m[2]).$(m[3]) :
-                        $(project) : $(copied) : $(property-set) ] ;
+                    result += [ stage.symlink $(m[1]).$(m[2]) : $(project)
+                      : $(copied) : $(property-set) ] ;
+                    result += [ stage.symlink $(m[1]).$(m[2]).$(m[3])  : $(project)
+                      : $(copied) : $(property-set) ] ;
                 }
             }
 
@@ -505,13 +484,16 @@ rule install ( name : sources * : requirements * : default-build * )
 
     if <tag> in $(requirements:G)
     {
-        import errors ;
-        errors.user-error The <tag> property is not allowed for the 'install'
-            rule. ;
+        errors.user-error
+            "The <tag> property is not allowed for the 'install' rule" ;
     }
 
-    targets.create-metatarget install-target-class : $(project) : $(name) :
-        $(sources) : $(requirements) : $(default-build) ;
+    targets.main-target-alternative
+      [ new install-target-class $(name) : $(project)
+        : [ targets.main-target-sources $(sources) : $(name) ]
+        : [ targets.main-target-requirements $(requirements) : $(project) ]
+        : [ targets.main-target-default-build $(default-build) : $(project) ]
+      ] ;
 }
 
 

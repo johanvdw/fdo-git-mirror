@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hfafield.cpp 24044 2012-03-01 18:45:30Z warmerdam $
+ * $Id: hfafield.cpp 22913 2011-08-08 20:47:11Z rouault $
  *
  * Project:  Erdas Imagine (.img) Translator
  * Purpose:  Implementation of the HFAField class for managing information
@@ -30,7 +30,7 @@
 
 #include "hfa_p.h"
 
-CPL_CVSID("$Id: hfafield.cpp 24044 2012-03-01 18:45:30Z warmerdam $");
+CPL_CVSID("$Id: hfafield.cpp 22913 2011-08-08 20:47:11Z rouault $");
 
 #define MAX_ENTRY_REPORT   16
                            
@@ -1020,25 +1020,6 @@ HFAField::ExtractInstValue( const char * pszField, int nIndexValue,
           else if( nIndexValue == -1 )
           {
               dfDoubleRet = nIntRet = nRows;
-          }
-          else if( nBaseItemType == EPT_u1 )
-          {
-              if (nIndexValue*8 >= nDataSize)
-              {
-                  CPLError(CE_Failure, CPLE_AppDefined, "Buffer too small");
-                  return FALSE;
-              }
-
-              if( pabyData[nIndexValue>>3] & (1 << (nIndexValue & 0x7)) )
-              {
-                  dfDoubleRet = 1;
-                  nIntRet = 1;
-              }
-              else
-              {
-                  dfDoubleRet = 0.0;
-                  nIntRet = 0;
-              }
           }
           else if( nBaseItemType == EPT_u8 )
           {

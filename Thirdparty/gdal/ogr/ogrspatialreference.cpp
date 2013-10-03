@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrspatialreference.cpp 25627 2013-02-10 10:17:19Z rouault $
+ * $Id: ogrspatialreference.cpp 22974 2011-08-24 18:37:09Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  The OGRSpatialReference class.
@@ -33,7 +33,7 @@
 #include "cpl_http.h"
 #include "cpl_atomic_ops.h"
 
-CPL_CVSID("$Id: ogrspatialreference.cpp 25627 2013-02-10 10:17:19Z rouault $");
+CPL_CVSID("$Id: ogrspatialreference.cpp 22974 2011-08-24 18:37:09Z rouault $");
 
 // The current opinion is that WKT longitudes like central meridian
 // should be relative to greenwich, not the prime meridian in use. 
@@ -549,22 +549,6 @@ OGRSpatialReferenceH CPL_STDCALL OSRClone( OGRSpatialReferenceH hSRS )
     VALIDATE_POINTER1( hSRS, "OSRClone", NULL );
 
     return (OGRSpatialReferenceH) ((OGRSpatialReference *) hSRS)->Clone();
-}
-
-/************************************************************************/
-/*                            dumpReadable()                            */
-/*                                                                      */
-/*      Dump pretty wkt to stdout, mostly for debugging.                */
-/************************************************************************/
-
-void OGRSpatialReference::dumpReadable()
-
-{
-    char *pszPrettyWkt = NULL;
-
-    exportToPrettyWkt( &pszPrettyWkt, FALSE );
-    printf( "%s\n", pszPrettyWkt );
-    CPLFree( pszPrettyWkt );
 }
 
 /************************************************************************/
@@ -1992,11 +1976,6 @@ OGRErr OGRSpatialReference::SetFromUserInput( const char * pszDefinition )
         || EQUALN(pszDefinition,"urn:opengis:def:crs:",20))
         return importFromURN( pszDefinition );
 
-    if( EQUALN(pszDefinition,"http://opengis.net/def/crs",26)
-        || EQUALN(pszDefinition,"http://www.opengis.net/def/crs",30)
-        || EQUALN(pszDefinition,"www.opengis.net/def/crs",23))
-        return importFromCRSURL( pszDefinition );
-
     if( EQUALN(pszDefinition,"AUTO:",5) )
         return importFromWMSAUTO( pszDefinition );
 
@@ -2252,7 +2231,7 @@ OGRErr OGRSpatialReference::importFromURNPart(const char* pszAuthority,
 /*      Is this an EPSG code? Note that we import it with EPSG          */
 /*      preferred axis ordering for geographic coordinate systems!      */
 /* -------------------------------------------------------------------- */
-    if( EQUALN(pszAuthority,"EPSG",4) )
+    if( EQUALN(pszAuthority,"EPSG:",5) )
         return importFromEPSGA( atoi(pszCode) );
 
 /* -------------------------------------------------------------------- */
@@ -2264,7 +2243,7 @@ OGRErr OGRSpatialReference::importFromURNPart(const char* pszAuthority,
 /* -------------------------------------------------------------------- */
 /*      Is this an OGC code?                                            */
 /* -------------------------------------------------------------------- */
-    if( !EQUALN(pszAuthority,"OGC",3) )
+    if( !EQUALN(pszAuthority,"OGC:",4) )
     {
         CPLError( CE_Failure, CPLE_AppDefined,
                   "URN %s has unrecognised authority.",
@@ -2463,158 +2442,6 @@ OGRErr OGRSpatialReference::importFromURN( const char *pszURN )
     }
     else
         return eStatus;
-}
-
-/************************************************************************/
-/*                           importFromCRSURL()                         */
-/*                                                                      */
-/*      See OGC Best Practice document 11-135 for details.              */
-/************************************************************************/
-
-/**
- * \brief Initialize from OGC URL. 
- *
- * Initializes this spatial reference from a coordinate system defined
- * by an OGC URL prefixed with "http://opengis.net/def/crs" per best practice 
- * paper 11-135.  Currently EPSG and OGC authority values are supported, 
- * including OGC auto codes, but not including CRS1 or CRS88 (NAVD88). 
- *
- * This method is also supported through SetFromUserInput() which can
- * normally be used for URLs.
- * 
- * @param pszURL the URL string. 
- *
- * @return OGRERR_NONE on success or an error code.
- */
-
-OGRErr OGRSpatialReference::importFromCRSURL( const char *pszURL )
-
-{
-    const char *pszCur;
-    
-    if( EQUALN(pszURL,"http://opengis.net/def/crs",26) )
-        pszCur = pszURL + 26;
-    else if( EQUALN(pszURL,"http://www.opengis.net/def/crs",30) )
-        pszCur = pszURL + 30;
-    else if( EQUALN(pszURL,"www.opengis.net/def/crs",23) )
-        pszCur = pszURL + 23;
-    else
-    {
-        CPLError( CE_Failure, CPLE_AppDefined, 
-                  "URL %s not a supported format.", pszURL );
-        return OGRERR_FAILURE;
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Clear any existing definition.                                  */
-/* -------------------------------------------------------------------- */
-    if( GetRoot() != NULL )
-    {
-        delete poRoot;
-        poRoot = NULL;
-    }
-
-    if( EQUALN(pszCur, "-compound?1=", 12) )
-    {
-/* -------------------------------------------------------------------- */
-/*      It's a compound CRS, of the form:                               */
-/*                                                                      */
-/*      http://opengis.net/def/crs-compound?1=URL1&2=URL2&3=URL3&..     */
-/* -------------------------------------------------------------------- */
-        pszCur += 12;
-        
-        // extract each component CRS URL
-        int iComponentUrl = 2;
-
-        CPLString osName = "";
-        Clear();
-        
-        while (iComponentUrl != -1)
-        {
-            char searchStr[5];
-            sprintf(searchStr, "&%d=", iComponentUrl);
-            
-            const char* pszUrlEnd = strstr(pszCur, searchStr);
-            
-            // figure out the next component URL
-            char* pszComponentUrl;
-            
-            if( pszUrlEnd )
-            {
-                size_t nLen = pszUrlEnd - pszCur;
-                pszComponentUrl = (char*) CPLMalloc(nLen + 1);
-                strncpy(pszComponentUrl, pszCur, nLen);
-                pszComponentUrl[nLen] = '\0';
-                
-                ++iComponentUrl;
-                pszCur += nLen + strlen(searchStr);
-            }
-            else
-            {
-                if( iComponentUrl == 2 )
-                {
-                    CPLError( CE_Failure, CPLE_AppDefined, 
-                              "Compound CRS URLs must have at least two component CRSs." );
-                    return OGRERR_FAILURE;
-                }
-                else
-                {
-                    pszComponentUrl = CPLStrdup(pszCur);
-                    // no more components
-                    iComponentUrl = -1;
-                }
-            }
-            
-            OGRSpatialReference oComponentSRS;
-            OGRErr eStatus = oComponentSRS.importFromCRSURL( pszComponentUrl );
-
-            CPLFree(pszComponentUrl);
-            pszComponentUrl = NULL;
-            
-            if( eStatus == OGRERR_NONE )
-            {
-                if( osName.length() != 0 )
-                {
-                  osName += " + ";
-                }
-                osName += oComponentSRS.GetRoot()->GetValue();
-                SetNode( "COMPD_CS", osName );
-                GetRoot()->AddChild( oComponentSRS.GetRoot()->Clone() );
-            }
-            else
-                return eStatus;
-        }
-        
-        
-        return OGRERR_NONE;
-    }
-    else
-    {
-/* -------------------------------------------------------------------- */
-/*      It's a normal CRS URL, of the form:                             */
-/*                                                                      */
-/*      http://opengis.net/def/crs/AUTHORITY/VERSION/CODE               */
-/* -------------------------------------------------------------------- */
-        ++pszCur;
-        const char *pszAuthority = pszCur;
-
-        // skip authority
-        while( *pszCur != '/' && *pszCur )
-            pszCur++;
-        if( *pszCur == '/' )
-            pszCur++;
-        
-
-        // skip version
-        while( *pszCur != '/' && *pszCur )
-            pszCur++;
-        if( *pszCur == '/' )
-            pszCur++;
-        
-        const char *pszCode = pszCur;
-        
-        return importFromURNPart( pszAuthority, pszCode, pszURL );
-    }
 }
 
 /************************************************************************/
@@ -3362,8 +3189,6 @@ OGRErr OSRSetProjection( OGRSpatialReferenceH hSRS,
                          const char * pszProjection )
 
 {
-    VALIDATE_POINTER1( hSRS, "OSRSetProjection", CE_Failure );
-
     return ((OGRSpatialReference *) hSRS)->SetProjection( pszProjection );
 }
 
@@ -4498,8 +4323,6 @@ OGRErr OSRSetGaussSchreiberTMercator( OGRSpatialReferenceH hSRS,
                                       double dfFalseNorthing )
 
 {
-    VALIDATE_POINTER1( hSRS, "OSRSetGaussSchreiberTMercator", CE_Failure );
-
     return ((OGRSpatialReference *) hSRS)->SetGaussSchreiberTMercator(
         dfCenterLat, dfCenterLong, dfScale,
         dfFalseEasting, dfFalseNorthing );
@@ -4542,84 +4365,11 @@ OGRErr OSRSetGnomonic( OGRSpatialReferenceH hSRS,
 }
 
 /************************************************************************/
-/*                              SetHOMAC()                              */
-/************************************************************************/
-
-/**
- * \brief Set an Hotine Oblique Mercator Azimuth Center projection using 
- * azimuth angle.
- *
- * This projection corresponds to EPSG projection method 9815, also 
- * sometimes known as hotine oblique mercator (variant B).
- *
- * This method does the same thing as the C function OSRSetHOMAC().
- *
- * @param dfCenterLat Latitude of the projection origin.
- * @param dfCenterLong Longitude of the projection origin.
- * @param dfAzimuth Azimuth, measured clockwise from North, of the projection
- * centerline.
- * @param dfRectToSkew ?.
- * @param dfScale Scale factor applies to the projection origin.
- * @param dfFalseEasting False easting.
- * @param dfFalseNorthing False northing.
- *
- * @return OGRERR_NONE on success.
- */ 
-
-OGRErr OGRSpatialReference::SetHOMAC( double dfCenterLat, double dfCenterLong,
-                                      double dfAzimuth, double dfRectToSkew,
-                                      double dfScale,
-                                      double dfFalseEasting,
-                                      double dfFalseNorthing )
-
-{
-    SetProjection( SRS_PT_HOTINE_OBLIQUE_MERCATOR_AZIMUTH_CENTER );
-    SetNormProjParm( SRS_PP_LATITUDE_OF_CENTER, dfCenterLat );
-    SetNormProjParm( SRS_PP_LONGITUDE_OF_CENTER, dfCenterLong );
-    SetNormProjParm( SRS_PP_AZIMUTH, dfAzimuth );
-    SetNormProjParm( SRS_PP_RECTIFIED_GRID_ANGLE, dfRectToSkew );
-    SetNormProjParm( SRS_PP_SCALE_FACTOR, dfScale );
-    SetNormProjParm( SRS_PP_FALSE_EASTING, dfFalseEasting );
-    SetNormProjParm( SRS_PP_FALSE_NORTHING, dfFalseNorthing );
-
-    return OGRERR_NONE;
-}
-
-/************************************************************************/
-/*                            OSRSetHOMAC()                             */
-/************************************************************************/
-
-/**
- * \brief Set an Oblique Mercator projection using azimuth angle.
- *
- * This is the same as the C++ method OGRSpatialReference::SetHOMAC()
- */
-OGRErr OSRSetHOMAC( OGRSpatialReferenceH hSRS, 
-                    double dfCenterLat, double dfCenterLong,
-                    double dfAzimuth, double dfRectToSkew, 
-                    double dfScale,
-                    double dfFalseEasting,
-                    double dfFalseNorthing )
-    
-{
-    VALIDATE_POINTER1( hSRS, "OSRSetHOMAC", CE_Failure );
-
-    return ((OGRSpatialReference *) hSRS)->SetHOMAC( 
-        dfCenterLat, dfCenterLong, 
-        dfAzimuth, dfRectToSkew, 
-        dfScale,
-        dfFalseEasting, dfFalseNorthing );
-}
-
-/************************************************************************/
 /*                               SetHOM()                               */
 /************************************************************************/
 
 /**
  * \brief Set a Hotine Oblique Mercator projection using azimuth angle.
- *
- * This projection corresponds to EPSG projection method 9812, also 
- * sometimes known as hotine oblique mercator (variant A)..
  *
  * This method does the same thing as the C function OSRSetHOM().
  *
@@ -7115,7 +6865,6 @@ void OSRCleanup( void )
 {
     CleanupESRIDatumMappingTable();
     CSVDeaccess( NULL );
-    OCTCleanupProjMutex();
 }
 
 /************************************************************************/

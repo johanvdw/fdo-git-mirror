@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: tigerpoint.cpp 23871 2012-02-02 03:24:07Z warmerdam $
+ * $Id: tigerpoint.cpp 22961 2011-08-20 17:09:59Z rouault $
  *
  * Project:  TIGER/Line Translator
  * Purpose:  Implements TigerPoint class.
@@ -30,7 +30,7 @@
 #include "ogr_tiger.h"
 #include "cpl_conv.h"
 
-CPL_CVSID("$Id: tigerpoint.cpp 23871 2012-02-02 03:24:07Z warmerdam $");
+CPL_CVSID("$Id: tigerpoint.cpp 22961 2011-08-20 17:09:59Z rouault $");
 
 /************************************************************************/
 /*                             TigerPoint()                             */
@@ -64,14 +64,14 @@ OGRFeature *TigerPoint::GetFeature( int nRecordId,
     if( fpPrimary == NULL )
         return NULL;
 
-    if( VSIFSeekL( fpPrimary, nRecordId * nRecordLength, SEEK_SET ) != 0 ) {
+    if( VSIFSeek( fpPrimary, nRecordId * nRecordLength, SEEK_SET ) != 0 ) {
         CPLError( CE_Failure, CPLE_FileIO,
                   "Failed to seek to %d of %sP",
                   nRecordId * nRecordLength, pszModule );
         return NULL;
     }
 
-    if( VSIFReadL( achRecord, psRTInfo->nRecordLength, 1, fpPrimary ) != 1 ) {
+    if( VSIFRead( achRecord, psRTInfo->nRecordLength, 1, fpPrimary ) != 1 ) {
         CPLError( CE_Failure, CPLE_FileIO,
                   "Failed to read record %d of %sP",
                   nRecordId, pszModule );

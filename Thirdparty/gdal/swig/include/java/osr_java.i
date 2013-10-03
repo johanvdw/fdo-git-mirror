@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: osr_java.i 25229 2012-11-16 19:06:58Z rouault $
+ * $Id: osr_java.i 21579 2011-01-24 21:57:24Z rouault $
  *
  * Name:     osr_java.i
  * Project:  GDAL SWIG Interface
@@ -158,12 +158,6 @@
 
   public double[] TransformPoint(double x, double y) {
     return TransformPoint(x, y, 0);
-  }
-
-  /* New in GDAL 1.10 */
-  public static CoordinateTransformation CreateCoordinateTransformation(SpatialReference src, SpatialReference dst)
-  {
-      return osr.CreateCoordinateTransformation(src, dst);
   }
 %}
     

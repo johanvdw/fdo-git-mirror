@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gxfdataset.cpp 25164 2012-10-20 13:42:32Z rouault $
+ * $Id: gxfdataset.cpp 22401 2011-05-18 22:20:45Z warmerdam $
  *
  * Project:  GXF Reader
  * Purpose:  GDAL binding for GXF reader.
@@ -30,7 +30,7 @@
 #include "gxfopen.h"
 #include "gdal_pam.h"
 
-CPL_CVSID("$Id: gxfdataset.cpp 25164 2012-10-20 13:42:32Z rouault $");
+CPL_CVSID("$Id: gxfdataset.cpp 22401 2011-05-18 22:20:45Z warmerdam $");
 
 #ifndef PI
 #  define PI 3.14159265358979323846
@@ -137,9 +137,7 @@ CPLErr GXFRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
 
     if (eDataType == GDT_Float32)
     {
-        padfBuffer = (double *) VSIMalloc2(sizeof(double), nBlockXSize);
-        if( padfBuffer == NULL )
-            return CE_Failure;
+        padfBuffer = (double *) CPLMalloc(sizeof(double) * nBlockXSize);
         eErr = GXFGetScanline( poGXF_DS->hGXF, nBlockYOff, padfBuffer );
         
         for( i = 0; i < nBlockXSize; i++ )
@@ -273,25 +271,22 @@ GDALDataset *GXFDataset::Open( GDALOpenInfo * poOpenInfo )
 /*      we also now verify that there is a #GRID keyword before         */
 /*      passing it off to GXFOpen().  We check in the first 50K.        */
 /* -------------------------------------------------------------------- */
-#define BIGBUFSIZE 50000
     int nBytesRead, bGotGrid = FALSE;
+    char szBigBuf[50000];
     FILE *fp;
 
     fp = VSIFOpen( poOpenInfo->pszFilename, "rb" );
     if( fp == NULL )
         return NULL;
 
-    char *pszBigBuf = (char *) CPLMalloc(BIGBUFSIZE);
-    nBytesRead = VSIFRead( pszBigBuf, 1, BIGBUFSIZE, fp );
+    nBytesRead = VSIFRead( szBigBuf, 1, sizeof(szBigBuf), fp );
     VSIFClose( fp );
 
     for( i = 0; i < nBytesRead - 5 && !bGotGrid; i++ )
     {
-        if( pszBigBuf[i] == '#' && EQUALN(pszBigBuf+i+1,"GRID",4) )
+        if( szBigBuf[i] == '#' && EQUALN(szBigBuf+i+1,"GRID",4) )
             bGotGrid = TRUE;
     }
-
-    CPLFree( pszBigBuf );
 
     if( !bGotGrid )
         return NULL;

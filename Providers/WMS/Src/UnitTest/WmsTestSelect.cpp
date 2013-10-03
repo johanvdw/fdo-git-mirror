@@ -318,7 +318,7 @@ void WmsTestSelect::testServer2 ()
     try
     {
 	    FdoPtr<FdoIConnection> conn = this->GetConnection ();
-	    conn->SetConnectionString (L"FeatureServer=http://www.bsc-eoc.org/cgi-bin/bsc_ows.asp");
+	    conn->SetConnectionString (L"FeatureServer=http://www.bsc-eoc.org/cgi-bin/bsc_ows.asp;DefaultImageHeight=400");
 	    CPPUNIT_ASSERT (FdoConnectionState_Open == conn->Open ());
 
 	    FdoPtr<FdoISelect> cmd = static_cast<FdoISelect *> (conn->CreateCommand (FdoCommandType_Select));
@@ -411,7 +411,7 @@ void WmsTestSelect::testServer3 ()
 	    CPPUNIT_ASSERT (FdoConnectionState_Open == conn->Open ());
 
 	    FdoPtr<FdoISelect> cmd = static_cast<FdoISelect *> (conn->CreateCommand (FdoCommandType_Select));
-		cmd->SetFeatureClassName (L"Foundation railrdl_1m");
+		cmd->SetFeatureClassName (L"Foundation bndtxt_1m");
 	    FdoPtr<FdoIFeatureReader> featReader = cmd->Execute ();
 
 		CPPUNIT_ASSERT (featReader->ReadNext ());
@@ -423,18 +423,19 @@ void WmsTestSelect::testServer3 ()
         FdoPtr<FdoIGeometry> geom = factory->CreateGeometryFromFgf (gba.p);
         FdoPtr<FdoIEnvelope> enve = geom->GetEnvelope ();
 
-        //CPPUNIT_ASSERT (enve->GetMinX() == -179.909469604492);
-        //CPPUNIT_ASSERT (enve->GetMinY() == -82.9724044799805);
-        //CPPUNIT_ASSERT (enve->GetMaxX() == 179.91194152832);
-        //CPPUNIT_ASSERT (enve->GetMaxY() == 83.61899566650389);
+        CPPUNIT_ASSERT (enve->GetMinX() == -179.909469604492);
+        CPPUNIT_ASSERT (enve->GetMinY() == -82.9724044799805);
+        CPPUNIT_ASSERT (enve->GetMaxX() == 179.91194152832);
+        CPPUNIT_ASSERT (enve->GetMaxY() == 83.61899566650389);
 
 		conn->Close();
 
-	    conn->SetConnectionString (L"FeatureServer=http://demo.cubewerx.com/demo/cubeserv/cubeserv.cgi?version=1.3.0");
+        // connect the same server with 1.1.0 version
+	    conn->SetConnectionString (L"FeatureServer=http://demo.cubewerx.com/demo/cubeserv/cubeserv.cgi?version=1.1.0");
 	    CPPUNIT_ASSERT (FdoConnectionState_Open == conn->Open ());
 
         cmd = static_cast<FdoISelect *> (conn->CreateCommand (FdoCommandType_Select));
-		cmd->SetFeatureClassName (L"Foundation roadl_1m");
+		cmd->SetFeatureClassName (L"Foundation bndtxt_1m");
 	    featReader = cmd->Execute ();
 
 		CPPUNIT_ASSERT (featReader->ReadNext ());
@@ -446,10 +447,10 @@ void WmsTestSelect::testServer3 ()
         geom = factory->CreateGeometryFromFgf (gba.p);
         enve = geom->GetEnvelope ();
 
-        //CPPUNIT_ASSERT (enve->GetMinX() == -179.909469604492);
-        //CPPUNIT_ASSERT (enve->GetMinY() == -82.9724044799805);
-        //CPPUNIT_ASSERT (enve->GetMaxX() == 179.91194152832);
-        //CPPUNIT_ASSERT (enve->GetMaxY() == 83.61899566650389);
+        CPPUNIT_ASSERT (enve->GetMinX() == -179.909469604492);
+        CPPUNIT_ASSERT (enve->GetMinY() == -82.9724044799805);
+        CPPUNIT_ASSERT (enve->GetMaxX() == 179.91194152832);
+        CPPUNIT_ASSERT (enve->GetMaxY() == 83.61899566650389);
     }
     catch (FdoException* e)
     {
@@ -861,7 +862,7 @@ void WmsTestSelect::testCubeServer ()
         FdoPtr<FdoIConnection> conn = this->GetConnection ();
         FdoPtr<FdoIConnectionInfo> info = conn->GetConnectionInfo();
         FdoPtr<FdoIConnectionPropertyDictionary> props = info->GetConnectionProperties();
-        props->SetProperty(L"FeatureServer", L"http://demo.cubewerx.com/demo/cubeserv/cubeserv.cgi?version=1.3.0");
+        props->SetProperty(L"FeatureServer", L"http://demo.cubewerx.com/demo/cubeserv/cubeserv.cgi");
         CPPUNIT_ASSERT (FdoConnectionState_Open == conn->Open ());
 
         FdoPtr<FdoIDescribeSchema> cmdDescribeSchema = static_cast<FdoIDescribeSchema *> (conn->CreateCommand (FdoCommandType_DescribeSchema));
@@ -880,7 +881,7 @@ void WmsTestSelect::testCubeServer ()
 #endif//_DEBUG
 
         FdoPtr<FdoISelect> cmdSelect = static_cast<FdoISelect*>(conn->CreateCommand(FdoCommandType_Select));
-        cmdSelect->SetFeatureClassName(L"Foundation treesa_1m");
+        cmdSelect->SetFeatureClassName(L"Foundation landicea_1m");
 
         FdoPtr<FdoIFeatureReader> featureReader = cmdSelect->Execute();
         FdoPtr<FdoClassDefinition> classDef2 = featureReader->GetClassDefinition();
@@ -915,7 +916,7 @@ void WmsTestSelect::testCubeServer ()
 
         CPPUNIT_ASSERT (FdoConnectionState_Open == conn->Open ());
         cmdSelect = static_cast<FdoISelect*>(conn->CreateCommand(FdoCommandType_Select));
-        cmdSelect->SetFeatureClassName(L"Trees");
+        cmdSelect->SetFeatureClassName(L"OceanSeas");
         featureReader = cmdSelect->Execute();
         while (featureReader->ReadNext ())
         {

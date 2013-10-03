@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2012, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2010, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -18,76 +18,41 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
+ * $Id: memdebug.c,v 1.68 2010-01-18 20:22:04 yangtse Exp $
  ***************************************************************************/
 
-#include "curl_setup.h"
+#include "setup.h"
 
 #ifdef CURLDEBUG
-
 #include <curl/curl.h>
+
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
 
 #define _MPRINTF_REPLACE
 #include <curl/mprintf.h>
 #include "urldata.h"
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdarg.h>
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 
 #define MEMDEBUG_NODEFINES /* don't redefine the standard functions */
 #include "curl_memory.h"
 #include "memdebug.h"
 
 #ifndef HAVE_ASSERT_H
-#  define assert(x) Curl_nop_stmt
-#endif
-
-/*
- * Until 2011-08-17 libcurl's Memory Tracking feature also performed
- * automatic malloc and free filling operations using 0xA5 and 0x13
- * values. Our own preinitialization of dynamically allocated memory
- * might be useful when not using third party memory debuggers, but
- * on the other hand this would fool memory debuggers into thinking
- * that all dynamically allocated memory is properly initialized.
- *
- * As a default setting, libcurl's Memory Tracking feature no longer
- * performs preinitialization of dynamically allocated memory on its
- * own. If you know what you are doing, and really want to retain old
- * behavior, you can achieve this compiling with preprocessor symbols
- * CURL_MT_MALLOC_FILL and CURL_MT_FREE_FILL defined with appropriate
- * values.
- */
-
-#ifdef CURL_MT_MALLOC_FILL
-# if (CURL_MT_MALLOC_FILL < 0) || (CURL_MT_MALLOC_FILL > 0xff)
-#   error "invalid CURL_MT_MALLOC_FILL or out of range"
-# endif
-#endif
-
-#ifdef CURL_MT_FREE_FILL
-# if (CURL_MT_FREE_FILL < 0) || (CURL_MT_FREE_FILL > 0xff)
-#   error "invalid CURL_MT_FREE_FILL or out of range"
-# endif
-#endif
-
-#if defined(CURL_MT_MALLOC_FILL) && defined(CURL_MT_FREE_FILL)
-# if (CURL_MT_MALLOC_FILL == CURL_MT_FREE_FILL)
-#   error "CURL_MT_MALLOC_FILL same as CURL_MT_FREE_FILL"
-# endif
-#endif
-
-#ifdef CURL_MT_MALLOC_FILL
-#  define mt_malloc_fill(buf,len) memset((buf), CURL_MT_MALLOC_FILL, (len))
-#else
-#  define mt_malloc_fill(buf,len) Curl_nop_stmt
-#endif
-
-#ifdef CURL_MT_FREE_FILL
-#  define mt_free_fill(buf,len) memset((buf), CURL_MT_FREE_FILL, (len))
-#else
-#  define mt_free_fill(buf,len) Curl_nop_stmt
+#  define assert(x) do { } while (0)
 #endif
 
 struct memdebug {
   size_t size;
   union {
-    curl_off_t o;
     double d;
     void * p;
   } mem[1];
@@ -112,7 +77,7 @@ static long memsize = 0;  /* set number of mallocs allowed */
 void curl_memdebug(const char *logname)
 {
   if(!logfile) {
-    if(logname && *logname)
+    if(logname)
       logfile = fopen(logname, "w");
     else
       logfile = stderr;
@@ -180,7 +145,7 @@ void *curl_domalloc(size_t wantedsize, int line, const char *source)
   mem = (Curl_cmalloc)(size);
   if(mem) {
     /* fill memory with junk */
-    mt_malloc_fill(mem->mem, wantedsize);
+    memset(mem->mem, 0xA5, wantedsize);
     mem->size = wantedsize;
   }
 
@@ -206,9 +171,12 @@ void *curl_docalloc(size_t wanted_elements, size_t wanted_size,
   user_size = wanted_size * wanted_elements;
   size = sizeof(struct memdebug) + user_size;
 
-  mem = (Curl_ccalloc)(1, size);
-  if(mem)
+  mem = (Curl_cmalloc)(size);
+  if(mem) {
+    /* fill memory with zeroes */
+    memset(mem->mem, 0, user_size);
     mem->size = user_size;
+  }
 
   if(source)
     curl_memlog("MEM %s:%d calloc(%zu,%zu) = %p\n",
@@ -253,18 +221,8 @@ void *curl_dorealloc(void *ptr, size_t wantedsize,
   if(countcheck("realloc", line, source))
     return NULL;
 
-#ifdef __INTEL_COMPILER
-#  pragma warning(push)
-#  pragma warning(disable:1684)
-   /* 1684: conversion from pointer to same-sized integral type */
-#endif
-
   if(ptr)
-    mem = (void *)((char *)ptr - offsetof(struct memdebug, mem));
-
-#ifdef __INTEL_COMPILER
-#  pragma warning(pop)
-#endif
+    mem = (struct memdebug *)((char *)ptr - offsetof(struct memdebug, mem));
 
   mem = (Curl_crealloc)(mem, size);
   if(source)
@@ -285,20 +243,10 @@ void curl_dofree(void *ptr, int line, const char *source)
 
   assert(ptr != NULL);
 
-#ifdef __INTEL_COMPILER
-#  pragma warning(push)
-#  pragma warning(disable:1684)
-   /* 1684: conversion from pointer to same-sized integral type */
-#endif
+  mem = (struct memdebug *)((char *)ptr - offsetof(struct memdebug, mem));
 
-  mem = (void *)((char *)ptr - offsetof(struct memdebug, mem));
-
-#ifdef __INTEL_COMPILER
-#  pragma warning(pop)
-#endif
-
-  /* destroy */
-  mt_free_fill(mem->mem, mem->size);
+  /* destroy  */
+  memset(mem->mem, 0x13, mem->size);
 
   /* free for real */
   (Curl_cfree)(mem);
@@ -307,71 +255,38 @@ void curl_dofree(void *ptr, int line, const char *source)
     curl_memlog("MEM %s:%d free(%p)\n", source, line, ptr);
 }
 
-curl_socket_t curl_socket(int domain, int type, int protocol,
-                          int line, const char *source)
+int curl_socket(int domain, int type, int protocol, int line,
+                const char *source)
 {
-  const char *fmt = (sizeof(curl_socket_t) == sizeof(int)) ?
-                    "FD %s:%d socket() = %d\n" :
-                    (sizeof(curl_socket_t) == sizeof(long)) ?
-                    "FD %s:%d socket() = %ld\n" :
-                    "FD %s:%d socket() = %zd\n" ;
-
-  curl_socket_t sockfd = socket(domain, type, protocol);
-  if(source && (sockfd != CURL_SOCKET_BAD))
-    curl_memlog(fmt, source, line, sockfd);
+  int sockfd=socket(domain, type, protocol);
+  if(source && (sockfd!=-1))
+    curl_memlog("FD %s:%d socket() = %d\n",
+                source, line, sockfd);
   return sockfd;
 }
 
-#ifdef HAVE_SOCKETPAIR
-int curl_socketpair(int domain, int type, int protocol,
-                    curl_socket_t socket_vector[2],
-                    int line, const char *source)
+int curl_accept(int s, void *saddr, void *saddrlen,
+                int line, const char *source)
 {
-  const char *fmt = (sizeof(curl_socket_t) == sizeof(int)) ?
-                    "FD %s:%d socketpair() = %d %d\n" :
-                    (sizeof(curl_socket_t) == sizeof(long)) ?
-                    "FD %s:%d socketpair() = %ld %ld\n" :
-                    "FD %s:%d socketpair() = %zd %zd\n" ;
-
-  int res = socketpair(domain, type, protocol, socket_vector);
-  if(source && (0 == res))
-    curl_memlog(fmt, source, line, socket_vector[0], socket_vector[1]);
-  return res;
-}
-#endif
-
-curl_socket_t curl_accept(curl_socket_t s, void *saddr, void *saddrlen,
-                          int line, const char *source)
-{
-  const char *fmt = (sizeof(curl_socket_t) == sizeof(int)) ?
-                    "FD %s:%d accept() = %d\n" :
-                    (sizeof(curl_socket_t) == sizeof(long)) ?
-                    "FD %s:%d accept() = %ld\n" :
-                    "FD %s:%d accept() = %zd\n" ;
-
   struct sockaddr *addr = (struct sockaddr *)saddr;
   curl_socklen_t *addrlen = (curl_socklen_t *)saddrlen;
-  curl_socket_t sockfd = accept(s, addr, addrlen);
-  if(source && (sockfd != CURL_SOCKET_BAD))
-    curl_memlog(fmt, source, line, sockfd);
+  int sockfd=accept(s, addr, addrlen);
+  if(source)
+    curl_memlog("FD %s:%d accept() = %d\n",
+                source, line, sockfd);
   return sockfd;
 }
 
 /* separate function to allow libcurl to mark a "faked" close */
-void curl_mark_sclose(curl_socket_t sockfd, int line, const char *source)
+void curl_mark_sclose(int sockfd, int line, const char *source)
 {
-  const char *fmt = (sizeof(curl_socket_t) == sizeof(int)) ?
-                    "FD %s:%d sclose(%d)\n" :
-                    (sizeof(curl_socket_t) == sizeof(long)) ?
-                    "FD %s:%d sclose(%ld)\n" :
-                    "FD %s:%d sclose(%zd)\n" ;
-
   if(source)
-    curl_memlog(fmt, source, line, sockfd);
+    curl_memlog("FD %s:%d sclose(%d)\n",
+                source, line, sockfd);
 }
 
 /* this is our own defined way to close sockets on *ALL* platforms */
-int curl_sclose(curl_socket_t sockfd, int line, const char *source)
+int curl_sclose(int sockfd, int line, const char *source)
 {
   int res=sclose(sockfd);
   curl_mark_sclose(sockfd, line, source);

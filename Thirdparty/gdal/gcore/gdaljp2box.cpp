@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: gdaljp2box.cpp 24227 2012-04-13 20:55:20Z rouault $
+ * $Id: gdaljp2box.cpp 23076 2011-09-07 18:28:51Z rouault $
  *
  * Project:  GDAL 
  * Purpose:  GDALJP2Box Implementation - Low level JP2 box reader.
@@ -30,7 +30,7 @@
 #include "gdaljp2metadata.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: gdaljp2box.cpp 24227 2012-04-13 20:55:20Z rouault $");
+CPL_CVSID("$Id: gdaljp2box.cpp 23076 2011-09-07 18:28:51Z rouault $");
 
 /************************************************************************/
 /*                             GDALJP2Box()                             */
@@ -183,12 +183,6 @@ int GDALJP2Box::ReadBox()
         nDataOffset += 16;
     }
 
-    if( GetDataLength() < 0 )
-    {
-        CPLDebug("GDALJP2", "Invalid length for box %s", szBoxType);
-        return FALSE;
-    }
-
     return TRUE;
 }
 
@@ -240,15 +234,11 @@ GIntBig GDALJP2Box::GetDataLength()
 /*                            DumpReadable()                            */
 /************************************************************************/
 
-int GDALJP2Box::DumpReadable( FILE *fpOut, int nIndentLevel )
+int GDALJP2Box::DumpReadable( FILE *fpOut )
 
 {
     if( fpOut == NULL )
         fpOut = stdout;
-
-    int i;
-    for(i=0;i<nIndentLevel;i++)
-        fprintf( fpOut, "  " );
 
     fprintf( fpOut, "  Type=%s, Offset=%d/%d, Data Size=%d",
              szBoxType, (int) nBoxOffset, (int) nDataOffset, 
@@ -269,16 +259,15 @@ int GDALJP2Box::DumpReadable( FILE *fpOut, int nIndentLevel )
              strlen(oSubBox.GetType()) > 0;
              oSubBox.ReadNextChild( this ) )
         {
-            oSubBox.DumpReadable( fpOut, nIndentLevel + 1 );
+            oSubBox.DumpReadable( fpOut );
         }
+
+        printf( "  (end of %s subboxes)\n", szBoxType );
     }
 
     if( EQUAL(GetType(),"uuid") )
     {
         char *pszHex = CPLBinaryToHex( 16, GetUUID() );
-        for(i=0;i<nIndentLevel;i++)
-            fprintf( fpOut, "  " );
-
         fprintf( fpOut, "    UUID=%s", pszHex );
 
         if( EQUAL(pszHex,"B14BF8BD083D4B43A5AE8CD7D5A6CE03") )

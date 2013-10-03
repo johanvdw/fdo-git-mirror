@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrocidatasource.cpp 25759 2013-03-15 17:41:57Z ilucena $
+ * $Id: ogrocidatasource.cpp 22299 2011-05-04 21:23:02Z warmerdam $
  *
  * Project:  Oracle Spatial Driver
  * Purpose:  Implementation of the OGROCIDataSource class.
@@ -31,7 +31,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-CPL_CVSID("$Id: ogrocidatasource.cpp 25759 2013-03-15 17:41:57Z ilucena $");
+CPL_CVSID("$Id: ogrocidatasource.cpp 22299 2011-05-04 21:23:02Z warmerdam $");
 
 static int anEPSGOracleMapping[] = 
 {
@@ -419,7 +419,7 @@ void OGROCIDataSource::DeleteLayer( const char *pszLayerName )
     if( iLayer == nLayers )
     {
         CPLDebug( "OCI", "DeleteLayer: %s not found in layer list." \
-                  "  Layer *not* deleted.", pszLayerName );
+                  "  Layer * not* deleted.", pszLayerName );
         return;
     }
 
@@ -963,50 +963,4 @@ int OGROCIDataSource::FetchSRSId( OGRSpatialReference * poSRS )
         return -1;
     else
         return nSRSId;
-}
-
-
-/************************************************************************/
-/*                           GetLayerByName()                           */
-/************************************************************************/
-
-OGRLayer *OGROCIDataSource::GetLayerByName( const char *pszName )
-
-{
-    OGROCILayer *poLayer;
-    int  i, count;
-
-    if ( !pszName )
-	return NULL;
-
-    count = GetLayerCount();
-
-    /* first a case sensitive check */
-    for( i = 0; i < count; i++ )
-    {
-        poLayer = papoLayers[i];
-
-        if( strcmp( pszName, poLayer->GetName() ) == 0 )
-        {
-            return poLayer;
-        }
-    }
-
-    char *pszSafeLayerName = CPLStrdup( pszName );
-    poSession->CleanName( pszSafeLayerName );
-
-    /* then case insensitive and laundered */
-    for( i = 0; i < count; i++ )
-    {
-        poLayer = papoLayers[i];
-
-        if( EQUAL( pszSafeLayerName, poLayer->GetName() ) )
-        {
-            break;
-        }
-    }
-
-    CPLFree( pszSafeLayerName );
-
-    return i < count ? poLayer : NULL;
 }

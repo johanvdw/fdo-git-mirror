@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: hugefileresolver.cpp 23675 2012-01-01 16:09:45Z rouault $
+ * $Id: hugefileresolver.cpp 23676 2012-01-01 16:10:36Z rouault $
  *
  * Project:  GML Reader
  * Purpose:  Implementation of GMLReader::HugeFileResolver() method.
@@ -46,7 +46,7 @@
 
 #include <stack>
 
-CPL_CVSID("$Id: hugefileresolver.cpp 23675 2012-01-01 16:09:45Z rouault $");
+CPL_CVSID("$Id: hugefileresolver.cpp 23676 2012-01-01 16:10:36Z rouault $");
 
 /****************************************************/
 /*      SQLite is absolutely required in order to   */

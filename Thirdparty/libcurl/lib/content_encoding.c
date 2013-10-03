@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2011, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2010, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -18,11 +18,15 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
+ * $Id: content_encoding.c,v 1.36 2010-02-09 09:35:48 bagder Exp $
  ***************************************************************************/
 
-#include "curl_setup.h"
+#include "setup.h"
 
 #ifdef HAVE_LIBZ
+
+#include <stdlib.h>
+#include <string.h>
 
 #include "urldata.h"
 #include <curl/curl.h>
@@ -48,21 +52,6 @@
 #define ORIG_NAME    0x08 /* bit 3 set: original file name present */
 #define COMMENT      0x10 /* bit 4 set: file comment present */
 #define RESERVED     0xE0 /* bits 5..7: reserved */
-
-static voidpf
-zalloc_cb(voidpf opaque, unsigned int items, unsigned int size)
-{
-  (void) opaque;
-  /* not a typo, keep it calloc() */
-  return (voidpf) calloc(items, size);
-}
-
-static void
-zfree_cb(voidpf opaque, voidpf ptr)
-{
-  (void) opaque;
-  free(ptr);
-}
 
 static CURLcode
 process_zlib_error(struct connectdata *conn, z_stream *z)
@@ -107,7 +96,7 @@ inflate_stream(struct connectdata *conn,
 
   /* because the buffer size is fixed, iteratively decompress and transfer to
      the client via client_write. */
-  for(;;) {
+  for (;;) {
     /* (re)set buffer for decompressed output for every iteration */
     z->next_out = (Bytef *)decomp;
     z->avail_out = DSIZ;
@@ -115,7 +104,7 @@ inflate_stream(struct connectdata *conn,
     status = inflate(z, Z_SYNC_FLUSH);
     if(status == Z_OK || status == Z_STREAM_END) {
       allow_restart = 0;
-      if((DSIZ - z->avail_out) && (!k->ignorebody)) {
+      if(DSIZ - z->avail_out) {
         result = Curl_client_write(conn, CLIENTWRITE_BODY, decomp,
                                    DSIZ - z->avail_out);
         /* if !CURLE_OK, clean up, return */
@@ -135,9 +124,7 @@ inflate_stream(struct connectdata *conn,
       }
 
       /* Done with these bytes, exit */
-
-      /* status is always Z_OK at this point! */
-      if(z->avail_in == 0) {
+      if(status == Z_OK && z->avail_in == 0) {
         free(decomp);
         return result;
       }
@@ -173,10 +160,11 @@ Curl_unencode_deflate_write(struct connectdata *conn,
 
   /* Initialize zlib? */
   if(k->zlib_init == ZLIB_UNINIT) {
-    memset(z, 0, sizeof(z_stream));
-    z->zalloc = (alloc_func)zalloc_cb;
-    z->zfree = (free_func)zfree_cb;
-
+    z->zalloc = (alloc_func)Z_NULL;
+    z->zfree = (free_func)Z_NULL;
+    z->opaque = 0;
+    z->next_in = NULL;
+    z->avail_in = 0;
     if(inflateInit(z) != Z_OK)
       return process_zlib_error(conn, z);
     k->zlib_init = ZLIB_INIT;
@@ -260,6 +248,7 @@ static enum {
 
     /* Skip over the NUL */
     --len;
+    ++data;
   }
 
   if(flags & HEAD_CRC) {
@@ -267,6 +256,7 @@ static enum {
       return GZIP_UNDERFLOW;
 
     len -= 2;
+    data += 2;
   }
 
   *headerlen = totallen - len;
@@ -283,9 +273,11 @@ Curl_unencode_gzip_write(struct connectdata *conn,
 
   /* Initialize zlib? */
   if(k->zlib_init == ZLIB_UNINIT) {
-    memset(z, 0, sizeof(z_stream));
-    z->zalloc = (alloc_func)zalloc_cb;
-    z->zfree = (free_func)zfree_cb;
+    z->zalloc = (alloc_func)Z_NULL;
+    z->zfree = (free_func)Z_NULL;
+    z->opaque = 0;
+    z->next_in = NULL;
+    z->avail_in = 0;
 
     if(strcmp(zlibVersion(), "1.2.0.4") >= 0) {
       /* zlib ver. >= 1.2.0.4 supports transparent gzip decompressing */

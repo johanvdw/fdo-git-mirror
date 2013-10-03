@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogrsf_frmts.dox 25840 2013-04-02 19:10:04Z winkey $
+ * $Id: ogrsf_frmts.dox 22368 2011-05-13 17:59:41Z rouault $
  *
  * Project:  OpenGIS Simple Features Reference Implementation
  * Purpose:  Documentation for ogrsf_frmts.h classes.
@@ -904,15 +904,11 @@ success.
  review the <a href="ogr_sql.html">OGR SQL</a> document.  Some drivers (ie.
  Oracle and PostGIS) pass the SQL directly through to the underlying RDBMS.
 
- Starting with OGR 1.10, the <a href="ogr_sql_sqlite.html">SQLITE dialect</a>
- can also be used.
-
  @param pszStatement the SQL statement to execute. 
  @param poSpatialFilter geometry which represents a spatial filter. Can be NULL.
  @param pszDialect allows control of the statement dialect. If set to NULL, the
 OGR SQL engine will be used, except for RDBMS drivers that will use their dedicated SQL engine,
-unless OGRSQL is explicitely passed as the dialect. Starting with OGR 1.10, the SQLITE dialect
-can also be used.
+unless OGRSQL is explicitely passed as the dialect.
 
  @return an OGRLayer containing the results of the query.  Deallocate with
  ReleaseResultSet().
@@ -939,9 +935,6 @@ can also be used.
  review the <a href="ogr_sql.html">OGR SQL</a> document.  Some drivers (ie.
  Oracle and PostGIS) pass the SQL directly through to the underlying RDBMS.
 
- Starting with OGR 1.10, the <a href="ogr_sql_sqlite.html">SQLITE dialect</a>
- can also be used.
-
  This function is the same as the C++ method OGRDataSource::ExecuteSQL();
 
  @param hDS handle to the data source on which the SQL query is executed.
@@ -949,8 +942,7 @@ can also be used.
  @param hSpatialFilter handle to a geometry which represents a spatial filter. Can be NULL.
  @param pszDialect allows control of the statement dialect. If set to NULL, the
 OGR SQL engine will be used, except for RDBMS drivers that will use their dedicated SQL engine,
-unless OGRSQL is explicitely passed as the dialect. Starting with OGR 1.10, the SQLITE dialect
-can also be used.
+unless OGRSQL is explicitely passed as the dialect.
 
  @return an handle to a OGRLayer containing the results of the query.  
  Deallocate with OGR_DS_ReleaseResultSet().
@@ -1004,7 +996,6 @@ can also be used.
 
  <ul>
   <li> <b>ODsCCreateLayer</b>: True if this datasource can create new layers.<p>
-  <li> <b>ODsCDeleteLayer</b>: True if this datasource can delete existing layers.<p>
  </ul>
 
  The \#define macro forms of the capability names should be used in preference
@@ -1030,7 +1021,6 @@ can also be used.
 
  <ul>
   <li> <b>ODsCCreateLayer</b>: True if this datasource can create new layers.
-  <li> <b>ODsCDeleteLayer</b>: True if this datasource can delete existing layers.<p>
   <p>
  </ul>
 
@@ -1077,17 +1067,17 @@ specific.
 
 ...
 
-        OGRLayer *poLayer;
-        char     **papszOptions;
+	OGRLayer *poLayer;
+        char     *papszOptions;
 
-        if( !poDS->TestCapability( ODsCCreateLayer ) )
+	if( !poDS->TestCapability( ODsCCreateLayer ) )
         {
-        ...
+	    ...
         }
 
         papszOptions = CSLSetNameValue( papszOptions, "DIM", "2" );
         poLayer = poDS->CreateLayer( "NewLayer", NULL, wkbUnknown,
-                                     papszOptions );
+				     papszOptions );
         CSLDestroy( papszOptions );
 
         if( poLayer == NULL )
@@ -1134,7 +1124,7 @@ http://www.gdal.org/ogr/ogr_formats.html
 ...
 
 	OGRLayerH *hLayer;
-        char     **papszOptions;
+        char     *papszOptions;
 
 	if( OGR_DS_TestCapability( hDS, ODsCCreateLayer ) )
         {

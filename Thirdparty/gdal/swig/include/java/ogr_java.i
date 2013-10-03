@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ogr_java.i 24762 2012-08-11 16:28:26Z rouault $
+ * $Id: ogr_java.i 23330 2011-11-05 21:10:20Z rouault $
  *
  * Name:     ogr_java.i
  * Project:  GDAL SWIG Interface
@@ -454,7 +454,5 @@ SMART_FINALIZER(Geometry)
 /* ----------------------------------------------------------------- */
 /* End of smart finalizer mechanism                                  */
 /* ----------------------------------------------------------------- */
-
-%include callback.i
 
 %include typemaps_java.i

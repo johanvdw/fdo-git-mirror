@@ -1,5 +1,6 @@
-#ifndef HEADER_CURL_FILE_H
-#define HEADER_CURL_FILE_H
+#ifndef __FILE_H
+#define __FILE_H
+
 /***************************************************************************
  *                                  _   _ ____  _
  *  Project                     ___| | | |  _ \| |
@@ -20,6 +21,7 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
+ * $Id: file.h,v 1.18 2009-12-12 22:17:51 bagder Exp $
  ***************************************************************************/
 
 
@@ -36,6 +38,4 @@ struct FILEPROTO {
 #ifndef CURL_DISABLE_FILE
 extern const struct Curl_handler Curl_handler_file;
 #endif
-
-#endif /* HEADER_CURL_FILE_H */
-
+#endif

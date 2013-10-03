@@ -150,29 +150,9 @@ def Debug(*args):
   """Debug(char msg_class, char message)"""
   return _gdal.Debug(*args)
 
-def SetErrorHandler(*args):
-  """SetErrorHandler(char pszCallbackName = None) -> CPLErr"""
-  return _gdal.SetErrorHandler(*args)
-
-def PushErrorHandler(*args):
-  """PushErrorHandler(CPLErrorHandler pfnErrorHandler = None) -> CPLErr"""
-  return _gdal.PushErrorHandler(*args)
-
 def Error(*args):
   """Error(CPLErr msg_class = CE_Failure, int err_code = 0, char msg = "error")"""
   return _gdal.Error(*args)
-
-def GOA2GetAuthorizationURL(*args):
-  """GOA2GetAuthorizationURL(char pszScope) -> retStringAndCPLFree"""
-  return _gdal.GOA2GetAuthorizationURL(*args)
-
-def GOA2GetRefreshToken(*args):
-  """GOA2GetRefreshToken(char pszAuthToken, char pszScope) -> retStringAndCPLFree"""
-  return _gdal.GOA2GetRefreshToken(*args)
-
-def GOA2GetAccessToken(*args):
-  """GOA2GetAccessToken(char pszRefreshToken, char pszScope) -> retStringAndCPLFree"""
-  return _gdal.GOA2GetAccessToken(*args)
 
 def PopErrorHandler(*args):
   """PopErrorHandler()"""
@@ -217,10 +197,6 @@ def FindFile(*args):
 def ReadDir(*args):
   """ReadDir(char utf8_path) -> char"""
   return _gdal.ReadDir(*args)
-
-def ReadDirRecursive(*args):
-  """ReadDirRecursive(char utf8_path) -> char"""
-  return _gdal.ReadDirRecursive(*args)
 
 def SetConfigOption(*args):
   """SetConfigOption(char pszKey, char pszValue)"""
@@ -290,6 +266,13 @@ class StatBuf(_object):
 
 StatBuf_swigregister = _gdal.StatBuf_swigregister
 StatBuf_swigregister(StatBuf)
+
+def PushErrorHandler(*args):
+  """
+    PushErrorHandler(char pszCallbackName = None) -> CPLErr
+    PushErrorHandler(CPLErrorHandler arg0)
+    """
+  return _gdal.PushErrorHandler(*args)
 
 
 def VSIStatL(*args):
@@ -827,7 +810,7 @@ class Dataset(MajorObject):
             return sd_list
 
         i = 1
-        while 'SUBDATASET_'+str(i)+'_NAME' in sd:
+        while sd.has_key('SUBDATASET_'+str(i)+'_NAME'):
             sd_list.append( ( sd['SUBDATASET_'+str(i)+'_NAME'],
                               sd['SUBDATASET_'+str(i)+'_DESC'] ) )
             i = i + 1
@@ -1076,10 +1059,6 @@ class Band(MajorObject):
             int buf_pixel_space = None, int buf_line_space = None) -> CPLErr
         """
         return _gdal.Band_ReadRaster1(self, *args, **kwargs)
-
-    def ReadBlock(self, *args, **kwargs):
-        """ReadBlock(self, int xoff, int yoff) -> CPLErr"""
-        return _gdal.Band_ReadBlock(self, *args, **kwargs)
 
     def ReadRaster(self, xoff, yoff, xsize, ysize,
                      buf_xsize = None, buf_ysize = None, buf_type = None,
@@ -1387,14 +1366,6 @@ class Transformer(_object):
     def TransformPoints(self, *args):
         """TransformPoints(self, int bDstToSrc, int nCount) -> int"""
         return _gdal.Transformer_TransformPoints(self, *args)
-
-    def TransformGeolocations(self, *args, **kwargs):
-        """
-        TransformGeolocations(self, Band xBand, Band yBand, Band zBand, GDALProgressFunc callback = None, 
-            void callback_data = None, 
-            char options = None) -> int
-        """
-        return _gdal.Transformer_TransformGeolocations(self, *args, **kwargs)
 
 Transformer_swigregister = _gdal.Transformer_swigregister
 Transformer_swigregister(Transformer)

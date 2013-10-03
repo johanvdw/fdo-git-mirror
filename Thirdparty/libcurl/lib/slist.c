@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2011, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2009, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -18,10 +18,16 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
+ * $Id: slist.c,v 1.2 2009-04-21 11:46:17 yangtse Exp $
  ***************************************************************************/
 
-#include "curl_setup.h"
+#include "setup.h"
 
+#include <stdio.h>
+#include <stdarg.h>
+#include <stdlib.h>
+
+#include <string.h>
 #include "curl_memory.h"
 #include "slist.h"
 
@@ -96,7 +102,7 @@ struct curl_slist *Curl_slist_duplicate(struct curl_slist *inlist)
   while(inlist) {
     tmp = curl_slist_append(outlist, inlist->data);
 
-    if(!tmp) {
+    if (!tmp) {
       curl_slist_free_all(outlist);
       return NULL;
     }
@@ -119,7 +125,10 @@ void curl_slist_free_all(struct curl_slist *list)
   item = list;
   do {
     next = item->next;
-    Curl_safefree(item->data);
+
+    if(item->data) {
+      free(item->data);
+    }
     free(item);
     item = next;
   } while(next);

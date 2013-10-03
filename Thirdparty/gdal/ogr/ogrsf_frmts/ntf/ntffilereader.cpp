@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ntffilereader.cpp 25504 2013-01-14 22:18:55Z rouault $
+ * $Id: ntffilereader.cpp 11589 2007-06-03 15:01:36Z warmerdam $
  *
  * Project:  NTF Translator
  * Purpose:  NTFFileReader class implementation.
@@ -33,7 +33,7 @@
 #include "cpl_string.h"
 #include "ogr_api.h"
 
-CPL_CVSID("$Id: ntffilereader.cpp 25504 2013-01-14 22:18:55Z rouault $");
+CPL_CVSID("$Id: ntffilereader.cpp 11589 2007-06-03 15:01:36Z warmerdam $");
 
 static int DefaultNTFRecordGrouper( NTFFileReader *, NTFRecord **,
                                     NTFRecord * );
@@ -276,12 +276,7 @@ int NTFFileReader::Open( const char * pszFilenameIn )
     }
 
     nNTFLevel = atoi(oVHR.GetField( 57, 57 ));
-    if( !( nNTFLevel >= 1 && nNTFLevel <= 5 ) )
-    {
-        CPLError( CE_Failure, CPLE_AppDefined, 
-                  "Invalid value : nNTFLevel = %d", nNTFLevel );
-        return FALSE;
-    }
+    CPLAssert( nNTFLevel >= 1 && nNTFLevel <= 5 );
 
 /* -------------------------------------------------------------------- */
 /*      Read records till we get the section header.                    */
@@ -404,15 +399,6 @@ int NTFFileReader::Open( const char * pszFilenameIn )
         delete poRecord;
         CPLError( CE_Failure, CPLE_AppDefined,
                   "Cound not find section header record in %s.\n", 
-                  pszFilename );
-        return FALSE;
-    }
-
-    if( pszProduct == NULL )
-    {
-        delete poRecord;
-        CPLError( CE_Failure, CPLE_AppDefined,
-                  "Cound not find product type in %s.\n", 
                   pszFilename );
         return FALSE;
     }

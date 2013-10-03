@@ -54,10 +54,3 @@ OGRFeature *kml2feat (
     OGRLayer * poOgrLayer,
     OGRFeatureDefn * poOgrFeatDefn,
     OGRSpatialReference *poOgrSRS);
-
-OGRFeature *kmlgroundoverlay2feat (
-    GroundOverlayPtr poKmlOverlay,
-    OGRLIBKMLDataSource * poOgrDS,
-    OGRLayer * poOgrLayer,
-    OGRFeatureDefn * poOgrFeatDefn,
-    OGRSpatialReference *poOgrSRS);

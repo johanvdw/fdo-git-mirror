@@ -1,10 +1,4 @@
 <testcase>
-<info>
-<keywords>
-FTP
-</keywords>
-</info>
-
 # Server-side
 <reply>
 </reply>
@@ -40,7 +34,7 @@ CWD dir1
 EPSV
 TYPE I
 STOR 149
-CWD /
+CWD /nowhere/anywhere
 CWD dir2
 EPSV
 STOR 149

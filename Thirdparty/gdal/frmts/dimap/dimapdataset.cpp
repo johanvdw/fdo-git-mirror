@@ -34,7 +34,7 @@
 #include "ogr_spatialref.h"
 #include "gdal_proxy.h"
 
-CPL_CVSID("$Id: dimapdataset.cpp 25110 2012-10-13 13:53:53Z rouault $");
+CPL_CVSID("$Id: dimapdataset.cpp 23634 2011-12-22 18:50:05Z aboudreault $");
 
 CPL_C_START
 void	GDALRegister_DIMAP(void);
@@ -66,7 +66,6 @@ class DIMAPDataset : public GDALPamDataset
 
     CPLString     osMDFilename;
     CPLString     osImageDSFilename;
-    CPLString     osDIMAPFilename;
     int           nProductVersion;
     
     char          **papszXMLDimapMetadata;
@@ -77,7 +76,7 @@ class DIMAPDataset : public GDALPamDataset
     int ReadImageInformation();
     int ReadImageInformation2(); /* DIMAP 2 */
 
-    void SetMetadataFromXML(CPLXMLNode *psProduct, const char *apszMetadataTranslation[]);
+    void SetMetadata(CPLXMLNode *psProduct, const char *apszMetadataTranslation[]);
   public:
 		DIMAPDataset();
 	        ~DIMAPDataset();
@@ -298,18 +297,7 @@ int DIMAPDataset::Identify( GDALOpenInfo * poOpenInfo )
             CPLFormCIFilename( poOpenInfo->pszFilename, "METADATA.DIM", NULL );
         
         if( VSIStatL( osMDFilename, &sStat ) == 0 )
-        {
-            /* Make sure this is really a Dimap format */
-            GDALOpenInfo  oOpenInfo( osMDFilename, GA_ReadOnly, NULL );
-            if( oOpenInfo.nHeaderBytes >= 100 )
-            {
-                if( strstr((const char *) oOpenInfo.pabyHeader, 
-                           "<Dimap_Document" ) == NULL )
-                    return FALSE;
-                else
-                    return TRUE;
-            }
-        }
+            return TRUE;
         else
 	{
 	  /* DIMAP 2 file */
@@ -351,7 +339,7 @@ GDALDataset *DIMAPDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Get the metadata filename.                                      */
 /* -------------------------------------------------------------------- */
-    CPLString osMDFilename, osImageDSFilename, osDIMAPFilename;
+    CPLString osMDFilename, osImageDSFilename;;
 
     if( poOpenInfo->bIsDirectory )
     {
@@ -416,6 +404,7 @@ GDALDataset *DIMAPDataset::Open( GDALOpenInfo * poOpenInfo )
 	    return NULL;
 	}
       
+	CPLString osDIMAPFilename;
 	CPLXMLNode *psDatasetComponent = psDatasetComponents->psChild;
 
         for( ; psDatasetComponent != NULL; psDatasetComponent = psDatasetComponent->psNext ) 
@@ -507,7 +496,6 @@ GDALDataset *DIMAPDataset::Open( GDALOpenInfo * poOpenInfo )
     poDS->nProductVersion = nProductVersion;
     poDS->osMDFilename = osMDFilename;
     poDS->osImageDSFilename = osImageDSFilename;
-    poDS->osDIMAPFilename = osDIMAPFilename;    
 
     int res = TRUE;
     if( nProductVersion == 2 )
@@ -697,7 +685,7 @@ int DIMAPDataset::ReadImageInformation()
             NULL, NULL
         };
 
-    SetMetadataFromXML(psProduct, apszMetadataTranslation);
+    SetMetadata(psProduct, apszMetadataTranslation);
 
 /* -------------------------------------------------------------------- */
 /*      Set Band metadata from the <Spectral_Band_Info> content         */
@@ -801,7 +789,7 @@ int DIMAPDataset::ReadImageInformation2()
 					     psDoc, "Raster_Data.Data_Access.Data_Files.Data_File.DATA_FILE_PATH.href", "" );
 	if( strlen(pszHref) > 0 )
 	{
-	    CPLString osPath = CPLGetPath( osDIMAPFilename );
+	    CPLString osPath = CPLGetPath(osMDFilename);
 	    osImageDSFilename = 
 		CPLFormFilename( osPath, pszHref, NULL );
 	}
@@ -904,7 +892,7 @@ int DIMAPDataset::ReadImageInformation2()
             NULL, NULL
         };
 
-    SetMetadataFromXML(psProductDim, apszMetadataTranslationDim);
+    SetMetadata(psProductDim, apszMetadataTranslationDim);
 
 /* -------------------------------------------------------------------- */
 /*      Translate other metadata of interest: STRIP_<product_name>.XML    */
@@ -917,7 +905,7 @@ int DIMAPDataset::ReadImageInformation2()
             NULL, NULL
     };
 
-    SetMetadataFromXML(psProductStrip, apszMetadataTranslationStrip);
+    SetMetadata(psProductStrip, apszMetadataTranslationStrip);
 
 /* -------------------------------------------------------------------- */
 /*      Set Band metadata from the <Band_Radiance> and                  */
@@ -1009,10 +997,10 @@ int DIMAPDataset::ReadImageInformation2()
 }
 
 /************************************************************************/
-/*                          SetMetadataFromXML()                        */
+/*                            SetMetadata()                             */
 /************************************************************************/
 
-void DIMAPDataset::SetMetadataFromXML(CPLXMLNode *psProduct, const char *apszMetadataTranslation[])
+void DIMAPDataset::SetMetadata(CPLXMLNode *psProduct, const char *apszMetadataTranslation[])
 {
     CPLXMLNode *psDoc = CPLGetXMLNode( psProduct, "=Dimap_Document" );
     if( psDoc == NULL ) 
