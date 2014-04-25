@@ -50,12 +50,12 @@ void SchemaTest::OpenConnection(FdoIConnection* conn, const wchar_t* path , bool
     wchar_t fullpath[1024];
     _wfullpath(fullpath, path, 1024);
 #else
-    char cpath[PATH_MAX];
-    char cfullpath[PATH_MAX];
-    wcstombs(cpath, path, PATH_MAX);
+    char cpath[1024];
+    char cfullpath[1024];
+    wcstombs(cpath, path, 1024);
     realpath(cpath, cfullpath);
-    wchar_t fullpath[PATH_MAX];
-    mbstowcs(fullpath, cfullpath, PATH_MAX);
+    wchar_t fullpath[1024];
+    mbstowcs(fullpath, cfullpath, 1024);
 #endif
 
     std::wstring connStr;
