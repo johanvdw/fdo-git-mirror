@@ -267,8 +267,6 @@ public:
     FdoDataType GetCalculationType(FdoString* name);
 
 private:
-    bool mFoundTopLevel;
-
     // avoid calling HandleExpr(exp); after a call to push_stack()
     // without calling again push_stack() since it will write the expression
     // in wrong SQL chunk!
