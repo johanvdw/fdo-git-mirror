@@ -41,8 +41,6 @@ FdoInt32* ShpCommandCapabilities::GetCommands (FdoInt32& size)
     {
         FdoCommandType_Select,
         FdoCommandType_SelectAggregates,
-        FdoCommandType_GetSchemaNames,
-        FdoCommandType_GetClassNames,
         FdoCommandType_DescribeSchema,
         FdoCommandType_DescribeSchemaMapping,
         FdoCommandType_GetSpatialContexts,
