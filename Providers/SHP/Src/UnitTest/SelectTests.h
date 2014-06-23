@@ -32,26 +32,18 @@ class SelectTests :
     public ShpTests
 {
     CPPUNIT_TEST_SUITE (SelectTests);
-#ifdef ADSK_FDO
     CPPUNIT_TEST (select);
-#endif
     CPPUNIT_TEST (get_spatial_contexts);
-#ifdef ADSK_FDO
     CPPUNIT_TEST (get_class_definition);
     CPPUNIT_TEST (requery);
     CPPUNIT_TEST (select_subset);
     CPPUNIT_TEST (select_all);
-#endif
     CPPUNIT_TEST (select_mixed_decimals);
     CPPUNIT_TEST (get_spatial_context_text);
-#ifdef ADSK_FDO
     CPPUNIT_TEST (select_only_geometry);
-#endif
     CPPUNIT_TEST (select_hawaii);
     CPPUNIT_TEST (select_states);
-#ifdef ADSK_FDO
     CPPUNIT_TEST (select_date_time);
-#endif
     CPPUNIT_TEST (select_large_geometries);
     CPPUNIT_TEST (analyze_polygons);
     CPPUNIT_TEST (select_with_aggregates_should_fail);

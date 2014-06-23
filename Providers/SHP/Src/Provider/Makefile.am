@@ -29,8 +29,6 @@ libSHPProviderSrc_la_SOURCES = \
   ShpConnectionInfo.cpp \
   ShpSchemaUtilities.cpp \
   ShpDescribeSchemaCommand.cpp \
-  ShpGetSchemaNamesCommand.cpp \
-  ShpGetClassNamesCommand.cpp \
   ShpDescribeSchemaMappingCommand.cpp \
   ShpApplySchemaCommand.cpp \
   ShpDestroySchemaCommand.cpp \
@@ -89,8 +87,6 @@ noinst_HEADERS = $(libSHPProviderSrc_la_SOURCES) \
    ShpInsertCommand.h \
    ShpSpatialContext.h \
    ShpDescribeSchemaCommand.h \
-   ShpGetSchemaNamesCommand.h \
-   ShpGetClassNamesCommand.h \
    ShpLpClassDefinition.h \
    ShpSpatialContextReader.h \
    ShpDescribeSchemaMappingCommand.h \

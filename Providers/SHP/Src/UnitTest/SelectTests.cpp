@@ -967,9 +967,7 @@ void SelectTests::analyze_polygons()
         // directories/filenames/geometrycolumn name:
         wchar_t* testData[][3] =
         {
-#ifdef ADSK_FDO
             { L"../../TestData/Zones",     L"ZONES", L"Geometry" },
-#endif
             { L"../../TestData/World",     L"world_adm0", L"Geometry" },
             //NO POLYGON DATA: { L"../../TestData/Testing",   L"TestModify", L"Geometry" },
             //DUPLICATE FIELD NAME CAUSES EXCEPTION: { L"../../TestData/States",    L"statesp020", L"Geometry" },
@@ -985,10 +983,8 @@ void SelectTests::analyze_polygons()
             { L"../../TestData/Sheboygan", L"Soils", L"Geometry" },
             //NO POLYGON DATA: { L"../../TestData/Sheboygan", L"Trees", L"Geometry" },
             { L"../../TestData/Sheboygan", L"VotingDistricts", L"Geometry" },
-#ifdef ADSK_FDO
             { L"../../TestData/Ontario",   L"lakes", L"Geometry" },
             { L"../../TestData/Ontario",   L"ontario", L"Geometry" },
-#endif
             //NO POLYGON DATA: { L"../../TestData/Ontario",   L"roads", L"Geometry" },
             //NO POLYGON DATA: { L"../../TestData/Ontario",   L"ShpMixedDecimals", L"Geometry" },
             { L"../../TestData/Oahu",      L"coundist01_n83", L"Geometry" },
