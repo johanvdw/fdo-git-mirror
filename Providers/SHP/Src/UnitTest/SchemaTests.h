@@ -29,17 +29,12 @@ class SchemaTests :
 {
     CPPUNIT_TEST_SUITE (SchemaTests);
     CPPUNIT_TEST (describe);
-    CPPUNIT_TEST (describe_with_hint);
-    CPPUNIT_TEST (get_schema_names);
-    CPPUNIT_TEST (get_class_names);
     //CPPUNIT_TEST (describe_bogus); // allow query any schema since there is just one arbitrary schema
     CPPUNIT_TEST (apply);
     CPPUNIT_TEST (apply_schema);
     CPPUNIT_TEST (apply_nameless);
     CPPUNIT_TEST (create_nameless);
-#ifdef ADSK_FDO
     CPPUNIT_TEST (schema_mapping_defaults_test);
-#endif
     CPPUNIT_TEST (schema_mapping_no_defaults_test);
     CPPUNIT_TEST (add_class);
     CPPUNIT_TEST (apply_two);
@@ -79,10 +74,6 @@ protected:
     void create_nameless ();
     void apply_two ();
     void apply_three ();
-
-    void describe_with_hint();
-    void get_schema_names();
-    void get_class_names();
 
     // Executes a describe schema mapping (with default values, no config file) command.
     void schema_mapping_defaults_test();

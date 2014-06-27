@@ -97,7 +97,7 @@ void FdoSqlServerInvalidExpDetProcessor::ProcessFunction(FdoFunction& expr)
 }
 
 FdoRdbmsSqlServerSqlBuilder::FdoRdbmsSqlServerSqlBuilder (FdoRdbmsSqlServerConnection* conn)
-    : FdoRdbmsSqlBuilder(conn), mFoundTopLevel(false)
+    : FdoRdbmsSqlBuilder(conn)
 {
     m_props = NULL;
     m_fdoConn = conn;
@@ -2036,31 +2036,15 @@ void FdoRdbmsSqlServerSqlBuilder::ProcessBinaryLogicalOperator(FdoBinaryLogicalO
     bool addLeftBr = false;
     bool addRightBr = false;
 
-    bool isTopLevel = false;
-    if (!mFoundTopLevel)
-    {
-        mFoundTopLevel = true;
-        isTopLevel = true;
-    }
-
     if (op == FdoBinaryLogicalOperations_And)
     {
-        //#864: Always parenthesize top-level operands
-        if (isTopLevel) 
-        {
-            addLeftBr = true;
+        FdoBinaryLogicalOperator* pBLO = dynamic_cast<FdoBinaryLogicalOperator*>(right.p);
+        if (pBLO != NULL && pBLO->GetOperation() == FdoBinaryLogicalOperations_Or)
             addRightBr = true;
-        }
-        else
-        {
-            FdoBinaryLogicalOperator* pBLO = dynamic_cast<FdoBinaryLogicalOperator*>(right.p);
-            if (pBLO != NULL && pBLO->GetOperation() == FdoBinaryLogicalOperations_Or)
-                addRightBr = true;
 
-            pBLO = dynamic_cast<FdoBinaryLogicalOperator*>(left.p);
-            if (pBLO != NULL && pBLO->GetOperation() == FdoBinaryLogicalOperations_Or)
-                addLeftBr = true;
-        }
+        pBLO = dynamic_cast<FdoBinaryLogicalOperator*>(left.p);
+        if (pBLO != NULL && pBLO->GetOperation() == FdoBinaryLogicalOperations_Or)
+            addLeftBr = false;
     }
     
     if (addLeftBr)

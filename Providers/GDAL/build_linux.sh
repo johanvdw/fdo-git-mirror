@@ -209,9 +209,9 @@ if test "$TYPECONFIGURE" == configure ; then
    fi
 
    if test "$TYPEBUILD" == release; then
-      ./configure --enable-silent-rules --prefix="$PREFIXVAL"
+      ./configure --prefix="$PREFIXVAL"
    else
-      ./configure --enable-silent-rules --enable-debug=yes --prefix="$PREFIXVAL"
+      ./configure --enable-debug=yes --prefix="$PREFIXVAL"
    fi
 fi
    
